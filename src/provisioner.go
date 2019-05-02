@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
@@ -16,6 +17,7 @@ func NewMSAProvisioner() controller.Provisioner {
 }
 
 func (p *msaProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
+	fmt.Println(options)
 	return nil, errors.New("unimplemented")
 }
 
