@@ -34,8 +34,8 @@ func start() error {
 
 	pc := controller.NewProvisionController(
 		kubeClient,
-		"msa-provisioner",
-		NewMSAProvisioner(),
+		"dothill-provisioner",
+		NewDothillProvisioner(),
 		serverVersion.GitVersion,
 	)
 

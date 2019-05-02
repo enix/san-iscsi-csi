@@ -7,7 +7,7 @@ ifeq ($(VERSION),)
 endif
 
 ifeq ($(BIN),)
-	BIN = msa-provisioner
+	BIN = dothill-provisioner
 endif
 
 IMAGE = $(REGISTRY)/$(BIN):$(VERSION)

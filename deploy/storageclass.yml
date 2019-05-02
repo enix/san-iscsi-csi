@@ -1,7 +1,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: msa-storage
+  name: dothill-storage
 
-provisioner: msa-provisioner
+provisioner: dothill-provisioner
 reclaimPolicy: Delete

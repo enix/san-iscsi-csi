@@ -1,13 +1,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: msa-provisioner
+  name: dothill-provisioner
 
 subjects:
   - kind: ServiceAccount
-    name: msa-provisioner
-    namespace: msa-storage
+    name: dothill-provisioner
+    namespace: dothill
 roleRef:
   kind: ClusterRole
-  name: msa-provisioner
+  name: dothill-provisioner
   apiGroup: rbac.authorization.k8s.io

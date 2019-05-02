@@ -1,8 +1,8 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: msa-provisioner
-  namespace: msa-storage
+  name: dothill-provisioner
+  namespace: dothill
 
 spec:
   replicas: 1
@@ -11,11 +11,11 @@ spec:
   template:
     metadata:
       labels:
-        app: msa-provisioner
+        app: dothill-provisioner
     spec:
       imagePullSecrets:
       - name: regcred
       containers:
-      - name: msa-provisioner
-        image: "docker-registry.enix.io/enix/msa-provisioner:latest"
-      serviceAccount: msa-provisioner
+      - name: dothill-provisioner
+        image: "docker-registry.enix.io/enix/dothill-provisioner:latest"
+      serviceAccount: dothill-provisioner
