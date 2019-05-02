@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: msa-provisioner
+  namespace: msa-storage
+
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: msa-provisioner
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: msa-provisioner
+        image: "docker-registry.enix.io/enix/msa-provisioner:latest"
+      serviceAccount: msa-provisioner
