@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
 
+	"github.com/pborman/getopt/v2"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -10,7 +12,35 @@ import (
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
-func start() error {
+type args struct {
+	Name       string
+	PortalAddr string
+	BaseIQN    string
+	Remaining  []string
+}
+
+func loadArguments() *args {
+	args := args{
+		Name:       "dothill-provisioner",
+		BaseIQN:    "iqn.2019-05.io.enix",
+		PortalAddr: "1.2.3.4:3260",
+	}
+
+	getopt.FlagLong(&args.Name, "name", 'n', "provisioner name", args.Name)
+	getopt.FlagLong(&args.PortalAddr, "portal", 'p', "portal full address", args.PortalAddr)
+	getopt.FlagLong(&args.BaseIQN, "iqn", 'i', "iqn static part", args.BaseIQN)
+
+	opts := getopt.CommandLine
+	opts.Parse(os.Args)
+	for opts.NArgs() > 0 {
+		args.Remaining = append(args.Remaining, opts.Arg(0))
+		opts.Parse(opts.Args())
+	}
+
+	return &args
+}
+
+func start(args *args) error {
 	config := &rest.Config{
 		Host:            "https://185.145.251.10:6443",
 		TLSClientConfig: rest.TLSClientConfig{Insecure: true},
@@ -34,17 +64,24 @@ func start() error {
 
 	pc := controller.NewProvisionController(
 		kubeClient,
-		"dothill-provisioner",
-		NewDothillProvisioner(),
+		args.Name,
+		NewDothillProvisioner(args),
 		serverVersion.GitVersion,
 	)
 
+	log.Println("provision controller listening...")
 	pc.Run(wait.NeverStop)
 	return nil
 }
 
 func main() {
-	err := start()
+	args := loadArguments()
+	if len(args.Remaining) > 0 {
+		getopt.Usage()
+		os.Exit(1)
+	}
+
+	err := start(args)
 	if err != nil {
 		log.Fatal(err)
 	}

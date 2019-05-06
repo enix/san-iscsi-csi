@@ -2,23 +2,30 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
-type dothillProvisioner struct{}
+type dothillProvisioner struct {
+	BaseIQN    string
+	PortalAddr string
+}
 
 // NewDothillProvisioner : Creates the provisionner instance that implements
 // the controller.Provisioner interface
-func NewDothillProvisioner() controller.Provisioner {
-	return &dothillProvisioner{}
+func NewDothillProvisioner(args *args) controller.Provisioner {
+	return &dothillProvisioner{
+		PortalAddr: args.PortalAddr,
+		BaseIQN:    args.BaseIQN,
+	}
 }
 
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
 	mode := v1.PersistentVolumeFilesystem
-	iqn := "iqn.2019-05.io.enix:storage00"
+	iqn := fmt.Sprintf("%s:%s", p.BaseIQN, "storage00")
 
 	return &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
@@ -33,8 +40,8 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 			},
 			PersistentVolumeSource: v1.PersistentVolumeSource{
 				ISCSI: &v1.ISCSIPersistentVolumeSource{
-					TargetPortal: "1.2.3.4:3260",
-					Portals:      []string{"1.2.3.4:3260"},
+					TargetPortal: p.PortalAddr,
+					Portals:      []string{p.PortalAddr},
 					IQN:          iqn,
 					Lun:          0,
 					FSType:       "ext4",
