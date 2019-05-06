@@ -4,5 +4,6 @@ push:
     - docker:dind
   before_script:
     - apk add --update make
+    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
     - make push
