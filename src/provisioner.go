@@ -14,6 +14,8 @@ type dothillProvisioner struct {
 	baseIQN    string
 	portalAddr string
 	fsType     string
+	chapSecret string
+	useChap    bool
 	client     *dothill.Client
 }
 
@@ -24,6 +26,8 @@ func NewDothillProvisioner(args *args) controller.Provisioner {
 		portalAddr: args.PortalAddr,
 		baseIQN:    args.BaseIQN,
 		fsType:     args.FSType,
+		chapSecret: args.ChapSecret,
+		useChap:    len(args.ChapSecret) > 0,
 		client: dothill.NewClient(&dothill.Options{
 			Addr:     args.APIAddr,
 			Username: args.Username,
@@ -40,7 +44,7 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 
 	iqn := fmt.Sprintf("%s:storage-lun%d", p.baseIQN, lun)
 	mode := v1.PersistentVolumeFilesystem
-	return &v1.PersistentVolume{
+	pv := &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: iqn,
 		},
@@ -59,15 +63,20 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 					Lun:          int32(lun),
 					FSType:       p.fsType,
 					ReadOnly:     false,
-					// DiscoveryCHAPAuth: true,
-					// SessionCHAPAuth: true,
-					// SecretRef: &v1.SecretReference{
-					// 	Name: "chap-secret",
-					// },
 				},
 			},
 		},
-	}, nil
+	}
+
+	if p.useChap {
+		pv.Spec.PersistentVolumeSource.ISCSI.DiscoveryCHAPAuth = true
+		pv.Spec.PersistentVolumeSource.ISCSI.SessionCHAPAuth = true
+		pv.Spec.PersistentVolumeSource.ISCSI.SecretRef = &v1.SecretReference{
+			Name: p.chapSecret,
+		}
+	}
+
+	return pv, nil
 }
 
 func (p *dothillProvisioner) Delete(*v1.PersistentVolume) error {
