@@ -4,32 +4,42 @@ import (
 	"errors"
 	"fmt"
 
+	dothill "enix.io/dothill-api-go"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
 type dothillProvisioner struct {
-	BaseIQN    string
-	PortalAddr string
-	FSType     string
+	baseIQN    string
+	portalAddr string
+	fsType     string
+	client     *dothill.Client
 }
 
 // NewDothillProvisioner : Creates the provisionner instance that implements
 // the controller.Provisioner interface
 func NewDothillProvisioner(args *args) controller.Provisioner {
 	return &dothillProvisioner{
-		PortalAddr: args.PortalAddr,
-		BaseIQN:    args.BaseIQN,
-		FSType:     args.FSType,
+		portalAddr: args.PortalAddr,
+		baseIQN:    args.BaseIQN,
+		fsType:     args.FSType,
+		client: dothill.NewClient(&dothill.Options{
+			Addr:     args.APIAddr,
+			Username: args.Username,
+			Password: args.Password,
+		}),
 	}
 }
 
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
-	lun := 0
-	iqn := fmt.Sprintf("%s:storage-lun%d", p.BaseIQN, lun)
-	mode := v1.PersistentVolumeFilesystem
+	lun, err := p.createVolume()
+	if err != nil {
+		return nil, err
+	}
 
+	iqn := fmt.Sprintf("%s:storage-lun%d", p.baseIQN, lun)
+	mode := v1.PersistentVolumeFilesystem
 	return &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: iqn,
@@ -43,11 +53,11 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 			},
 			PersistentVolumeSource: v1.PersistentVolumeSource{
 				ISCSI: &v1.ISCSIPersistentVolumeSource{
-					TargetPortal: p.PortalAddr,
-					Portals:      []string{p.PortalAddr},
+					TargetPortal: p.portalAddr,
+					Portals:      []string{p.portalAddr},
 					IQN:          iqn,
 					Lun:          int32(lun),
-					FSType:       p.FSType,
+					FSType:       p.fsType,
 					ReadOnly:     false,
 					// DiscoveryCHAPAuth: true,
 					// SessionCHAPAuth: true,
@@ -62,4 +72,8 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 
 func (p *dothillProvisioner) Delete(*v1.PersistentVolume) error {
 	return errors.New("unimplemented")
+}
+
+func (p *dothillProvisioner) createVolume() (int32, error) {
+	return 0, nil
 }

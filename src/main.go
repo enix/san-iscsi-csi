@@ -16,8 +16,11 @@ type args struct {
 	Help       bool
 	Name       string
 	PortalAddr string
+	APIAddr    string
 	BaseIQN    string
 	FSType     string
+	Username   string
+	Password   string
 	Remaining  []string
 }
 
@@ -27,13 +30,18 @@ func loadArguments() *args {
 		BaseIQN:    "iqn.2019-05.io.enix",
 		PortalAddr: "1.2.3.4:3260",
 		FSType:     "ext4",
+		Username:   "manage",
+		Password:   "!manage",
 	}
 
 	getopt.FlagLong(&args.Help, "help", 'h', "display this message")
 	getopt.FlagLong(&args.Name, "name", 'n', "provisioner name", args.Name)
 	getopt.FlagLong(&args.PortalAddr, "portal", 'p', "portal full address", args.PortalAddr)
+	getopt.FlagLong(&args.APIAddr, "api", 'a', "api full address", args.APIAddr)
 	getopt.FlagLong(&args.BaseIQN, "iqn", 'i', "iqn static part", args.BaseIQN)
 	getopt.FlagLong(&args.FSType, "fs", 'f', "filesytem to use when formatting the block device", args.FSType)
+	getopt.FlagLong(&args.Username, "username", 'u', "username used to authenticate to the dothill API", args.Username)
+	getopt.FlagLong(&args.Password, "passwd", 'p', "password used to authenticate to the dothill API", args.Password)
 
 	opts := getopt.CommandLine
 	opts.Parse(os.Args)
