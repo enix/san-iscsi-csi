@@ -13,9 +13,11 @@ import (
 )
 
 type args struct {
+	Help       bool
 	Name       string
 	PortalAddr string
 	BaseIQN    string
+	FSType     string
 	Remaining  []string
 }
 
@@ -24,11 +26,14 @@ func loadArguments() *args {
 		Name:       "dothill-provisioner",
 		BaseIQN:    "iqn.2019-05.io.enix",
 		PortalAddr: "1.2.3.4:3260",
+		FSType:     "ext4",
 	}
 
+	getopt.FlagLong(&args.Help, "help", 'h', "display this message")
 	getopt.FlagLong(&args.Name, "name", 'n', "provisioner name", args.Name)
 	getopt.FlagLong(&args.PortalAddr, "portal", 'p', "portal full address", args.PortalAddr)
 	getopt.FlagLong(&args.BaseIQN, "iqn", 'i', "iqn static part", args.BaseIQN)
+	getopt.FlagLong(&args.FSType, "fs", 'f', "filesytem to use when formatting the block device", args.FSType)
 
 	opts := getopt.CommandLine
 	opts.Parse(os.Args)
@@ -76,9 +81,13 @@ func start(args *args) error {
 
 func main() {
 	args := loadArguments()
-	if len(args.Remaining) > 0 {
+	if args.Help || len(args.Remaining) > 0 {
 		getopt.Usage()
-		os.Exit(1)
+
+		if len(args.Remaining) > 0 {
+			os.Exit(1)
+		}
+		return
 	}
 
 	err := start(args)

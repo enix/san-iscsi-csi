@@ -12,6 +12,7 @@ import (
 type dothillProvisioner struct {
 	BaseIQN    string
 	PortalAddr string
+	FSType     string
 }
 
 // NewDothillProvisioner : Creates the provisionner instance that implements
@@ -20,12 +21,14 @@ func NewDothillProvisioner(args *args) controller.Provisioner {
 	return &dothillProvisioner{
 		PortalAddr: args.PortalAddr,
 		BaseIQN:    args.BaseIQN,
+		FSType:     args.FSType,
 	}
 }
 
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
+	lun := 0
+	iqn := fmt.Sprintf("%s:storage-lun%d", p.BaseIQN, lun)
 	mode := v1.PersistentVolumeFilesystem
-	iqn := fmt.Sprintf("%s:%s", p.BaseIQN, "storage00")
 
 	return &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
@@ -43,8 +46,8 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 					TargetPortal: p.PortalAddr,
 					Portals:      []string{p.PortalAddr},
 					IQN:          iqn,
-					Lun:          0,
-					FSType:       "ext4",
+					Lun:          int32(lun),
+					FSType:       p.FSType,
 					ReadOnly:     false,
 					// DiscoveryCHAPAuth: true,
 					// SessionCHAPAuth: true,
