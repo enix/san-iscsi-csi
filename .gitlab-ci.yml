@@ -1,0 +1,8 @@
+push:
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - apk add --update make
+  script:
+    - make push
