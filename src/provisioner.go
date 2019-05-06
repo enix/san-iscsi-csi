@@ -28,11 +28,11 @@ func NewDothillProvisioner(args *args) controller.Provisioner {
 		fsType:     args.FSType,
 		chapSecret: args.ChapSecret,
 		useChap:    len(args.ChapSecret) > 0,
-		client: dothill.NewClient(&dothill.Options{
+		client: &dothill.Client{
 			Addr:     args.APIAddr,
 			Username: args.Username,
 			Password: args.Password,
-		}),
+		},
 	}
 }
 
