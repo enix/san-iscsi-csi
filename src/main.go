@@ -2,66 +2,37 @@ package main
 
 import (
 	"log"
-	"os"
 
-	"github.com/pborman/getopt/v2"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
-type args struct {
-	Help       bool
-	Name       string
-	PortalAddr string
-	APIAddr    string
-	BaseIQN    string
-	FSType     string
-	Username   string
-	Password   string
-	ChapSecret string
-	Remaining  []string
+func loadConfiguration() {
+	viper.SetConfigName("dothill")
+	viper.AddConfigPath("/etc")
+	viper.AddConfigPath(".")
+
+	viper.SetDefault("name", "dothill-provisioner")
+	viper.SetDefault("fsType", "ext4")
+	viper.SetDefault("username", "manage")
+	viper.SetDefault("password", "!manage")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func loadArguments() *args {
-	args := args{
-		Name:       "dothill-provisioner",
-		BaseIQN:    "iqn.2019-05.io.enix",
-		PortalAddr: "1.2.3.4:3260",
-		APIAddr:    "https://1.2.3.4:443",
-		FSType:     "ext4",
-		Username:   "manage",
-		Password:   "!manage",
-		ChapSecret: "",
-	}
-
-	getopt.FlagLong(&args.Help, "help", 'h', "display this message")
-	getopt.FlagLong(&args.Name, "name", 'n', "provisioner name", args.Name)
-	getopt.FlagLong(&args.PortalAddr, "portal", 0, "portal full address", args.PortalAddr)
-	getopt.FlagLong(&args.APIAddr, "api", 'a', "api full address", args.APIAddr)
-	getopt.FlagLong(&args.BaseIQN, "iqn", 'i', "iqn static part", args.BaseIQN)
-	getopt.FlagLong(&args.FSType, "fs", 'f', "filesytem to use when formatting the block device", args.FSType)
-	getopt.FlagLong(&args.Username, "username", 'u', "username used to authenticate to the dothill API", args.Username)
-	getopt.FlagLong(&args.Password, "passwd", 'p', "password used to authenticate to the dothill API", args.Password)
-	getopt.FlagLong(&args.ChapSecret, "chap-secret", 'c', "chap secret name (chap disabled if not specified)", "chap-secret")
-
-	opts := getopt.CommandLine
-	opts.Parse(os.Args)
-	for opts.NArgs() > 0 {
-		args.Remaining = append(args.Remaining, opts.Arg(0))
-		opts.Parse(opts.Args())
-	}
-
-	return &args
-}
-
-func start(args *args) error {
+func start() error {
 	config := &rest.Config{
-		Host:            "https://185.145.251.10:6443",
+		Host:            "https://10.14.99.121:6443",
 		TLSClientConfig: rest.TLSClientConfig{Insecure: true},
-		BearerToken:     "eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLWJ3ejlzIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiI5ZWVmNTlkMy02Y2RjLTExZTktOGZkNy1mYTE2M2U2ZjhkZmEiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.HBUDMQYuhAdAYv8RHssc1-D2bVCRbp-2N2uBu-W-rcobF1HPho3MpcFZMFhij4pDyhupiDHKRHv6G2Lo1HCUUxdM7sBUFxliegjB-0JN3JhR9dwkyuW7UqMr_PvHgajDyJYm6muz5PKJlnRyKC3XfDsZrx2WTHs1SPmCxS3CQsCvPUNB871Q1zFn5acCjqbDqQYVK9uP5Hkg3-Qks34z7nglZGuaVB0F_eP2PBNIjGypJSMiNBkd0xtjtlb0dKz50Ed_DRA746CeAubZWHrQn6ySvaeuqwKjVOAVSmzN3MmdeLTgKaMxdDQEtJnDDJslTMcdhbhWdVZGGV5c4fJhEQ",
+		BearerToken:     "eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImFkbWluLXRva2VuLXI4eHp3Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiZmQxODgxOTQtNzBkMy0xMWU5LTk4YTctYTI3Yjk0Nzc3ZjBiIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6YWRtaW4ifQ.wxejx7Q05jnx6Ru18sbLIxDxJ8qPljt9mG4Cy46o5cnuohCo6X9FrQ4XTi57E1M9MikhuVZIE-4v2EnioGjlnAZaCYlEKrw5XIYBrtj4MweKZ3ruZCRH46woMK5U__2jTNZ0XfsRJ3TQBgiqwDoi_GjLz1IkgJ04UZWbLZ5bgRxVEZFFAPpNuj84WD1fNxFyfczWnDaIBMyhnlHD0R3F3wV0ZjQ4SR6QGLNXWCjoDN7PIpSgaTcyPw9SUMK1eIqyIhwXavOLABOURFESZfg2DsCajVnaL7qEQhxA9ZF8tErANWTjtlDMP-zAw_kZGpkPB60TaQq4FoNqh5ICQ81Pgg",
 	}
 
 	// config, err := rest.InClusterConfig()
@@ -81,8 +52,8 @@ func start(args *args) error {
 
 	pc := controller.NewProvisionController(
 		kubeClient,
-		args.Name,
-		NewDothillProvisioner(args),
+		viper.GetString("name"),
+		NewDothillProvisioner(),
 		serverVersion.GitVersion,
 	)
 
@@ -92,17 +63,8 @@ func start(args *args) error {
 }
 
 func main() {
-	args := loadArguments()
-	if args.Help || len(args.Remaining) > 0 {
-		getopt.Usage()
-
-		if len(args.Remaining) > 0 {
-			os.Exit(1)
-		}
-		return
-	}
-
-	err := start(args)
+	loadConfiguration()
+	err := start()
 	if err != nil {
 		log.Fatal(err)
 	}
