@@ -1,13 +1,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 
 	"github.com/spf13/viper"
 
-	dothill "github.com/enix/dothill-api-go"
+	dothill "enix.io/dothill-api-go"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -45,29 +44,39 @@ func NewDothillProvisioner() controller.Provisioner {
 		log.Fatal("'targetIQN' missing from configuration")
 	}
 
+	dothillClient := &dothill.Client{
+		Addr:     apiAddress,
+		Username: viper.GetString("username"),
+		Password: viper.GetString("password"),
+	}
+
+	err := dothillClient.Login()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return &dothillProvisioner{
 		baseInitiatorIQN: baseInitiatorIQN,
 		targetIQN:        targetIQN,
 		portals:          viper.GetStringSlice("portals"),
 		fsType:           viper.GetString("fsType"),
-		client: &dothill.Client{
-			Addr:     apiAddress,
-			Username: viper.GetString("username"),
-			Password: viper.GetString("password"),
-		},
+		client:           dothillClient,
 	}
 }
 
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
-	lun, err := p.createVolume()
+	lun, _ := p.chooseLUN()
+	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name)
+	volumeName := fmt.Sprintf("%s.%s.%d", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name, lun)
+
+	err := p.prepareVolume(volumeName, initiatorName, "10GB", lun)
 	if err != nil {
 		return nil, err
 	}
 
-	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name)
 	pv := &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s.%s.%d", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name, lun),
+			Name: volumeName,
 		},
 		Spec: v1.PersistentVolumeSpec{
 			PersistentVolumeReclaimPolicy: options.PersistentVolumeReclaimPolicy,
@@ -82,7 +91,7 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 					TargetPortal:  p.portals[0],
 					Portals:       p.portals,
 					IQN:           p.targetIQN,
-					Lun:           lun,
+					Lun:           int32(lun),
 					FSType:        p.fsType,
 					ReadOnly:      false,
 				},
@@ -95,9 +104,20 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 }
 
 func (p *dothillProvisioner) Delete(*v1.PersistentVolume) error {
-	return errors.New("unimplemented")
+	fmt.Println("ok")
+	return nil
 }
 
-func (p *dothillProvisioner) createVolume() (int32, error) {
-	return 1, nil
+func (p *dothillProvisioner) chooseLUN() (int, error) {
+	return 2, nil
+}
+
+func (p *dothillProvisioner) prepareVolume(volumeName, initiatorName, size string, lun int) error {
+	_, _, err := p.client.CreateVolume(volumeName, size, "A")
+	if err != nil {
+		return err
+	}
+
+	_, _, err = p.client.MapVolume(volumeName, initiatorName, lun)
+	return err
 }
