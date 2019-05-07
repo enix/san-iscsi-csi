@@ -5,3 +5,4 @@ metadata:
 
 provisioner: dothill-provisioner
 reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
