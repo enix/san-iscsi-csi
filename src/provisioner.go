@@ -83,6 +83,9 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	pv := &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: volumeName,
+			Annotations: map[string]string{
+				"initiatorName": initiatorName,
+			},
 		},
 		Spec: v1.PersistentVolumeSpec{
 			PersistentVolumeReclaimPolicy: options.PersistentVolumeReclaimPolicy,
@@ -109,8 +112,12 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	return pv, nil
 }
 
-func (p *dothillProvisioner) Delete(*v1.PersistentVolume) error {
-	fmt.Println("ok")
+func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
+	name := volume.ObjectMeta.Name
+	initiatorName := volume.ObjectMeta.Annotations["initiatorName"]
+
+	p.client.UnmapVolume(name, initiatorName)
+	p.client.DeleteVolume(name)
 	return nil
 }
 
