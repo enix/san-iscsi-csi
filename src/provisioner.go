@@ -70,7 +70,7 @@ func NewDothillProvisioner() controller.Provisioner {
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
 	size := options.PVC.Spec.Resources.Requests["storage"]
 	sizeStr := fmt.Sprintf("%sB", size.String())
-	id := strings.ReplaceAll(string(options.SelectedNode.ObjectMeta.UID), "-", "_")
+	id := strings.ReplaceAll(string(options.SelectedNode.ObjectMeta.UID), "-", ".")
 	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, id)
 	log.Printf("creating %s volume for host %s\n", sizeStr, initiatorName)
 
@@ -84,8 +84,14 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	}
 
 	volumeName := fmt.Sprintf("%s.%s.%d", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name, lun)
-	err = p.prepareVolume(volumeName, initiatorName, sizeStr, lun)
+	_, _, err = p.client.CreateVolume(volumeName, sizeStr, viper.GetString("pool"))
 	if err != nil {
+		return nil, err
+	}
+
+	err = p.prepareVolume(volumeName, initiatorName, lun)
+	if err != nil {
+		p.client.DeleteVolume(volumeName)
 		return nil, err
 	}
 
@@ -122,10 +128,17 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 	name := volume.ObjectMeta.Name
 	initiatorName := volume.ObjectMeta.Annotations["initiatorName"]
-
 	log.Printf("deleting volume %s\n", name)
-	p.client.UnmapVolume(name, initiatorName)
-	p.client.DeleteVolume(name)
+
+	_, _, err := p.client.UnmapVolume(name, initiatorName)
+	_, _, err2 := p.client.DeleteVolume(name)
+	if err != nil {
+		return err
+	}
+	if err2 != nil {
+		return err2
+	}
+
 	log.Printf("deleted volume %s\n", name)
 	return nil
 }
@@ -164,12 +177,14 @@ func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
 	return -1, errors.New("no more available LUNs")
 }
 
-func (p *dothillProvisioner) prepareVolume(volumeName, initiatorName, size string, lun int) error {
-	_, _, err := p.client.CreateVolume(volumeName, size, viper.GetString("pool"))
-	if err != nil {
-		return err
+func (p *dothillProvisioner) prepareVolume(volumeName, initiatorName string, lun int) error {
+	_, status, err := p.client.MapVolume(volumeName, initiatorName, "rw", lun)
+	if status.ReturnCode == -10386 {
+		_, _, err = p.client.CreateHost(initiatorName[len(initiatorName)-5:], initiatorName)
+		if err != nil {
+			return err
+		}
+		_, _, err = p.client.MapVolume(volumeName, initiatorName, "rw", lun)
 	}
-
-	_, _, err = p.client.MapVolume(volumeName, initiatorName, "rw", lun)
 	return err
 }
