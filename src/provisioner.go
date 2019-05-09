@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"sort"
 
 	"github.com/spf13/viper"
 
@@ -65,11 +67,14 @@ func NewDothillProvisioner() controller.Provisioner {
 }
 
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
-	lun, _ := p.chooseLUN()
 	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name)
+	lun, err := p.chooseLUN(initiatorName)
+	if err != nil {
+		return nil, err
+	}
 	volumeName := fmt.Sprintf("%s.%s.%d", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name, lun)
 
-	err := p.prepareVolume(volumeName, initiatorName, "10GB", lun)
+	err = p.prepareVolume(volumeName, initiatorName, "10GB", lun)
 	if err != nil {
 		return nil, err
 	}
@@ -108,8 +113,25 @@ func (p *dothillProvisioner) Delete(*v1.PersistentVolume) error {
 	return nil
 }
 
-func (p *dothillProvisioner) chooseLUN() (int, error) {
-	return 2, nil
+func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
+	volumes, _, err := p.client.ShowHostMaps(initiatorName)
+	if err != nil {
+		return 0, err
+	}
+
+	sort.Sort(Volumes(volumes))
+	index := 0
+	for ; index < len(volumes); index++ {
+		if volumes[index].LUN != index+1 {
+			return index + 1, nil
+		}
+	}
+
+	if index+1 < 255 {
+		return index + 1, nil
+	}
+
+	return -1, errors.New("no more available LUNs")
 }
 
 func (p *dothillProvisioner) prepareVolume(volumeName, initiatorName, size string, lun int) error {
