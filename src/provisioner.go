@@ -139,7 +139,10 @@ func checkAccessMode(options controller.VolumeOptions) error {
 }
 
 func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
-	volumes, _, err := p.client.ShowHostMaps(initiatorName)
+	volumes, status, err := p.client.ShowHostMaps(initiatorName)
+	if status.ReturnCode == -10074 {
+		return 1, nil
+	}
 	if err != nil {
 		return 0, err
 	}
