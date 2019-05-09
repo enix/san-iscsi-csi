@@ -19,6 +19,7 @@ func loadConfiguration() {
 
 	viper.SetDefault("name", "dothill-provisioner")
 	viper.SetDefault("fsType", "ext4")
+	viper.SetDefault("pool", "A")
 	viper.SetDefault("username", "manage")
 	viper.SetDefault("password", "!manage")
 
