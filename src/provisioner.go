@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 
 	"github.com/spf13/viper"
 
@@ -69,7 +70,8 @@ func NewDothillProvisioner() controller.Provisioner {
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
 	size := options.PVC.Spec.Resources.Requests["storage"]
 	sizeStr := fmt.Sprintf("%sB", size.String())
-	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name)
+	id := strings.ReplaceAll(string(options.SelectedNode.ObjectMeta.UID), "-", "_")
+	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, id)
 	log.Printf("creating %s volume for host %s\n", sizeStr, initiatorName)
 
 	if err := checkAccessMode(options); err != nil {
