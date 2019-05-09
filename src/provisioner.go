@@ -74,7 +74,8 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	}
 	volumeName := fmt.Sprintf("%s.%s.%d", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name, lun)
 
-	err = p.prepareVolume(volumeName, initiatorName, "10GB", lun)
+	size := options.PVC.Spec.Resources.Requests["storage"]
+	err = p.prepareVolume(volumeName, initiatorName, fmt.Sprintf("%sB", size.String()), lun)
 	if err != nil {
 		return nil, err
 	}
