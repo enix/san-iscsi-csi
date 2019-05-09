@@ -72,8 +72,7 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name)
 	log.Printf("creating %s volume for host %s\n", sizeStr, initiatorName)
 
-	err := runProvisioningPreflightChecks(options)
-	if err != nil {
+	if err := checkAccessMode(options); err != nil {
 		return nil, err
 	}
 
@@ -129,10 +128,10 @@ func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 	return nil
 }
 
-func runProvisioningPreflightChecks(options controller.VolumeOptions) error {
+func checkAccessMode(options controller.VolumeOptions) error {
 	for _, mode := range options.PVC.Spec.AccessModes {
-		if mode == v1.ReadWriteMany {
-			return errors.New("dothill storage does not support ReadWriteMany access mode")
+		if mode != v1.ReadWriteOnce {
+			return errors.New("dothill storage only supports ReadWriteOnce access mode")
 		}
 	}
 
@@ -161,11 +160,11 @@ func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
 }
 
 func (p *dothillProvisioner) prepareVolume(volumeName, initiatorName, size string, lun int) error {
-	_, _, err := p.client.CreateVolume(volumeName, size, "A")
+	_, _, err := p.client.CreateVolume(volumeName, size, viper.GetString("pool"))
 	if err != nil {
 		return err
 	}
 
-	_, _, err = p.client.MapVolume(volumeName, initiatorName, lun)
+	_, _, err = p.client.MapVolume(volumeName, initiatorName, "rw", lun)
 	return err
 }
