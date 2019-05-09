@@ -68,7 +68,7 @@ func NewDothillProvisioner() controller.Provisioner {
 }
 
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
-	size := options.PVC.Spec.Resources.Requests["storage"]
+	size := options.PVC.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
 	sizeStr := fmt.Sprintf("%sB", size.String())
 	id := strings.ReplaceAll(string(options.SelectedNode.ObjectMeta.UID), "-", ".")
 	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, id)
