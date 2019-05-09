@@ -67,20 +67,23 @@ func NewDothillProvisioner() controller.Provisioner {
 }
 
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
+	size := options.PVC.Spec.Resources.Requests["storage"]
+	sizeStr := fmt.Sprintf("%sB", size.String())
 	initiatorName := fmt.Sprintf("%s:%s", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name)
+	log.Printf("creating %s volume for host %s\n", sizeStr, initiatorName)
+
 	lun, err := p.chooseLUN(initiatorName)
 	if err != nil {
 		return nil, err
 	}
 	volumeName := fmt.Sprintf("%s.%s.%d", p.baseInitiatorIQN, options.SelectedNode.ObjectMeta.Name, lun)
-
-	size := options.PVC.Spec.Resources.Requests["storage"]
-	err = p.prepareVolume(volumeName, initiatorName, fmt.Sprintf("%sB", size.String()), lun)
+	err = p.prepareVolume(volumeName, initiatorName, sizeStr, lun)
 	if err != nil {
 		return nil, err
 	}
 
-	pv := &v1.PersistentVolume{
+	log.Printf("created volume %s (%s) for host %s\n", volumeName, sizeStr, initiatorName)
+	return &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: volumeName,
 			Annotations: map[string]string{
@@ -106,18 +109,17 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 				},
 			},
 		},
-	}
-
-	log.Println(pv)
-	return pv, nil
+	}, nil
 }
 
 func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 	name := volume.ObjectMeta.Name
 	initiatorName := volume.ObjectMeta.Annotations["initiatorName"]
 
+	log.Printf("deleting volume %s\n", name)
 	p.client.UnmapVolume(name, initiatorName)
 	p.client.DeleteVolume(name)
+	log.Printf("deleted volume %s\n", name)
 	return nil
 }
 
