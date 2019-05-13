@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dothill-provisioner
+  namespace: dothill
+
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: dothill-provisioner
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: dothill-provisioner
+        image: docker-registry.enix.io/enix/dothill-provisioner:1.0.0
+      serviceAccount: dothill-provisioner

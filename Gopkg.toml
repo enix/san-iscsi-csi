@@ -1,0 +1,27 @@
+[[constraint]]
+  name = "github.com/enix/dothill-api-go"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.1"
+
+[[constraint]]
+  branch = "master"
+  name = "k8s.io/api"
+
+[[constraint]]
+  branch = "master"
+  name = "k8s.io/apimachinery"
+
+[[constraint]]
+  branch = "master"
+  name = "k8s.io/client-go"
+
+[[constraint]]
+  name = "sigs.k8s.io/sig-storage-lib-external-provisioner"
+  version = "3.1.0"
+
+[prune]
+  go-tests = true
+  unused-packages = true

@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dothill-provisioner
+
+subjects:
+  - kind: ServiceAccount
+    name: dothill-provisioner
+    namespace: dothill
+roleRef:
+  kind: ClusterRole
+  name: dothill-provisioner
+  apiGroup: rbac.authorization.k8s.io
