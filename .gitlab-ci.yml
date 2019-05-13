@@ -23,7 +23,7 @@ build and push:
     - apk add --update make
     - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - VERSION=$CI_COMMIT_TAG make push
+    - VERSION="${CI_COMMIT_TAG:1}" make push
   only:
     - tags
 
