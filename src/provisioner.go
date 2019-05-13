@@ -6,6 +6,7 @@ import (
 	"log"
 	"sort"
 	"strings"
+	"sync"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -16,6 +17,7 @@ import (
 )
 
 type dothillProvisioner struct {
+	lock          sync.Mutex
 	dothillClient *dothill.Client
 	kubeClient    *kubernetes.Clientset
 }
@@ -30,6 +32,9 @@ func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisio
 }
 
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	size := options.PVC.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
 	sizeStr := fmt.Sprintf("%sB", size.String())
 	log.Printf("creating %s volume for host %s\n", sizeStr, options.Parameters[initiatorNameConfigKey])
@@ -67,11 +72,18 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 }
 
 func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	log.Printf("deleting volume %s\n", volume.ObjectMeta.Name)
 	initiatorName := volume.ObjectMeta.Annotations[initiatorNameConfigKey]
 	storageClassName := volume.ObjectMeta.Annotations[storageClassAnnotationKey]
 	storageClass, err := p.kubeClient.StorageV1().StorageClasses().Get(storageClassName, metav1.GetOptions{})
 	if err != nil {
+		return err
+	}
+
+	if err = runPreflightChecks(storageClass.Parameters, nil); err != nil {
 		return err
 	}
 
