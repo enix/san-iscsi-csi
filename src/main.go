@@ -4,30 +4,30 @@ import (
 	"log"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
-func loadConfiguration() {
-	viper.SetConfigName("dothill")
-	viper.AddConfigPath("/etc")
-	viper.AddConfigPath(".")
+const (
+	pluginName = "dothill"
 
-	viper.SetDefault("name", "dothill-provisioner")
-	viper.SetDefault("fsType", "ext4")
-	viper.SetDefault("pool", "A")
-	viper.SetDefault("username", "manage")
-	viper.SetDefault("password", "!manage")
+	fsTypeConfigKey                = "fsType"
+	poolConfigKey                  = "pool"
+	targetIQNConfigKey             = "iqn"
+	portalsConfigKey               = "portals"
+	initiatorNameConfigKey         = "initiatorName"
+	apiAddressConfigKey            = "apiAddress"
+	credentialsSecretNameConfigKey = "credentialsSecretName"
+	usernameSecretKey              = "username"
+	passwordSecretKey              = "password"
+	storageClassAnnotationKey      = "storageClass"
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+	maximumLUN                    = 255
+	hostDoesNotExistsErrorCode    = -10386
+	hostMapDoesNotExistsErrorCode = -10074
+)
 
 func start() error {
 	config := &rest.Config{
@@ -53,8 +53,8 @@ func start() error {
 
 	pc := controller.NewProvisionController(
 		kubeClient,
-		viper.GetString("name"),
-		NewDothillProvisioner(),
+		pluginName,
+		NewDothillProvisioner(kubeClient),
 		serverVersion.GitVersion,
 	)
 
@@ -64,7 +64,6 @@ func start() error {
 }
 
 func main() {
-	loadConfiguration()
 	err := start()
 	if err != nil {
 		log.Fatal(err)
