@@ -12,7 +12,7 @@ endif
 
 IMAGE = $(REGISTRY)/$(BIN):$(VERSION)
 
-SRC		=	src/main.go src/provisioner.go
+SRC		=	src/main.go src/provisioner.go src/helpers.go
 
 all:		image
 .PHONY: all

@@ -1,4 +1,4 @@
-FROM instrumentisto/dep:0.5-alpine AS build
+FROM enix/go-dep:0.5 AS build
 
 WORKDIR /go/src/enix.io/dothil-provisioner
 
