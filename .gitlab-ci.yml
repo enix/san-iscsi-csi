@@ -1,4 +1,21 @@
-push:
+stages:
+  - test
+  - release
+
+build:
+  stage: test
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - apk add --update make
+  script:
+    - make
+  except:
+    - tags
+
+build and push:
+  stage: release
   image: docker:stable
   services:
     - docker:dind
@@ -6,4 +23,16 @@ push:
     - apk add --update make
     - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - make push
+    - VERSION=$CI_COMMIT_TAG make push
+  only:
+    - tags
+
+semantic-release:
+  stage: release
+  image: enix/semantic-release:gitlab
+  script:
+    - npx semantic-release --ci
+  only:
+    - master
+  except:
+    - tags
