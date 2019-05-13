@@ -1,6 +1,6 @@
 package main
 
-import dothill "enix.io/dothill-api-go"
+import dothill "github.com/enix/dothill-api-go"
 
 // Volumes : convenience alias fort sorting purposes
 type Volumes []dothill.Volume
