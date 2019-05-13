@@ -1,22 +1,23 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"sort"
 	"strings"
 	"sync"
 
-	"k8s.io/client-go/kubernetes"
-
 	dothill "github.com/enix/dothill-api-go"
+	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
 type dothillProvisioner struct {
+	namespace     string
 	lock          sync.Mutex
 	dothillClient *dothill.Client
 	kubeClient    *kubernetes.Clientset
@@ -25,7 +26,16 @@ type dothillProvisioner struct {
 // NewDothillProvisioner : Creates the provisionner instance that implements
 // the controller.Provisioner interface
 func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisioner {
+	namespace := "default"
+	namespaceBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		log.Println(errors.Wrap(err, "failed to get current namespace, using 'default' as a fallback"))
+	} else {
+		namespace = string(namespaceBytes)
+	}
+
 	return &dothillProvisioner{
+		namespace:     namespace,
 		dothillClient: &dothill.Client{},
 		kubeClient:    kubeClient,
 	}
@@ -107,7 +117,7 @@ func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 }
 
 func (p *dothillProvisioner) configureClient(parameters map[string]string) error {
-	credentials, err := p.kubeClient.CoreV1().Secrets("default").Get(parameters[credentialsSecretNameConfigKey], metav1.GetOptions{})
+	credentials, err := p.kubeClient.CoreV1().Secrets(p.namespace).Get(parameters[credentialsSecretNameConfigKey], metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
