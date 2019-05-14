@@ -1,2 +1,5 @@
 # go dependencies
 /vendor
+
+# test cluster config
+kubeconfig

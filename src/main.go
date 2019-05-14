@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
@@ -29,18 +30,7 @@ const (
 	hostMapDoesNotExistsErrorCode = -10074
 )
 
-func start() error {
-	// config := &rest.Config{
-	// 	Host:            "https://10.14.99.121:6443",
-	// 	TLSClientConfig: rest.TLSClientConfig{Insecure: true},
-	// 	BearerToken:     "eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImFkbWluLXRva2VuLXJkZGtoIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiY2Y3ZDEyMjgtNzI1MS0xMWU5LTliOTktYTI3Yjk0Nzc3ZjBiIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6YWRtaW4ifQ.co3p-eQSJt2kNHN-uYgNH4-4FDfA3hmQBHH25TyZ2RmAAe-tlQ9qrEPGPALeiJWiXsfq326HaWqtCMV2tMwCkkdVIwh3b0XdzTdP3DxunMXUUh-Ie6P3nFx-8lK2xwsYIVnc8_U5iHV8YxmVWQl8Ll3ypDGTR8qjJTiq_q1WCWyqaxYpNwPKmpWbqw2zDc4b2OCL72ikAdTlbcgoKJ7XaVZo6VME1iUKglioBWKM_die1SNbgK_CM9eTs5mATSy4Dsyk9OFrXW8ZVjMKM6OwLac695r_b2fN8MV7fezZVG7B4IiYbpC4wQQ_6yTpKNVBoM2qzmoV25lSGwibuvnwSg",
-	// }
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "unable to get kubernetes client config")
-	}
-
+func start(config *rest.Config) error {
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return errors.Wrap(err, "unable to get k8s client")
@@ -63,8 +53,34 @@ func start() error {
 	return nil
 }
 
+func loadConfiguration(kubeconfigPath string) (*rest.Config, error) {
+	var config *rest.Config
+	var err error
+
+	if len(kubeconfigPath) > 0 {
+		config, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	} else {
+		config, err = rest.InClusterConfig()
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get kubernetes client config")
+	}
+
+	return config, nil
+}
+
 func main() {
+	kubeconfigPath := flag.String("kubeconfig", "", "path to the kubeconfig file to use instead of in-cluster configuration")
 	err := start()
+	flag.Parse()
+
+	config, err := loadConfiguration(*kubeconfigPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = start(config)
 	if err != nil {
 		log.Fatal(err)
 	}
