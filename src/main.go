@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"github.com/pkg/errors"
@@ -8,6 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog"
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
@@ -36,10 +38,12 @@ func start(config *rest.Config) error {
 		return errors.Wrap(err, "unable to get k8s client")
 	}
 
+	klog.V(1).Info("fetching API server version")
 	serverVersion, err := kubeClient.Discovery().ServerVersion()
 	if err != nil {
 		return errors.Wrap(err, "failed to get Kubernetes API server version")
 	}
+	klog.V(1).Infof("server version is %s", serverVersion.GitVersion)
 
 	pc := controller.NewProvisionController(
 		kubeClient,
@@ -48,7 +52,7 @@ func start(config *rest.Config) error {
 		serverVersion.GitVersion,
 	)
 
-	log.Println("provision controller listening...")
+	klog.Info("starting provision controller")
 	pc.Run(wait.NeverStop)
 	return nil
 }
@@ -58,8 +62,10 @@ func loadConfiguration(kubeconfigPath string) (*rest.Config, error) {
 	var err error
 
 	if len(kubeconfigPath) > 0 {
+		klog.V(1).Infof("reading config from %s", kubeconfigPath)
 		config, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	} else {
+		klog.V(1).Info("fetching configuration from within the cluster")
 		config, err = rest.InClusterConfig()
 	}
 
@@ -67,12 +73,14 @@ func loadConfiguration(kubeconfigPath string) (*rest.Config, error) {
 		return nil, errors.Wrap(err, "unable to get kubernetes client config")
 	}
 
+	klog.V(1).Infof("loaded configuration, API server is at %s", config.Host)
+	klog.V(2).Infof("loaded configuration: %+v", config)
 	return config, nil
 }
 
 func main() {
 	kubeconfigPath := flag.String("kubeconfig", "", "path to the kubeconfig file to use instead of in-cluster configuration")
-	err := start()
+	klog.InitFlags(nil)
 	flag.Parse()
 
 	config, err := loadConfiguration(*kubeconfigPath)
@@ -82,6 +90,6 @@ func main() {
 
 	err = start(config)
 	if err != nil {
-		log.Fatal(err)
+		klog.Fatal(err)
 	}
 }
