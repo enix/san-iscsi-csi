@@ -6,7 +6,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: dothill-provisioner
-    namespace: dothill
+    namespace: kube-system
 roleRef:
   kind: ClusterRole
   name: dothill-provisioner

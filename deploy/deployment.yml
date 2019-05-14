@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: dothill-provisioner
-  namespace: dothill
+  namespace: kube-system
 
 spec:
   replicas: 1
@@ -13,9 +13,11 @@ spec:
       labels:
         app: dothill-provisioner
     spec:
+      imagePullPolicy: always
       imagePullSecrets:
       - name: regcred
       containers:
       - name: dothill-provisioner
-        image: docker-registry.enix.io/enix/dothill-provisioner:1.0.0
+        image: docker-registry.enix.io/enix/dothill-provisioner:rc
+        command: ["/usr/local/bin/dothill-provisioner", "-v", "1"]
       serviceAccount: dothill-provisioner

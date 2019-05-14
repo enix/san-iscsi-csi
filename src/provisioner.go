@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"sort"
 	"strings"
 	"sync"
@@ -13,6 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
@@ -29,9 +29,10 @@ func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisio
 	namespace := "default"
 	namespaceBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
-		log.Println(errors.Wrap(err, "failed to get current namespace, using 'default' as a fallback"))
+		klog.Info(errors.Wrap(err, "failed to get current namespace, using 'default' as a fallback"))
 	} else {
 		namespace = string(namespaceBytes)
+		klog.V(1).Infof("current namespace: %s", namespace)
 	}
 
 	return &dothillProvisioner{
@@ -45,9 +46,10 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
+	klog.V(2).Infof("Provision() called with: %+v", options)
 	size := options.PVC.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
 	sizeStr := fmt.Sprintf("%sB", size.String())
-	log.Printf("creating %s volume for host %s\n", sizeStr, options.Parameters[initiatorNameConfigKey])
+	klog.Infof("received %s volume request\n", sizeStr)
 
 	err := runPreflightChecks(options.Parameters, options.PVC.Spec.AccessModes)
 	if err != nil {
@@ -63,9 +65,11 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	if err != nil {
 		return nil, err
 	}
+	klog.V(1).Infof("using LUN %d", lun)
 
 	dnsFormattedIQN := strings.ReplaceAll(options.Parameters[initiatorNameConfigKey], ":", ".")
 	volumeName := fmt.Sprintf("%s.lun%d", dnsFormattedIQN, lun)
+	klog.V(1).Infof("creating volume %s (size %s) in pool %s", volumeName, sizeStr, options.Parameters[poolConfigKey])
 	_, _, err = p.dothillClient.CreateVolume(volumeName, sizeStr, options.Parameters[poolConfigKey])
 	if err != nil {
 		return nil, err
@@ -73,25 +77,31 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 
 	err = p.mapVolume(volumeName, options.Parameters[initiatorNameConfigKey], lun)
 	if err != nil {
+		klog.Infof("volume %s couldn't be mapped, deleting it", volumeName)
 		p.dothillClient.DeleteVolume(volumeName)
 		return nil, err
 	}
 
-	log.Printf("created volume %s (%s) for host %s\n", volumeName, sizeStr, options.Parameters[initiatorNameConfigKey])
-	return generatePersistentVolume(volumeName, options.Parameters[initiatorNameConfigKey], lun, options), nil
+	klog.Infof("created volume %s (%s) for initiator %s (mapped on LUN %d)", volumeName, sizeStr, options.Parameters[initiatorNameConfigKey], lun)
+	pv := generatePersistentVolume(volumeName, options.Parameters[initiatorNameConfigKey], lun, options)
+	klog.V(2).Infof("created persitent volume %+v", pv)
+	return pv, nil
 }
 
 func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	log.Printf("deleting volume %s\n", volume.ObjectMeta.Name)
+	klog.V(2).Infof("Delete() called with: %+v", volume)
+	klog.Infof("received delete request for volume %s", volume.ObjectMeta.Name)
 	initiatorName := volume.ObjectMeta.Annotations[initiatorNameConfigKey]
 	storageClassName := volume.ObjectMeta.Annotations[storageClassAnnotationKey]
+	klog.V(1).Infof("fetching storage class %s", storageClassName)
 	storageClass, err := p.kubeClient.StorageV1().StorageClasses().Get(storageClassName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
+	klog.V(2).Info(storageClass)
 
 	if err = runPreflightChecks(storageClass.Parameters, nil); err != nil {
 		return err
@@ -102,21 +112,23 @@ func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 		return err
 	}
 
+	klog.V(1).Infof("unmapping volume %s from initiator %s", volume.ObjectMeta.Name, initiatorName)
 	_, _, err = p.dothillClient.UnmapVolume(volume.ObjectMeta.Name, initiatorName)
 	if err != nil {
 		return err
 	}
 
+	klog.V(1).Infof("deleting volume %s", volume.ObjectMeta.Name)
 	_, _, err = p.dothillClient.DeleteVolume(volume.ObjectMeta.Name)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("deleted volume %s\n", volume.ObjectMeta.Name)
 	return nil
 }
 
 func (p *dothillProvisioner) configureClient(parameters map[string]string) error {
+	klog.V(1).Infof("fetching dothill credentials from secret %s in namespace %s", parameters[credentialsSecretNameConfigKey], p.namespace)
 	credentials, err := p.kubeClient.CoreV1().Secrets(p.namespace).Get(parameters[credentialsSecretNameConfigKey], metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -124,7 +136,9 @@ func (p *dothillProvisioner) configureClient(parameters map[string]string) error
 
 	username := string(credentials.Data[usernameSecretKey])
 	password := string(credentials.Data[passwordSecretKey])
+	klog.V(1).Infof("using dothill API at address %s", parameters[apiAddressConfigKey])
 	if p.dothillClient.Addr == parameters[apiAddressConfigKey] && p.dothillClient.Username == username {
+		klog.V(1).Info("dothill client is already configured for this API, skipping login")
 		return nil
 	}
 
@@ -132,20 +146,24 @@ func (p *dothillProvisioner) configureClient(parameters map[string]string) error
 	p.dothillClient.Password = password
 	p.dothillClient.Addr = parameters[apiAddressConfigKey]
 
+	klog.V(1).Infof("login into %s as user %s", p.dothillClient.Addr, p.dothillClient.Username)
 	err = p.dothillClient.Login()
 	if err != nil {
 		return err
 	}
 
+	klog.V(1).Info("login was successful")
 	return nil
 }
 
 func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
+	klog.V(1).Infof("listing LUN mappings for initiator %s", initiatorName)
 	volumes, status, err := p.dothillClient.ShowHostMaps(initiatorName)
 	if err != nil && status == nil {
 		return -1, err
 	}
 	if status.ReturnCode == hostMapDoesNotExistsErrorCode {
+		klog.V(1).Info("initiator does not exists, assuming there is no LUN mappings yet and using LUN 1")
 		return 1, nil
 	}
 	if err != nil {
@@ -168,23 +186,33 @@ func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
 }
 
 func (p *dothillProvisioner) mapVolume(volumeName, initiatorName string, lun int) error {
+	klog.V(1).Infof("trying to map volume %s for initiator %s on LUN %d", volumeName, initiatorName, lun)
 	_, status, err := p.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
 	if err != nil && status == nil {
 		return err
 	}
 	if status.ReturnCode == hostDoesNotExistsErrorCode {
 		nodeName := strings.Split(initiatorName, ":")[1]
+		klog.V(1).Infof("initiator does not exist, creating it with nickname %s", nodeName)
 		_, _, err = p.dothillClient.CreateHost(nodeName, initiatorName)
 		if err != nil {
 			return err
 		}
+		klog.V(1).Info("retrying to map volume")
 		_, _, err = p.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
+		if err != nil {
+			return err
+		}
 	}
-	return err
+
+	klog.V(1).Info("mapping was successful")
+	return nil
 }
 
 func generatePersistentVolume(name, initiatorName string, lun int, options controller.VolumeOptions) *v1.PersistentVolume {
 	portals := strings.Split(options.Parameters[portalsConfigKey], ",")
+	klog.V(1).Infof("generating persistent volume spec, ISCSI portals: %s", portals)
+
 	return &v1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -217,6 +245,7 @@ func generatePersistentVolume(name, initiatorName string, lun int, options contr
 
 func runPreflightChecks(parameters map[string]string, accessModes []v1.PersistentVolumeAccessMode) error {
 	checkIfKeyExistsInConfig := func(key string) error {
+		klog.V(2).Infof("checking for %s in storage class parameters", key)
 		_, ok := parameters[key]
 		if !ok {
 			return fmt.Errorf("'%s' is missing from configuration", key)
