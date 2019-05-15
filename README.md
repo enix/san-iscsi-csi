@@ -42,3 +42,23 @@ To make sure everything went well, there's a example pod you can deploy in the `
 ```sh
 kubectl apply -f example/pod.yml
 ```
+
+### Command-line arguments
+
+You can have a list of all available command line flags using the `-help` switch.
+
+#### Logging
+
+Logging can be modified using the `-v` flag :
+
+- `-v 0` : Almost no logs (default if not specified)
+- `-v 1` : Standard logs to follow what's going on
+- `-v 2` : Debug logs (quite awful to see)
+
+By default the `rc` image is launched with `-v 1`. For advanced logging configuration, see [klog](https://github.com/kubernetes/klog).
+
+#### Configuration
+
+By default, the provider will connect to the cluser by retreiving it's configuration from inside (e.g. by using `KUBERNETES_SERVICE_HOST` and data mounted in `/var/run`), which mean it won't work if the provisioner is not running inside a pod.
+
+If you need to run this from outside your cluster, you can use the `-kubeconfig path/to/your/.kube/config` flag to override the default configuration.
