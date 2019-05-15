@@ -26,10 +26,10 @@ type dothillProvisioner struct {
 // NewDothillProvisioner : Creates the provisionner instance that implements
 // the controller.Provisioner interface
 func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisioner {
-	namespace := "default"
+	namespace := "kube-system"
 	namespaceBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
-		klog.Info(errors.Wrap(err, "failed to get current namespace, using 'default' as a fallback"))
+		klog.Info(errors.Wrap(err, "failed to get current namespace, using 'kube-system' as a fallback"))
 	} else {
 		namespace = string(namespaceBytes)
 		klog.V(1).Infof("current namespace: %s", namespace)
