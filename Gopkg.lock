@@ -18,12 +18,12 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:fa0a7c7841a9cf8c87896b803071eaed787b76bad419b7039543f125b68c4fbf"
+  digest = "1:b6e85489899fb72eb50127ca635b9535f7a61fd13782450ba5249405a2ed77b5"
   name = "github.com/enix/dothill-api-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "a0bccca0c657280e2ca89f66c5254592f1322c16"
-  version = "v1.0.0"
+  revision = "248eb242ec80f0d3e8f948050c14ebb5d267c5fb"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:b7a8552c62868d867795b63eaf4f45d3e92d36db82b428e680b9c95a8c33e5b1"
@@ -92,6 +92,14 @@
   pruneopts = "UT"
   revision = "20f1fb78b0740ba8c3cb143a61e86ba5c8669768"
   version = "v0.5.0"
+
+[[projects]]
+  digest = "1:a0cefd27d12712af4b5018dc7046f245e1e3b5760e2e848c30b171b570708f9b"
+  name = "github.com/imdario/mergo"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7c29201646fa3de8506f701213473dd407f19646"
+  version = "v0.3.7"
 
 [[projects]]
   digest = "1:eaefc85d32c03e5f0c2b88ea2f79fce3d993e2c78316d21319575dd4ea9153ca"
@@ -182,6 +190,14 @@
   ]
   pruneopts = "UT"
   revision = "5867b95ac084bbfee6ea16595c4e05ab009021da"
+
+[[projects]]
+  digest = "1:c1b1102241e7f645bc8e0c22ae352e8f0dc6484b6cb4d132fa9f24174e0119e2"
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
+  version = "v1.0.3"
 
 [[projects]]
   branch = "master"
@@ -302,8 +318,8 @@
   version = "v2.2.2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:dba68da0a11004655cf005c17797275731b8660e4c5f2f79b83cca9eec57bba6"
+  branch = "release-1.14"
+  digest = "1:86ad5797d1189de342ed6988fbb76b92dc0429a4d677ad69888d6137efa5712e"
   name = "k8s.io/api"
   packages = [
     "admissionregistration/v1beta1",
@@ -344,7 +360,7 @@
     "storage/v1beta1",
   ]
   pruneopts = "UT"
-  revision = "eae0ddcf85ba48369efd2a60a24847960b96105e"
+  revision = "40a48860b5abbba9aa891b02b32da429b08d96a0"
 
 [[projects]]
   branch = "master"
@@ -401,7 +417,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5071d73bcab5a75594ed9ecfc79e4b5ad4ffb67f4c0ef81cae15c6b4f7012e5c"
+  digest = "1:f81b4bcda57d641e1a9fe7fd1538d6ed0a9d6ba6fd3e79a61b4259c2926a9dd1"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -533,8 +549,12 @@
     "plugin/pkg/client/auth/exec",
     "rest",
     "rest/watch",
+    "tools/auth",
     "tools/cache",
+    "tools/clientcmd",
     "tools/clientcmd/api",
+    "tools/clientcmd/api/latest",
+    "tools/clientcmd/api/v1",
     "tools/leaderelection",
     "tools/leaderelection/resourcelock",
     "tools/metrics",
@@ -546,6 +566,7 @@
     "util/cert",
     "util/connrotation",
     "util/flowcontrol",
+    "util/homedir",
     "util/keyutil",
     "util/retry",
     "util/workqueue",
@@ -610,6 +631,8 @@
     "k8s.io/apimachinery/pkg/util/wait",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/rest",
+    "k8s.io/client-go/tools/clientcmd",
+    "k8s.io/klog",
     "sigs.k8s.io/sig-storage-lib-external-provisioner/controller",
   ]
   solver-name = "gps-cdcl"
