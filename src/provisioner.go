@@ -51,6 +51,13 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	sizeStr := fmt.Sprintf("%sB", size.String())
 	klog.Infof("received %s volume request\n", sizeStr)
 
+	initiatorName := options.Parameters[initiatorNameConfigKey]
+	overrideInitiatorName, exists := options.PVC.Annotations[initiatorNameConfigKey]
+	if exists {
+		initiatorName = overrideInitiatorName
+		klog.V(1).Infof("custom initiator name was specified in PVC annotation: %s", initiatorName)
+	}
+
 	err := runPreflightChecks(options.Parameters, options.PVC.Spec.AccessModes)
 	if err != nil {
 		return nil, err
@@ -61,29 +68,29 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 		return nil, err
 	}
 
-	lun, err := p.chooseLUN(options.Parameters[initiatorNameConfigKey])
+	lun, err := p.chooseLUN(initiatorName)
 	if err != nil {
 		return nil, err
 	}
 	klog.V(1).Infof("using LUN %d", lun)
 
-	dnsFormattedIQN := strings.ReplaceAll(options.Parameters[initiatorNameConfigKey], ":", ".")
-	volumeName := fmt.Sprintf("%s.lun%d", dnsFormattedIQN, lun)
+	iqnUniqueName := strings.ReplaceAll(initiatorName, ":", ".")
+	volumeName := fmt.Sprintf("%s.lun%d", iqnUniqueName, lun)
 	klog.V(1).Infof("creating volume %s (size %s) in pool %s", volumeName, sizeStr, options.Parameters[poolConfigKey])
 	_, _, err = p.dothillClient.CreateVolume(volumeName, sizeStr, options.Parameters[poolConfigKey])
 	if err != nil {
 		return nil, err
 	}
 
-	err = p.mapVolume(volumeName, options.Parameters[initiatorNameConfigKey], lun)
+	err = p.mapVolume(volumeName, initiatorName, lun)
 	if err != nil {
 		klog.Infof("volume %s couldn't be mapped, deleting it", volumeName)
 		p.dothillClient.DeleteVolume(volumeName)
 		return nil, err
 	}
 
-	klog.Infof("created volume %s (%s) for initiator %s (mapped on LUN %d)", volumeName, sizeStr, options.Parameters[initiatorNameConfigKey], lun)
-	pv := generatePersistentVolume(volumeName, options.Parameters[initiatorNameConfigKey], lun, options)
+	klog.Infof("created volume %s (%s) for initiator %s (mapped on LUN %d)", volumeName, sizeStr, initiatorName, lun)
+	pv := generatePersistentVolume(volumeName, initiatorName, lun, options)
 	p.dothillClient.HTTPClient.CloseIdleConnections()
 	klog.V(2).Infof("created persitent volume %+v", pv)
 	return pv, nil
