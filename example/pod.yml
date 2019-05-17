@@ -2,6 +2,8 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: claim
+  # annotations:
+  #  initiatorName: iqn.2019-05.io.enix:override-from-pvc
 
 spec:
   accessModes:
