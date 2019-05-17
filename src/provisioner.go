@@ -74,7 +74,7 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	}
 	klog.V(1).Infof("using LUN %d", lun)
 
-	iqnUniqueName := strings.ReplaceAll(initiatorName, ":", ".")
+	iqnUniqueName := strings.Split(initiatorName, ":")[1]
 	volumeName := fmt.Sprintf("%s.lun%d", iqnUniqueName, lun)
 	klog.V(1).Infof("creating volume %s (size %s) in pool %s", volumeName, sizeStr, options.Parameters[poolConfigKey])
 	_, _, err = p.dothillClient.CreateVolume(volumeName, sizeStr, options.Parameters[poolConfigKey])
