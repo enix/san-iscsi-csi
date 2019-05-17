@@ -160,7 +160,7 @@ func (p *dothillProvisioner) configureClient(parameters map[string]string) error
 
 func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
 	klog.V(1).Infof("listing LUN mappings for initiator %s", initiatorName)
-	volumes, status, err := p.dothillClient.ShowHostMaps(initiatorName)
+	volumes, status, err := p.dothillClient.ShowHostMaps("")
 	if err != nil && status == nil {
 		return -1, err
 	}
