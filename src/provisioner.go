@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	dothill "github.com/enix/dothill-api-go"
 	"github.com/pkg/errors"
@@ -51,13 +53,6 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	sizeStr := fmt.Sprintf("%sB", size.String())
 	klog.Infof("received %s volume request\n", sizeStr)
 
-	initiatorName := options.Parameters[initiatorNameConfigKey]
-	overrideInitiatorName, exists := options.PVC.Annotations[initiatorNameConfigKey]
-	if exists {
-		initiatorName = overrideInitiatorName
-		klog.V(1).Infof("custom initiator name was specified in PVC annotation: %s", initiatorName)
-	}
-
 	err := runPreflightChecks(options.Parameters, options.PVC.Spec.AccessModes)
 	if err != nil {
 		return nil, err
@@ -68,14 +63,26 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 		return nil, err
 	}
 
-	lun, err := p.chooseLUN(initiatorName)
+	lun, err := p.chooseLUN()
 	if err != nil {
 		return nil, err
 	}
 	klog.V(1).Infof("using LUN %d", lun)
 
-	iqnUniqueName := strings.Split(initiatorName, ":")[1]
-	volumeName := fmt.Sprintf("%s.lun%d", iqnUniqueName, lun)
+	initiatorName := options.Parameters[initiatorNameConfigKey]
+	overrideInitiatorName, overrideExists := options.PVC.Annotations[initiatorNameConfigKey]
+	if overrideExists {
+		initiatorName = overrideInitiatorName
+		klog.V(1).Infof("custom initiator name was specified in PVC annotation: %s", initiatorName)
+	} else if options.Parameters[uniqueInitiatorNameByPvcConfigKey] == "true" {
+		year, month, _ := time.Now().Date()
+		uniquePart := fmt.Sprintf("%d", rand.Int())[:8]
+		initiatorName = fmt.Sprintf("iqn.%d-%02d.local.cluster:%s", year, int(month), uniquePart)
+		klog.V(1).Infof("generated initiator name: %s", initiatorName)
+	}
+
+	iqnUniquePart := strings.Split(initiatorName, ":")[1]
+	volumeName := fmt.Sprintf("%s.lun%d", iqnUniquePart, lun)
 	klog.V(1).Infof("creating volume %s (size %s) in pool %s", volumeName, sizeStr, options.Parameters[poolConfigKey])
 	_, _, err = p.dothillClient.CreateVolume(volumeName, sizeStr, options.Parameters[poolConfigKey])
 	if err != nil {
@@ -165,8 +172,8 @@ func (p *dothillProvisioner) configureClient(parameters map[string]string) error
 	return nil
 }
 
-func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
-	klog.V(1).Infof("listing LUN mappings for initiator %s", initiatorName)
+func (p *dothillProvisioner) chooseLUN() (int, error) {
+	klog.V(1).Infof("listing all LUN mappings")
 	volumes, status, err := p.dothillClient.ShowHostMaps("")
 	if err != nil && status == nil {
 		return -1, err
@@ -275,7 +282,9 @@ func runPreflightChecks(parameters map[string]string, accessModes []v1.Persisten
 		return err
 	}
 	if err := checkIfKeyExistsInConfig(initiatorNameConfigKey); err != nil {
-		return err
+		if err2 := checkIfKeyExistsInConfig(uniqueInitiatorNameByPvcConfigKey); err2 != nil {
+			return errors.Wrap(err, err2.Error())
+		}
 	}
 	if err := checkIfKeyExistsInConfig(apiAddressConfigKey); err != nil {
 		return err

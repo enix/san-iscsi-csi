@@ -16,16 +16,17 @@ import (
 const (
 	pluginName = "dothill"
 
-	fsTypeConfigKey                = "fsType"
-	poolConfigKey                  = "pool"
-	targetIQNConfigKey             = "iqn"
-	portalsConfigKey               = "portals"
-	initiatorNameConfigKey         = "initiatorName"
-	apiAddressConfigKey            = "apiAddress"
-	credentialsSecretNameConfigKey = "credentialsSecretName"
-	usernameSecretKey              = "username"
-	passwordSecretKey              = "password"
-	storageClassAnnotationKey      = "storageClass"
+	fsTypeConfigKey                   = "fsType"
+	poolConfigKey                     = "pool"
+	targetIQNConfigKey                = "iqn"
+	portalsConfigKey                  = "portals"
+	initiatorNameConfigKey            = "initiatorName"
+	apiAddressConfigKey               = "apiAddress"
+	credentialsSecretNameConfigKey    = "credentialsSecretName"
+	uniqueInitiatorNameByPvcConfigKey = "uniqueInitiatorNameByPvc"
+	usernameSecretKey                 = "username"
+	passwordSecretKey                 = "password"
+	storageClassAnnotationKey         = "storageClass"
 
 	maximumLUN                    = 255
 	hostDoesNotExistsErrorCode    = -10386

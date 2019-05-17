@@ -10,6 +10,7 @@ parameters:
   pool: A
   fsType: ext4
   initiatorName: iqn.2019-05.io.enix:cluster
+  uniqueInitiatorNameByPvc: "false"
   iqn: iqn.2015-11.com.hpe:storage.msa2050.18323cc9ed
   apiAddress: https://10.14.3.38
   portals: 10.14.99.201,10.14.99.202
