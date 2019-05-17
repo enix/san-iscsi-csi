@@ -26,10 +26,10 @@ type dothillProvisioner struct {
 // NewDothillProvisioner : Creates the provisionner instance that implements
 // the controller.Provisioner interface
 func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisioner {
-	namespace := "default"
+	namespace := "kube-system"
 	namespaceBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
-		klog.Info(errors.Wrap(err, "failed to get current namespace, using 'default' as a fallback"))
+		klog.Info(errors.Wrap(err, "failed to get current namespace, using 'kube-system' as a fallback"))
 	} else {
 		namespace = string(namespaceBytes)
 		klog.V(1).Infof("current namespace: %s", namespace)
@@ -37,7 +37,7 @@ func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisio
 
 	return &dothillProvisioner{
 		namespace:     namespace,
-		dothillClient: &dothill.Client{},
+		dothillClient: dothill.NewClient(),
 		kubeClient:    kubeClient,
 	}
 }
@@ -84,6 +84,7 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 
 	klog.Infof("created volume %s (%s) for initiator %s (mapped on LUN %d)", volumeName, sizeStr, options.Parameters[initiatorNameConfigKey], lun)
 	pv := generatePersistentVolume(volumeName, options.Parameters[initiatorNameConfigKey], lun, options)
+	p.dothillClient.HTTPClient.CloseIdleConnections()
 	klog.V(2).Infof("created persitent volume %+v", pv)
 	return pv, nil
 }
@@ -124,6 +125,7 @@ func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 		return err
 	}
 
+	p.dothillClient.HTTPClient.CloseIdleConnections()
 	return nil
 }
 
@@ -158,7 +160,7 @@ func (p *dothillProvisioner) configureClient(parameters map[string]string) error
 
 func (p *dothillProvisioner) chooseLUN(initiatorName string) (int, error) {
 	klog.V(1).Infof("listing LUN mappings for initiator %s", initiatorName)
-	volumes, status, err := p.dothillClient.ShowHostMaps(initiatorName)
+	volumes, status, err := p.dothillClient.ShowHostMaps("")
 	if err != nil && status == nil {
 		return -1, err
 	}
