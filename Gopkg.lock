@@ -18,12 +18,12 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:b6e85489899fb72eb50127ca635b9535f7a61fd13782450ba5249405a2ed77b5"
+  digest = "1:bc0238a20e664e61a9bdd0ac45cf69bd69305444531f36f7393aa125f321e735"
   name = "github.com/enix/dothill-api-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "248eb242ec80f0d3e8f948050c14ebb5d267c5fb"
-  version = "v1.1.0"
+  revision = "3fbbde6631f14634ed9717678f5dd47f39f3c429"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:b7a8552c62868d867795b63eaf4f45d3e92d36db82b428e680b9c95a8c33e5b1"

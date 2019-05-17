@@ -37,7 +37,7 @@ func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisio
 
 	return &dothillProvisioner{
 		namespace:     namespace,
-		dothillClient: &dothill.Client{},
+		dothillClient: dothill.NewClient(),
 		kubeClient:    kubeClient,
 	}
 }
@@ -84,6 +84,7 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 
 	klog.Infof("created volume %s (%s) for initiator %s (mapped on LUN %d)", volumeName, sizeStr, options.Parameters[initiatorNameConfigKey], lun)
 	pv := generatePersistentVolume(volumeName, options.Parameters[initiatorNameConfigKey], lun, options)
+	p.dothillClient.HTTPClient.CloseIdleConnections()
 	klog.V(2).Infof("created persitent volume %+v", pv)
 	return pv, nil
 }
@@ -124,6 +125,7 @@ func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 		return err
 	}
 
+	p.dothillClient.HTTPClient.CloseIdleConnections()
 	return nil
 }
 
