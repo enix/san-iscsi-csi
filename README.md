@@ -4,7 +4,7 @@ A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storag
 
 Developped and tested on HPE MSA2050 series.
 
-Should work with its rebrands like Lenovo S2200 or HPE MSA2000/P2000/MSA2040/MSA2050, Dell EMC PowerVault ME4 Series, Quantum StorNex...
+Should work with its rebrands like Lenovo S2200/ThinkSystem DS Series, HPE MSA2000/P2000/MSA2040/MSA2050 Series, Dell EMC PowerVault ME4 Series, Quantum StorNex...
 
 ### Quickstart
 
