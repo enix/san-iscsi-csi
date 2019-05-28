@@ -1,6 +1,10 @@
-# Dothill provisioner for Kubernetes
+# Dothill (Seagate) AssuredSAN provisioner for Kubernetes
 
-A dynamic volume provisioner for Dothill storage systems.
+A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storage systems. 
+
+Developped and tested on HPE MSA2050 series.
+
+Should work with its rebrands like Lenovo S2200 or HPE MSA2000/P2000/MSA2040/MSA2050 Dell EMC PowerVault ME4 Series, Quantum StorNex...
 
 ### Quickstart
 
