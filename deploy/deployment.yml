@@ -13,7 +13,7 @@ spec:
       labels:
         app: dothill-provisioner
     spec:
-      imagePullPolicy: always
+      imagePullPolicy: Always
       imagePullSecrets:
       - name: regcred
       containers:
