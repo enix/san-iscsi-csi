@@ -13,11 +13,11 @@ spec:
       labels:
         app: dothill-provisioner
     spec:
-      imagePullPolicy: Always
       imagePullSecrets:
       - name: regcred
       containers:
       - name: dothill-provisioner
+        imagePullPolicy: Always
         image: docker-registry.enix.io/enix/dothill-provisioner:rc
         command: ["/usr/local/bin/dothill-provisioner", "-v", "1"]
       serviceAccount: dothill-provisioner
