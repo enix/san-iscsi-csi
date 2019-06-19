@@ -8,7 +8,7 @@ RUN apk add --update make
 
 COPY . .
 
-RUN dep ensure
+RUN dep ensure -update
 
 RUN echo -e "package main\nconst version = \"${version}\"" > src/version.go
 
