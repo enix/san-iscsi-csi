@@ -47,6 +47,7 @@ func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisio
 func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
+	defer p.dothillClient.HTTPClient.CloseIdleConnections()
 
 	klog.V(2).Infof("Provision() called with: %+v", options)
 	size := options.PVC.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
@@ -98,7 +99,6 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 
 	klog.Infof("created volume %s (%s) for initiator %s (mapped on LUN %d)", volumeName, sizeStr, initiatorName, lun)
 	pv := generatePersistentVolume(volumeName, initiatorName, lun, options)
-	p.dothillClient.HTTPClient.CloseIdleConnections()
 	klog.V(2).Infof("created persitent volume %+v", pv)
 	return pv, nil
 }
@@ -106,6 +106,7 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
+	defer p.dothillClient.HTTPClient.CloseIdleConnections()
 
 	klog.V(2).Infof("Delete() called with: %+v", volume)
 	klog.Infof("received delete request for volume %s", volume.ObjectMeta.Name)
@@ -139,7 +140,23 @@ func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 		return err
 	}
 
-	p.dothillClient.HTTPClient.CloseIdleConnections()
+	klog.V(1).Infof("listing LUN mappings for %s", initiatorName)
+	volumes, _, err := p.dothillClient.ShowHostMaps(initiatorName)
+	if err != nil {
+		return err
+	}
+
+	if len(volumes) == 0 {
+		klog.V(1).Infof("no more mappings, deleting host %s", initiatorName)
+		_, _, err := p.dothillClient.DeleteHost(initiatorName)
+		if err != nil {
+			return err
+		}
+		klog.V(1).Info("delete was successful")
+	} else {
+		klog.V(1).Infof("not deleting host %s as other mappings exists", initiatorName)
+	}
+
 	return nil
 }
 
