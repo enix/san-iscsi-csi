@@ -12,7 +12,7 @@ endif
 
 IMAGE = $(REGISTRY)/$(BIN):$(VERSION)
 
-SRC		=	src/main.go src/provisioner.go src/helpers.go
+SRC		=	./src
 
 all:		image
 .PHONY: all
@@ -22,7 +22,7 @@ bin:
 .PHONY: bin
 
 image:
-	docker build -t $(IMAGE) .
+	docker build -t $(IMAGE) --build-arg version=$(VERSION) .
 .PHONY: image
 
 push:		image

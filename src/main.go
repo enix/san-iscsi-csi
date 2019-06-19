@@ -84,6 +84,7 @@ func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
 
+	klog.Infof("starting dothill provisioner v%s", version)
 	config, err := loadConfiguration(*kubeconfigPath)
 	if err != nil {
 		log.Fatal(err)
