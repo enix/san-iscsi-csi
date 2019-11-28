@@ -7,15 +7,15 @@
   version = "0.8.1"
 
 [[constraint]]
-  branch = "release-1.14"
+  branch = "release-1.17"
   name = "k8s.io/api"
 
 [[constraint]]
-  branch = "master"
+  branch = "release-1.17"
   name = "k8s.io/apimachinery"
 
 [[constraint]]
-  branch = "master"
+  branch = "release-1.17"
   name = "k8s.io/client-go"
 
 [[constraint]]
