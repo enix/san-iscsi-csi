@@ -15,7 +15,7 @@
   name = "k8s.io/apimachinery"
 
 [[constraint]]
-  branch = "release-1.17"
+  branch = "master"
   name = "k8s.io/client-go"
 
 [[constraint]]
