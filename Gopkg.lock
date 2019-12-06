@@ -10,6 +10,14 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:7f21fa1f8ab9a529dba26a7e9cf20de217c307fa1d96cb599d3afd9e5c83e9d6"
+  name = "github.com/container-storage-interface/spec"
+  packages = ["lib/go/csi"]
+  pruneopts = "UT"
+  revision = "f750e6765f5f6b4ac0e13e95214d58901290fb4b"
+  version = "v1.1.0"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -45,14 +53,17 @@
   revision = "611e8accdfc92c4187d399e95ce826046d4c8d73"
 
 [[projects]]
-  digest = "1:f5ce1529abc1204444ec73779f44f94e2fa8fcdb7aca3c355b0c95947e4005c6"
+  digest = "1:43299f4347f25208606272268dc33dbbc45d5f9b3a68c51dca090960e9b61522"
   name = "github.com/golang/protobuf"
   packages = [
+    "descriptor",
     "proto",
+    "protoc-gen-go/descriptor",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
     "ptypes/timestamp",
+    "ptypes/wrappers",
   ]
   pruneopts = "UT"
   revision = "6c65a5562fc06764971b7c5d05c76c75e84bdbf7"
@@ -112,6 +123,31 @@
   pruneopts = "UT"
   revision = "03217c3e97663914aec3faafde50d081f197a0a2"
   version = "v1.1.8"
+
+[[projects]]
+  digest = "1:a0892607b4f5385bb9fb12759facc8fad4e61b8b557384e4a078150c6ba43623"
+  name = "github.com/kubernetes-csi/csi-lib-utils"
+  packages = [
+    "connection",
+    "protosanitizer",
+    "rpc",
+  ]
+  pruneopts = "UT"
+  revision = "b8b7a89535d80e12f2c0f4c53cfb981add8aaca2"
+  version = "v0.6.1"
+
+[[projects]]
+  digest = "1:b430cbcc6a1d00ff4ee9920aa4d32bd8ef0a1fc4d1bc60cc9e4a7162e2746e09"
+  name = "github.com/kubernetes-csi/external-resizer"
+  packages = [
+    "pkg/controller",
+    "pkg/csi",
+    "pkg/resizer",
+    "pkg/util",
+  ]
+  pruneopts = "UT"
+  revision = "150071d3f49d6530139cc976e394d0854afd2436"
+  version = "v0.3.0"
 
 [[projects]]
   digest = "1:ff5ebae34cfbf047d505ee150de27e60570e8c394b3b8fdbb720ff6ac71985fc"
@@ -227,7 +263,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:673e0583908feb26f9910da213ef4ad9b4462d1c162ac548ce31164c2729731a"
+  digest = "1:0ad1a7fa9cc947fd30dd2e3738b5ea92f622c11d9474c93303883a5715d8cdcb"
   name = "golang.org/x/net"
   packages = [
     "bpf",
@@ -239,8 +275,10 @@
     "idna",
     "internal/iana",
     "internal/socket",
+    "internal/timeseries",
     "ipv4",
     "ipv6",
+    "trace",
   ]
   pruneopts = "UT"
   revision = "5ee1b9f4859acd2e99987ef94ec7a58427c53bef"
@@ -315,6 +353,58 @@
   pruneopts = "UT"
   revision = "971852bfffca25b069c31162ae8f247a3dba083b"
   version = "v1.6.5"
+
+[[projects]]
+  branch = "master"
+  digest = "1:583a0c80f5e3a9343d33aea4aead1e1afcc0043db66fdf961ddd1fe8cd3a4faf"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  pruneopts = "UT"
+  revision = "51378566eb590fa106d1025ea12835a4416dda84"
+
+[[projects]]
+  digest = "1:b59ce3ddb11daeeccccc9cb3183b58ebf8e9a779f1c853308cd91612e817a301"
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "backoff",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "binarylog/grpc_binarylog_v1",
+    "codes",
+    "connectivity",
+    "credentials",
+    "credentials/internal",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "internal",
+    "internal/backoff",
+    "internal/balancerload",
+    "internal/binarylog",
+    "internal/buffer",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/grpcsync",
+    "internal/resolver/dns",
+    "internal/resolver/passthrough",
+    "internal/syscall",
+    "internal/transport",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "serviceconfig",
+    "stats",
+    "status",
+    "tap",
+  ]
+  pruneopts = "UT"
+  revision = "1a3960e4bd028ac0cec0a2afd27d7d8e67c11514"
+  version = "v1.25.1"
 
 [[projects]]
   digest = "1:2d1fbdc6777e5408cabeb02bf336305e724b925ff4546ded0fa8715a7267922a"
@@ -590,12 +680,31 @@
   version = "kubernetes-1.14.0"
 
 [[projects]]
-  digest = "1:93e82f25d75aba18436ad1ac042cb49493f096011f2541075721ed6f9e05c044"
+  branch = "master"
+  digest = "1:c3dbea23f3fdb796c9464cec72ec3d4609178f6974026b344992f5b6b7566ef5"
+  name = "k8s.io/cloud-provider"
+  packages = ["volume"]
+  pruneopts = "UT"
+  revision = "6371aabbd7a7726f4b358444cca40def793950c2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:13e62eb3fdda3b5669579c0b2923300a3538e30c9316241d3198a5d0ce60b921"
+  name = "k8s.io/csi-translation-lib"
+  packages = [
+    ".",
+    "plugins",
+  ]
+  pruneopts = "UT"
+  revision = "4b18d293964deddd21316407e1c56a95ecb12f64"
+
+[[projects]]
+  digest = "1:e2999bf1bb6eddc2a6aa03fe5e6629120a53088926520ca3b4765f77d7ff7eab"
   name = "k8s.io/klog"
   packages = ["."]
   pruneopts = "UT"
-  revision = "2ca9ad30301bf30a8a6e0fa2110db6b8df699a91"
-  version = "v1.0.0"
+  revision = "a5bc97fbc634d635061f3146511332c7e313a55a"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -642,10 +751,12 @@
   analyzer-version = 1
   input-imports = [
     "github.com/enix/dothill-api-go",
+    "github.com/kubernetes-csi/external-resizer/pkg/controller",
     "github.com/pkg/errors",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/util/wait",
+    "k8s.io/client-go/informers",
     "k8s.io/client-go/kubernetes",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",

@@ -3,9 +3,12 @@ package main
 import (
 	"flag"
 	"log"
+	"time"
 
+	rc "github.com/kubernetes-csi/external-resizer/pkg/controller"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -53,13 +56,13 @@ func start(config *rest.Config) error {
 		controller,
 		serverVersion.GitVersion,
 	)
-	// resizer := rc.NewResizeController(
-	// 	pluginName,
-	// 	nil,
-	// 	kubeClient,
-	// 	10*time.Minute,
-	// 	informers.NewSharedInformerFactory(kubeClient, 10*time.Minute),
-	// )
+	/*resizer :=*/ rc.NewResizeController(
+		pluginName,
+		nil,
+		kubeClient,
+		10*time.Minute,
+		informers.NewSharedInformerFactory(kubeClient, 10*time.Minute),
+	)
 
 	klog.Info("starting controller")
 	provisioner.Run(wait.NeverStop)
