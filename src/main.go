@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"time"
@@ -49,24 +50,27 @@ func start(config *rest.Config) error {
 	}
 	klog.V(1).Infof("server version is %s", serverVersion.GitVersion)
 
-	controller := NewDothillController(kubeClient)
+	factory := informers.NewSharedInformerFactory(kubeClient, time.Minute)
+	controller := NewDothillController(pluginName, kubeClient)
 	provisioner := pc.NewProvisionController(
 		kubeClient,
 		pluginName,
 		controller,
 		serverVersion.GitVersion,
 	)
-	/*resizer :=*/ rc.NewResizeController(
+	resizer := rc.NewResizeController(
 		pluginName,
-		nil,
+		controller,
 		kubeClient,
-		10*time.Minute,
-		informers.NewSharedInformerFactory(kubeClient, 10*time.Minute),
+		time.Minute,
+		factory,
 	)
 
 	klog.Info("starting controller")
+	factory.Start(wait.NeverStop)
+	go func() { resizer.Run(1, context.TODO()) }()
 	provisioner.Run(wait.NeverStop)
-	// go func() { resizer.Run(wait.NeverStop) }()
+
 	return nil
 }
 
