@@ -94,9 +94,10 @@ func loadConfiguration(kubeconfigPath string) (*rest.Config, error) {
 func main() {
 	kubeconfigPath := flag.String("kubeconfig", "", "path to the kubeconfig file to use instead of in-cluster configuration")
 	klog.InitFlags(nil)
+	flag.Set("logtostderr", "true")
 	flag.Parse()
 
-	klog.Infof("starting dothill provisioner v%s", version)
+	klog.Infof("starting dothill storage controller v%s", version)
 	config, err := loadConfiguration(*kubeconfigPath)
 	if err != nil {
 		log.Fatal(err)

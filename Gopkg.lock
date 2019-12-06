@@ -281,7 +281,7 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "5ee1b9f4859acd2e99987ef94ec7a58427c53bef"
+  revision = "1ddd1de85cb0337b623b740a609d35817d516a8d"
 
 [[projects]]
   branch = "master"
@@ -688,15 +688,15 @@
   revision = "6371aabbd7a7726f4b358444cca40def793950c2"
 
 [[projects]]
-  branch = "master"
-  digest = "1:13e62eb3fdda3b5669579c0b2923300a3538e30c9316241d3198a5d0ce60b921"
+  digest = "1:8543bf87debd494b016beb1f0b42f28726427039362454ec6c081f256005a84d"
   name = "k8s.io/csi-translation-lib"
   packages = [
     ".",
     "plugins",
   ]
   pruneopts = "UT"
-  revision = "4b18d293964deddd21316407e1c56a95ecb12f64"
+  revision = "97c07dcbb623dc61bbe762aaeb009f32f9ff6bf5"
+  version = "kubernetes-1.15.4"
 
 [[projects]]
   digest = "1:e2999bf1bb6eddc2a6aa03fe5e6629120a53088926520ca3b4765f77d7ff7eab"
