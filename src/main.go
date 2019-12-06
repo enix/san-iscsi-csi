@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
-	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
+	pc "sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
 const (
@@ -46,15 +46,24 @@ func start(config *rest.Config) error {
 	}
 	klog.V(1).Infof("server version is %s", serverVersion.GitVersion)
 
-	pc := controller.NewProvisionController(
+	controller := NewDothillController(kubeClient)
+	provisioner := pc.NewProvisionController(
 		kubeClient,
 		pluginName,
-		NewDothillProvisioner(kubeClient),
+		controller,
 		serverVersion.GitVersion,
 	)
+	// resizer := rc.NewResizeController(
+	// 	pluginName,
+	// 	nil,
+	// 	kubeClient,
+	// 	10*time.Minute,
+	// 	informers.NewSharedInformerFactory(kubeClient, 10*time.Minute),
+	// )
 
-	klog.Info("starting provision controller")
-	pc.Run(wait.NeverStop)
+	klog.Info("starting controller")
+	provisioner.Run(wait.NeverStop)
+	// go func() { resizer.Run(wait.NeverStop) }()
 	return nil
 }
 

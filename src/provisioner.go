@@ -2,49 +2,20 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
-	dothill "github.com/enix/dothill-api-go"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 	"sigs.k8s.io/sig-storage-lib-external-provisioner/controller"
 )
 
-type dothillProvisioner struct {
-	namespace     string
-	lock          sync.Mutex
-	dothillClient *dothill.Client
-	kubeClient    *kubernetes.Clientset
-}
-
-// NewDothillProvisioner : Creates the provisionner instance that implements
-// the controller.Provisioner interface
-func NewDothillProvisioner(kubeClient *kubernetes.Clientset) controller.Provisioner {
-	namespace := "kube-system"
-	namespaceBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-	if err != nil {
-		klog.Info(errors.Wrap(err, "failed to get current namespace, using 'kube-system' as a fallback"))
-	} else {
-		namespace = string(namespaceBytes)
-		klog.V(1).Infof("current namespace: %s", namespace)
-	}
-
-	return &dothillProvisioner{
-		namespace:     namespace,
-		dothillClient: dothill.NewClient(),
-		kubeClient:    kubeClient,
-	}
-}
-
-func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
+// Provision : Called when a PVC is created
+func (p *DothillController) Provision(options controller.VolumeOptions) (*v1.PersistentVolume, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	defer p.dothillClient.HTTPClient.CloseIdleConnections()
@@ -103,7 +74,8 @@ func (p *dothillProvisioner) Provision(options controller.VolumeOptions) (*v1.Pe
 	return pv, nil
 }
 
-func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
+// Delete : Called when a PVC is deleted
+func (p *DothillController) Delete(volume *v1.PersistentVolume) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	defer p.dothillClient.HTTPClient.CloseIdleConnections()
@@ -160,7 +132,7 @@ func (p *dothillProvisioner) Delete(volume *v1.PersistentVolume) error {
 	return nil
 }
 
-func (p *dothillProvisioner) configureClient(parameters map[string]string) error {
+func (p *DothillController) configureClient(parameters map[string]string) error {
 	klog.V(1).Infof("fetching dothill credentials from secret %s in namespace %s", parameters[credentialsSecretNameConfigKey], p.namespace)
 	credentials, err := p.kubeClient.CoreV1().Secrets(p.namespace).Get(parameters[credentialsSecretNameConfigKey], metav1.GetOptions{})
 	if err != nil {
@@ -189,7 +161,7 @@ func (p *dothillProvisioner) configureClient(parameters map[string]string) error
 	return nil
 }
 
-func (p *dothillProvisioner) chooseLUN() (int, error) {
+func (p *DothillController) chooseLUN() (int, error) {
 	klog.V(1).Infof("listing all LUN mappings")
 	volumes, status, err := p.dothillClient.ShowHostMaps("")
 	if err != nil && status == nil {
@@ -218,7 +190,7 @@ func (p *dothillProvisioner) chooseLUN() (int, error) {
 	return -1, errors.New("no more available LUNs")
 }
 
-func (p *dothillProvisioner) mapVolume(volumeName, initiatorName string, lun int) error {
+func (p *DothillController) mapVolume(volumeName, initiatorName string, lun int) error {
 	klog.V(1).Infof("trying to map volume %s for initiator %s on LUN %d", volumeName, initiatorName, lun)
 	_, status, err := p.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
 	if err != nil && status == nil {
