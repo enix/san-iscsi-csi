@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,18 +48,23 @@ func (r *DothillController) Resize(pv *v1.PersistentVolume, requestSize resource
 	klog.V(1).Infof("fetching storage class %s", storageClassName)
 	storageClass, err := r.kubeClient.StorageV1().StorageClasses().Get(storageClassName, metav1.GetOptions{})
 	if err != nil {
-		return resource.Quantity{}, false, err
+		return currentStorage, false, err
 	}
 	klog.V(2).Info(storageClass)
 
 	if err = runPreflightChecks(storageClass.Parameters, nil); err != nil {
-		return resource.Quantity{}, false, err
+		return currentStorage, false, err
 	}
 
 	err = r.configureClient(storageClass.Parameters)
 	if err != nil {
-		return resource.Quantity{}, false, err
+		return currentStorage, false, err
 	}
 
-	return resource.Quantity{}, false, errors.New("unsupported yet")
+	_, _, err = r.dothillClient.ExpandVolume(pv.ObjectMeta.Name, requestSize.String())
+	if err != nil {
+		return currentStorage, false, err
+	}
+
+	return requestSize, false, nil
 }

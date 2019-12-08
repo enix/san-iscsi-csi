@@ -122,7 +122,8 @@ func (p *DothillController) Delete(volume *v1.PersistentVolume) error {
 		klog.V(1).Infof("no more mappings, deleting host %s", initiatorName)
 		_, _, err := p.dothillClient.DeleteHost(initiatorName)
 		if err != nil {
-			return err
+			klog.Error(errors.Wrap(err, "host deletion failed, skipping"))
+			return nil
 		}
 		klog.V(1).Info("delete was successful")
 	} else {
