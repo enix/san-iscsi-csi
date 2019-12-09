@@ -2,7 +2,9 @@ FROM golang:1.12-alpine3.9 AS build
 
 ARG version
 
-RUN apk add --update make
+RUN apk add --update make git
+
+WORKDIR /app
 
 COPY . .
 
