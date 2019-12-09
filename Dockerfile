@@ -1,24 +1,20 @@
-FROM enix/go-dep:0.5 AS build
+FROM golang:1.12-alpine3.9 AS build
 
 ARG version
-
-WORKDIR /go/src/enix.io/dothil-provisioner
 
 RUN apk add --update make
 
 COPY . .
 
-RUN dep ensure -update
-
 RUN echo -e "package main\nconst version = \"${version}\"" > src/version.go
 
-RUN BIN="/go/bin/dothill-provisioner" make bin
+RUN BIN="/dothill-provisioner" make bin
 
 ###########################################
 
 FROM alpine:3.7
 
-COPY --from=build /go/bin/dothill-provisioner /usr/local/bin/dothill-provisioner
+COPY --from=build /dothill-provisioner /usr/local/bin/dothill-provisioner
 
 RUN chmod +x /usr/local/bin/dothill-provisioner
 
