@@ -14,14 +14,14 @@ func (r *DothillController) Name() string {
 
 // CanSupport : Ensure the plugin will be able to process the resize
 func (r *DothillController) CanSupport(pv *v1.PersistentVolume, pvc *v1.PersistentVolumeClaim) bool {
-	currentStorage := pv.Spec.Capacity[v1.ResourceName(v1.ResourceStorage)]
-	currentBytes, conversionSucceed := currentStorage.AsInt64()
+	currentSize := pv.Spec.Capacity[v1.ResourceName(v1.ResourceStorage)]
+	currentBytes, conversionSucceed := currentSize.AsInt64()
 	if !conversionSucceed {
 		return false
 	}
 
-	requestedStorage := pvc.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
-	requestedBytes, conversionSucceed := requestedStorage.AsInt64()
+	requestSize := pvc.Spec.Resources.Requests[v1.ResourceName(v1.ResourceStorage)]
+	requestedBytes, conversionSucceed := requestSize.AsInt64()
 	if !conversionSucceed {
 		return false
 	}
@@ -41,29 +41,30 @@ func (r *DothillController) Resize(pv *v1.PersistentVolume, requestSize resource
 	defer r.dothillClient.HTTPClient.CloseIdleConnections()
 	klog.V(2).Infof("Resize() called with pv: %+v", pv)
 
-	currentStorage := pv.Spec.Capacity[v1.ResourceName(v1.ResourceStorage)]
-	klog.V(1).Infof("received resize request for volume %s: %s -> %s", pv.ObjectMeta.Name, currentStorage.ToDec(), requestSize.ToDec())
+	currentSize := pv.Spec.Capacity[v1.ResourceName(v1.ResourceStorage)]
+	klog.V(1).Infof("received resize request for volume %s: %s -> %s", pv.ObjectMeta.Name, currentSize.ToDec(), requestSize.ToDec())
 
 	storageClassName := pv.ObjectMeta.Annotations[storageClassAnnotationKey]
 	klog.V(1).Infof("fetching storage class %s", storageClassName)
 	storageClass, err := r.kubeClient.StorageV1().StorageClasses().Get(storageClassName, metav1.GetOptions{})
 	if err != nil {
-		return currentStorage, false, err
+		return currentSize, false, err
 	}
 	klog.V(2).Info(storageClass)
 
 	if err = runPreflightChecks(storageClass.Parameters, nil); err != nil {
-		return currentStorage, false, err
+		return currentSize, false, err
 	}
 
 	err = r.configureClient(storageClass.Parameters)
 	if err != nil {
-		return currentStorage, false, err
+		return currentSize, false, err
 	}
 
+	requestSize.Sub(currentSize)
 	_, _, err = r.dothillClient.ExpandVolume(pv.ObjectMeta.Name, requestSize.String())
 	if err != nil {
-		return currentStorage, false, err
+		return currentSize, false, err
 	}
 
 	return requestSize, false, nil
