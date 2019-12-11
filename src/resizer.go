@@ -61,11 +61,12 @@ func (r *DothillController) Resize(pv *v1.PersistentVolume, requestSize resource
 		return currentSize, false, err
 	}
 
-	requestSize.Sub(currentSize)
-	_, _, err = r.dothillClient.ExpandVolume(pv.ObjectMeta.Name, requestSize.String())
+	additionalSize := requestSize.Copy()
+	additionalSize.Sub(currentSize)
+	_, _, err = r.dothillClient.ExpandVolume(pv.ObjectMeta.Name, additionalSize.String())
 	if err != nil {
 		return currentSize, false, err
 	}
 
-	return requestSize, false, nil
+	return requestSize, true, nil
 }
