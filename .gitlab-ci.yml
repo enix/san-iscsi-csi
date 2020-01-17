@@ -2,13 +2,33 @@ stages:
   - test
   - release
 
-build:
+k8s controller sanity tests:
+  stage: test
+  image: golang:1.12-alpine3.9
+  before_script:
+    - apk add --update git gcc
+  script:
+    - go test ./cmd/controller
+  except:
+    - tags
+  allow_failure: true # TODO: remove me
+
+k8s node sanity tests:
+  stage: test
+  image: golang:1.12-alpine3.9
+  before_script:
+    - apk add --update git gcc
+  script:
+    - go test ./cmd/node
+  except:
+    - tags
+  allow_failure: true # TODO: remove me
+
+build docker image:
   stage: test
   image: docker:stable
   services:
     - docker:dind
-  before_script:
-    - apk add --update make
   script:
     - make
   except:

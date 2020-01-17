@@ -3,3 +3,6 @@
 
 # test cluster config
 kubeconfig
+
+# v1.x files
+_legacy

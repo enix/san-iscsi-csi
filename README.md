@@ -1,6 +1,6 @@
 # Dothill (Seagate) AssuredSAN provisioner for Kubernetes
 
-A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storage systems. 
+A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storage systems.
 
 Developped and tested on HPE MSA2050 series.
 
@@ -22,7 +22,7 @@ apt install open-iscsi multipath-tools
 
 - CentOS/RHEL
 ```sh
-yum -y install iscsi-initiator-utils device-mapper-multipath 
+yum -y install iscsi-initiator-utils device-mapper-multipath
 ```
 
 #### Deploy the provisioner to your cluster
@@ -71,8 +71,18 @@ Logging can be modified using the `-v` flag :
 
 By default the `rc` image is launched with `-v 1`. For advanced logging configuration, see [klog](https://github.com/kubernetes/klog).
 
-#### Configuration
+#### Development
 
-By default, the provider will connect to the cluser by retreiving it's configuration from inside (e.g. by using `KUBERNETES_SERVICE_HOST` and data mounted in `/var/run`), which mean it won't work if the provisioner is not running inside a pod.
+You can start the drivers over TCP so your remote dev cluster can connect to them.
 
-If you need to run this from outside your cluster, you can use the `-kubeconfig path/to/your/.kube/config` flag to override the default configuration.
+```
+go run ./cmd/<driver> -transport=tcp -bind=0.0.0.0:10000
+```
+
+### Testing
+
+You can run sanity checks by using:
+
+```
+go test ./cmd/<driver>
+```

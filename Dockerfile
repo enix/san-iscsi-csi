@@ -8,16 +8,18 @@ WORKDIR /app
 
 COPY . .
 
-RUN echo -e "package main\nconst version = \"${version}\"" > src/version.go
+RUN echo -e "package common\nconst Version = \"${version}\"" > pkg/common/version.go
 
-RUN BIN="/dothill-provisioner" make bin
+RUN BIN="/dothill" make controller
+
+RUN BIN="/dothill" make node
 
 ###########################################
 
 FROM alpine:3.7
 
-COPY --from=build /dothill-provisioner /usr/local/bin/dothill-provisioner
+COPY --from=build /dothill-controller /usr/local/bin/dothill-controller
 
-RUN chmod +x /usr/local/bin/dothill-provisioner
+RUN chmod +x /usr/local/bin/dothill-controller
 
-ENTRYPOINT [ "/usr/local/bin/dothill-provisioner" ]
+ENTRYPOINT [ "/usr/local/bin/dothill-controller" ]
