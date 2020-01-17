@@ -6,7 +6,7 @@ k8s controller sanity tests:
   stage: test
   image: golang:1.12-alpine3.9
   before_script:
-    - apk add --update git gcc
+    - apk add --update git musl-dev
   script:
     - go test ./cmd/controller
   except:
@@ -17,7 +17,7 @@ k8s node sanity tests:
   stage: test
   image: golang:1.12-alpine3.9
   before_script:
-    - apk add --update git gcc
+    - apk add --update git musl-dev
   script:
     - go test ./cmd/node
   except:
@@ -29,6 +29,8 @@ build docker image:
   image: docker:stable
   services:
     - docker:dind
+  before_script:
+    - apk add --update git make
   script:
     - make
   except:
