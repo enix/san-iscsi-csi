@@ -1,23 +1,49 @@
-apiVersion: extensions/v1beta1
+---
 kind: Deployment
+apiVersion: apps/v1
 metadata:
-  name: dothill-provisioner
-  namespace: kube-system
-
+  name: csi-provisioner
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
+  selector:
+    matchLabels:
+      app: csi-provisioner
   template:
     metadata:
       labels:
-        app: dothill-provisioner
+        app: csi-provisioner
     spec:
-      imagePullSecrets:
-      - name: regcred
+      serviceAccount: csi-provisioner
       containers:
-      - name: dothill-provisioner
-        imagePullPolicy: Always
-        image: docker-registry.enix.io/enix/dothill-provisioner:rc
-        command: ["/usr/local/bin/dothill-provisioner", "-v", "1"]
-      serviceAccount: dothill-provisioner
+        - name: csi-provisioner
+          image: quay.io/k8scsi/csi-provisioner:canary
+          args:
+            - "--csi-address=/var/lib/csi/sockets/pluginproxy/dev.sock"
+            - "--enable-leader-election"
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+
+        # - name: mock-driver
+        #   image: quay.io/k8scsi/mock-driver:canary
+        #   env:
+        #     - name: CSI_ENDPOINT
+        #       value: /var/lib/csi/sockets/pluginproxy/mock.sock
+        #  volumeMounts:
+        #    - name: socket-dir
+        #      mountPath: /var/lib/csi/sockets/pluginproxy/
+
+        - name: dev-proxy
+          image: alpine/socat
+          command:
+            - sh
+            - -c
+            - socat UNIX-LISTEN:/var/lib/csi/sockets/pluginproxy/dev.sock,reuseaddr,fork TCP:10.14.255.81:10000
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+
+      volumes:
+        - name: socket-dir
+          emptyDir:
