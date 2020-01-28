@@ -65,11 +65,10 @@ You can have a list of all available command line flags using the `-help` switch
 
 Logging can be modified using the `-v` flag :
 
-- `-v 0` : Almost no logs (default if not specified)
-- `-v 1` : Standard logs to follow what's going on
-- `-v 2` : Debug logs (quite awful to see)
+- `-v 0` : Standard logs to follow what's going on (default if not specified)
+- `-v 9` : Debug logs (quite awful to see)
 
-By default the `rc` image is launched with `-v 1`. For advanced logging configuration, see [klog](https://github.com/kubernetes/klog).
+By default the `rc` image is launched with `-v 0`. For advanced logging configuration, see [klog](https://github.com/kubernetes/klog).
 
 #### Development
 

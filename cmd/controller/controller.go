@@ -6,9 +6,5 @@ import (
 )
 
 func main() {
-	driver := common.Driver{
-		Impl: &controller.Driver{},
-	}
-
-	driver.Start()
+	common.NewDriver(controller.NewDriver()).Start()
 }

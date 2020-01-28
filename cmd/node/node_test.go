@@ -8,9 +8,5 @@ import (
 )
 
 func Test(t *testing.T) {
-	driver := common.Driver{
-		Impl: &node.Driver{},
-	}
-
-	driver.Test(t)
+	common.NewDriver(node.NewDriver()).Test(t)
 }

@@ -1,49 +1,55 @@
+# This YAML file demonstrates how to deploy the external
+# provisioner for use with the mock CSI driver. It
+# depends on the RBAC definitions from rbac.yaml.
 ---
-kind: Deployment
-apiVersion: apps/v1
-metadata:
-  name: csi-provisioner
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: csi-provisioner
-  template:
-    metadata:
-      labels:
+  kind: Deployment
+  apiVersion: apps/v1
+  metadata:
+    name: csi-provisioner
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
         app: csi-provisioner
-    spec:
-      serviceAccount: csi-provisioner
-      containers:
-        - name: csi-provisioner
-          image: quay.io/k8scsi/csi-provisioner:canary
-          args:
-            - "--csi-address=/var/lib/csi/sockets/pluginproxy/dev.sock"
-            - "--enable-leader-election"
-          imagePullPolicy: "IfNotPresent"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/
+    template:
+      metadata:
+        labels:
+          app: csi-provisioner
+      spec:
+        serviceAccount: csi-provisioner
+        containers:
+          - name: csi-provisioner
+            image: quay.io/k8scsi/csi-provisioner:canary
+            args:
+              - "--csi-address=$(ADDRESS)"
+              - "--enable-leader-election"
+            env:
+              - name: ADDRESS
+                value: /var/lib/csi/sockets/pluginproxy/dev.socket
+            imagePullPolicy: "IfNotPresent"
+            volumeMounts:
+              - name: socket-dir
+                mountPath: /var/lib/csi/sockets/pluginproxy/
 
-        # - name: mock-driver
-        #   image: quay.io/k8scsi/mock-driver:canary
-        #   env:
-        #     - name: CSI_ENDPOINT
-        #       value: /var/lib/csi/sockets/pluginproxy/mock.sock
-        #  volumeMounts:
-        #    - name: socket-dir
-        #      mountPath: /var/lib/csi/sockets/pluginproxy/
+          # - name: mock-driver
+          #   image: quay.io/k8scsi/mock-driver:canary
+          #   env:
+          #     - name: CSI_ENDPOINT
+          #       value: /var/lib/csi/sockets/pluginproxy/mock.socket
+          #   volumeMounts:
+          #     - name: socket-dir
+          #       mountPath: /var/lib/csi/sockets/pluginproxy/
 
-        - name: dev-proxy
-          image: alpine/socat
-          command:
-            - sh
-            - -c
-            - socat UNIX-LISTEN:/var/lib/csi/sockets/pluginproxy/dev.sock,reuseaddr,fork TCP:10.14.255.81:10000
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/
-
-      volumes:
-        - name: socket-dir
-          emptyDir:
+          - name: dev-driver
+            image: alpine/socat
+            command:
+              - socat
+              - -v
+              - UNIX-LISTEN:/var/lib/csi/sockets/pluginproxy/dev.socket,reuseaddr,fork
+              - TCP:10.14.255.81:10000
+            volumeMounts:
+              - name: socket-dir
+                mountPath: /var/lib/csi/sockets/pluginproxy/
+        volumes:
+          - name: socket-dir
+            emptyDir:

@@ -1,14 +1,7 @@
 package main
 
-import (
-	"github.com/enix/dothill-storage-controller/pkg/common"
-	"github.com/enix/dothill-storage-controller/pkg/node"
-)
+import "github.com/enix/dothill-storage-controller/pkg/common"
 
 func main() {
-	driver := common.Driver{
-		Impl: &node.Driver{},
-	}
-
-	driver.Start()
+	common.NewDriver(node.NewDriver()).Start()
 }

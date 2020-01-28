@@ -2,7 +2,6 @@ package node
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
@@ -11,7 +10,7 @@ import (
 // GetPluginInfo returns metadata of the plugin
 func (d *Driver) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
 	return &csi.GetPluginInfoResponse{
-		Name:          fmt.Sprintf("%s.node", common.PluginName),
+		Name:          common.PluginName,
 		VendorVersion: common.Version,
 	}, nil
 }

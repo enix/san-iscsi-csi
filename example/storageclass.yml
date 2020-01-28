@@ -4,12 +4,12 @@ metadata:
   name: dothill-storage
 
 provisioner: dothill
-reclaimPolicy: Delete
 parameters:
-  credentialsSecretName: dothill-credentials
-  pool: A
+  csi.storage.k8s.io/provisioner-secret-name: dothill-credentials
+  csi.storage.k8s.io/provisioner-secret-namespace: kube-system
+  pool: B
   fsType: ext4
-  initiatorName: iqn.2019-05.io.enix:cluster
+  initiatorName: iqn.2019-05.io.enix:arthurs-dev-cluster
   uniqueInitiatorNameByPvc: "false"
   iqn: iqn.2015-11.com.hpe:storage.msa2050.18323cc9ed
   apiAddress: https://10.14.3.38

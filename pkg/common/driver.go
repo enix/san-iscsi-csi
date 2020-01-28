@@ -12,8 +12,8 @@ import (
 	"k8s.io/klog"
 )
 
-// PluginName is the public name of the plugin
-const PluginName = "io.enix.csi.dothill"
+// PluginName is the public name to be used in storage class etc.
+const PluginName = "dothill"
 
 var (
 	transport = flag.String("transport", "unix", "transport protocol tu use (unix|tcp)")
@@ -23,9 +23,17 @@ var (
 // Driver contains main resources needed by the driver
 // and references the underlying specific driver
 type Driver struct {
-	Impl   csi.IdentityServer
+	impl   csi.IdentityServer
 	socket net.Listener
 	server *grpc.Server
+}
+
+// NewDriver is a convenience function for creating an abstract driver
+func NewDriver(impl csi.IdentityServer) *Driver {
+	return &Driver{
+		impl:   impl,
+		server: grpc.NewServer(),
+	}
 }
 
 // Start does the boilerplate stuff for starting the driver
@@ -42,19 +50,17 @@ func (driver *Driver) Start() {
 	}
 	driver.socket = socket
 
-	server := grpc.NewServer()
-	csi.RegisterIdentityServer(server, driver.Impl)
-	if controller, ok := driver.Impl.(csi.ControllerServer); ok {
-		csi.RegisterControllerServer(server, controller)
-	} else if node, ok := driver.Impl.(csi.NodeServer); ok {
-		csi.RegisterNodeServer(server, node)
+	csi.RegisterIdentityServer(driver.server, driver.impl)
+	if controller, ok := driver.impl.(csi.ControllerServer); ok {
+		csi.RegisterControllerServer(driver.server, controller)
+	} else if node, ok := driver.impl.(csi.NodeServer); ok {
+		csi.RegisterNodeServer(driver.server, node)
 	} else {
 		klog.Fatalf("cannot start a driver which does not implement anything")
 	}
-	driver.server = server
 
 	klog.Infof("driver listening on %s", *bind)
-	server.Serve(socket)
+	driver.server.Serve(socket)
 }
 
 // Stop shuts down the driver
