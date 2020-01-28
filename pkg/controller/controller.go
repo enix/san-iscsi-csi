@@ -58,48 +58,57 @@ func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeReq
 
 // ControllerPublishVolume attaches the given volume to the node
 func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
+	fmt.Println("ControllerPublishVolume call")
 	fmt.Println("go it")
 	return nil, status.Error(codes.Unimplemented, "ControllerPublishVolume unimplemented yet")
 }
 
 // ControllerUnpublishVolume deattaches the given volume from the node
 func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
+	fmt.Println("ControllerUnpublishVolume call")
 	return nil, status.Error(codes.Unimplemented, "ControllerUnpublishVolume unimplemented yet")
 }
 
 // ValidateVolumeCapabilities checks whether the volume capabilities requested
 // are supported.
 func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
+	fmt.Println("ValidateVolumeCapabilities call")
 	return nil, status.Error(codes.Unimplemented, "ValidateVolumeCapabilities unimplemented yet")
 }
 
 // ListVolumes returns a list of all requested volumes
 func (driver *Driver) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
+	fmt.Println("ListVolumes call")
 	return nil, status.Error(codes.Unimplemented, "ListVolumes unimplemented yet")
 }
 
 // GetCapacity returns the capacity of the storage pool
 func (driver *Driver) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
+	fmt.Println("GetCapacity call")
 	return nil, status.Error(codes.Unimplemented, "GetCapacity unimplemented yet")
 }
 
 // ControllerExpandVolume expands a volume to the given new size
 func (driver *Driver) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
+	fmt.Println("ControllerExpandVolume call")
 	return nil, status.Error(codes.Unimplemented, "ControllerExpandVolume unimplemented yet")
 }
 
 // CreateSnapshot creates a snapshot of the given volume
 func (driver *Driver) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
+	fmt.Println("CreateSnapshot call")
 	return nil, status.Error(codes.Unimplemented, "CreateSnapshot unimplemented yet")
 }
 
 // DeleteSnapshot deletes a snapshot of the given volume
 func (driver *Driver) DeleteSnapshot(ctx context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
+	fmt.Println("DeleteSnapshot call")
 	return nil, status.Error(codes.Unimplemented, "DeleteSnapshot unimplemented yet")
 }
 
 // ListSnapshots list existing snapshots
 func (driver *Driver) ListSnapshots(ctx context.Context, req *csi.ListSnapshotsRequest) (*csi.ListSnapshotsResponse, error) {
+	fmt.Println("ListSnapshots call")
 	return nil, status.Error(codes.Unimplemented, "ListSnapshots unimplemented yet")
 }
 

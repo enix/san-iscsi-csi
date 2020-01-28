@@ -19,8 +19,9 @@ spec:
         - name: csi-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
           args:
-            - "--csi-address=/csi/csi.sock"
-            - "--kubelet-registration-path=/var/lib/kubelet/plugins/io.enix.csi.dothill/csi.sock"
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/plugins/io.enix.csi.dothill/csi.sock
           lifecycle:
             preStop:
               exec:
@@ -35,6 +36,10 @@ spec:
           command:
             - dothill-node
             - -bind=unix:///csi/csi.sock
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /csi/csi.sock"]
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
