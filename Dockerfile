@@ -6,7 +6,10 @@ RUN apk add --update make git
 
 WORKDIR /app
 
-COPY . .
+COPY cmd cmd
+COPY pkg pkg
+COPY go.* ./
+COPY Makefile ./
 
 RUN echo -e "package common\nconst Version = \"${version}\"" > pkg/common/version.go
 
@@ -18,8 +21,8 @@ RUN BIN="/dothill" make node
 
 FROM alpine:3.7
 
-COPY --from=build /dothill-controller /usr/local/bin/dothill-controller
+COPY --from=build /dothill-* /usr/local/bin/
 
-RUN chmod +x /usr/local/bin/dothill-controller
+RUN chmod +x /usr/local/bin/dothill-*
 
-ENTRYPOINT [ "/usr/local/bin/dothill-controller" ]
+CMD [ "/usr/local/bin/dothill-controller" ]

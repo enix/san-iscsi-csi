@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -29,6 +30,7 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 	var csc []*csi.ControllerServiceCapability
 	cl := []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
+		csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
 		// csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 		// csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
 		// csi.ControllerServiceCapability_RPC_CLONE_VOLUME,
@@ -56,6 +58,7 @@ func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeReq
 
 // ControllerPublishVolume attaches the given volume to the node
 func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
+	fmt.Println("go it")
 	return nil, status.Error(codes.Unimplemented, "ControllerPublishVolume unimplemented yet")
 }
 

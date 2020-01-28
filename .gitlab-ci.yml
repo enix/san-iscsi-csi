@@ -2,7 +2,7 @@ stages:
   - test
   - release
 
-k8s controller sanity tests:
+k8s sanity tests:
   stage: test
   image: golang:1.12-alpine3.9
   before_script:
@@ -13,26 +13,16 @@ k8s controller sanity tests:
     - tags
   allow_failure: true # TODO: remove me
 
-k8s node sanity tests:
-  stage: test
-  image: golang:1.12-alpine3.9
-  before_script:
-    - apk add --update git gcc musl-dev
-  script:
-    - go test ./cmd/node
-  except:
-    - tags
-  allow_failure: true # TODO: remove me
-
-build docker image:
+build dirty docker image:
   stage: test
   image: docker:stable
   services:
     - docker:dind
   before_script:
-    - apk add --update git make
+    - apk add --update make
+    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - make
+    - VERSION=dirty make push
   except:
     - tags
 

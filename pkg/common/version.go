@@ -3,4 +3,4 @@
 package common
 
 // Version : version of the packages
-const Version = "DEV"
+const Version = "0.0.0-DIRTY"

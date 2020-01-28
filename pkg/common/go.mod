@@ -4,22 +4,14 @@ go 1.12
 
 require (
 	github.com/container-storage-interface/spec v1.2.0
-	github.com/enix/dothill-api-go v1.4.1
-	github.com/gogo/protobuf v1.3.1 // indirect
-	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/googleapis/gnostic v0.4.0 // indirect
+	github.com/google/uuid v1.1.1 // indirect
 	github.com/kubernetes-csi/csi-test v2.2.0+incompatible
 	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/onsi/gomega v1.8.1 // indirect
-	github.com/pkg/errors v0.9.1
 	golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3 // indirect
-	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.0.0-20190524140312-2c0ae7006135 // indirect
 	google.golang.org/grpc v1.26.0
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc // indirect
-	k8s.io/api v0.17.2 // indirect
-	k8s.io/client-go v11.0.0+incompatible // indirect
 	k8s.io/klog v1.0.0
-	k8s.io/utils v0.0.0-20200124190032-861946025e34 // indirect
 )

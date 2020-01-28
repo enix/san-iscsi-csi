@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dothill-node
+
+spec:
+	selector:
+    matchLabels:
+      name: dothill-node
+  template:
+    metadata:
+      labels:
+        name: dothill-node
+    spec:
+			containers:
+				- name: csi-driver-registrar
+					image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
+					args:
+						- "--csi-address=/csi/csi.sock"
+						- "--kubelet-registration-path=/var/lib/kubelet/plugins/dothill.csi.enix.io/csi.sock"
+					lifecycle:
+						preStop:
+							exec:
+								command: ["/bin/sh", "-c", "rm -rf /registration/dothill.csi.enix.io /registration/dothill.csi.enix.io-reg.sock"]
+					volumeMounts:
+						- name: plugin-dir
+							mountPath: /csi
+						- name: registration-dir
+							mountPath: /registration
+				- name: dothill-node
+					image: docker-registry.enix.io/enix/dothill-provisioner:beta
+					command: /dothill-node -bind=/csi/csi.sock
+					volumeMounts:
+						- name: plugin-dir
+							mountPath: /csi
+			volumes:
+				- name: registration-dir
+					hostPath:
+						path: /var/lib/kubelet/plugins_registry/
+						type: Directory
+				- name: plugin-dir
+					hostPath:
+						path: /var/lib/kubelet/plugins/dothill.csi.enix.io/
+						type: DirectoryOrCreate
