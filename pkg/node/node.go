@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
@@ -18,7 +19,14 @@ func NewDriver() *Driver {
 
 // NodeGetInfo returns info about the node
 func (d *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+	fmt.Println("call NodeGetInfo")
 	return nil, status.Error(codes.Unimplemented, "NodeGetInfo unimplemented yet")
+}
+
+// NodeGetCapabilities returns the supported capabilities of the node server
+func (d *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
+	fmt.Println("call NodeGetCapabilities")
+	return nil, status.Error(codes.Unimplemented, "NodeGetCapabilities unimplemented yet")
 }
 
 // NodeStageVolume mounts the volume to a staging path on the node. This is
@@ -42,11 +50,6 @@ func (d *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolu
 // NodeUnpublishVolume unmounts the volume from the target path
 func (d *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeUnpublishVolume unimplemented yet")
-}
-
-// NodeGetCapabilities returns the supported capabilities of the node server
-func (d *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "NodeGetCapabilities unimplemented yet")
 }
 
 // NodeExpandVolume finalizes volume expansion on the node
