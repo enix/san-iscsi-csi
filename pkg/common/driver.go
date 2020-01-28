@@ -10,7 +10,7 @@ import (
 )
 
 // PluginName is the public name to be used in storage class etc.
-const PluginName = "dothill"
+const PluginName = "io.enix.csi.dothill"
 
 // Driver contains main resources needed by the driver
 // and references the underlying specific driver
