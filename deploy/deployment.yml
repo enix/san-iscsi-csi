@@ -2,52 +2,44 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: csi-provisioner
+  name: dothill-controller
 
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: csi-provisioner
+      app: dothill-controller
   template:
     metadata:
       labels:
-        app: csi-provisioner
+        app: dothill-controller
     spec:
       serviceAccount: csi-provisioner
       containers:
         - name: csi-provisioner
           image: quay.io/k8scsi/csi-provisioner:canary
           args:
-            - "--csi-address=$(ADDRESS)"
-            - "--enable-leader-election"
-          env:
-            - name: ADDRESS
-              value: /var/lib/csi/sockets/pluginproxy/dev.socket
+            - --csi-address=/csi/csi.sock
+            - --enable-leader-election
           imagePullPolicy: "IfNotPresent"
           volumeMounts:
             - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/
-
-        # - name: mock-driver
-        #   image: quay.io/k8scsi/mock-driver:canary
-        #   env:
-        #     - name: CSI_ENDPOINT
-        #       value: /var/lib/csi/sockets/pluginproxy/mock.socket
+              mountPath: /csi
+        # - name: dothill-controller
+        #   image: docker-registry.enix.io/enix/dothill-provisioner:rc
         #   volumeMounts:
         #     - name: socket-dir
-        #       mountPath: /var/lib/csi/sockets/pluginproxy/
-
-        - name: dev-driver
+        #       mountPath: /csi
+        - name: tcp-controller
           image: alpine/socat
           command:
             - socat
             - -v
-            - UNIX-LISTEN:/var/lib/csi/sockets/pluginproxy/dev.socket,reuseaddr,fork
+            - UNIX-LISTEN:/csi/csi.sock,reuseaddr,fork
             - TCP:10.14.255.81:10000
           volumeMounts:
             - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/
+              mountPath: /csi
       volumes:
         - name: socket-dir
           emptyDir:

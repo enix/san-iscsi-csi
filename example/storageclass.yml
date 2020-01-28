@@ -3,7 +3,7 @@ kind: StorageClass
 metadata:
   name: dothill-storage
 
-provisioner: io.enix.csi.dothill
+provisioner: dothill.csi.enix.io
 parameters:
   csi.storage.k8s.io/provisioner-secret-name: dothill-credentials
   csi.storage.k8s.io/provisioner-secret-namespace: kube-system
