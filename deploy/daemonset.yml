@@ -16,18 +16,18 @@ spec:
       imagePullSecrets:
         - name: regcred
       containers:
-        - name: dothill-node
-          image: docker-registry.enix.io/enix/dothill-provisioner:rc
-          command:
-            - dothill-node
-            - -bind=unix:///csi/csi.sock
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "rm -rf /csi/csi.sock"]
-          volumeMounts:
-            - name: plugin-dir
-              mountPath: /csi
+        # - name: dothill-node
+        #   image: docker-registry.enix.io/enix/dothill-provisioner:rc
+        #   command:
+        #     - dothill-node
+        #     - -bind=unix:///csi/csi.sock
+        #   lifecycle:
+        #     preStop:
+        #       exec:
+        #         command: ["/bin/sh", "-c", "rm -rf /csi/csi.sock"]
+        #   volumeMounts:
+        #     - name: plugin-dir
+        #       mountPath: /csi
         - name: driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
           args:
@@ -43,6 +43,16 @@ spec:
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
+        - name: tcp-node
+          image: alpine/socat
+          command:
+            - socat
+            - -v
+            - UNIX-LISTEN:/csi/csi.sock,reuseaddr,fork
+            - TCP:10.14.255.81:10001
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
       volumes:
         - name: registration-dir
           hostPath:

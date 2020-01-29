@@ -38,7 +38,7 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 	}
 
 	for _, cap := range cl {
-		klog.Infof("enabling controller service capability: %v", cap.String())
+		klog.Infof("enabled controller service capability: %v", cap.String())
 		csc = append(csc, &csi.ControllerServiceCapability{
 			Type: &csi.ControllerServiceCapability_Rpc{
 				Rpc: &csi.ControllerServiceCapability_RPC{
@@ -53,6 +53,7 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 
 // DeleteVolume deletes the given volume. The function is idempotent.
 func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
+	fmt.Println("DeleteVolume call")
 	return nil, status.Error(codes.Unimplemented, "DeleteVolume unimplemented yet")
 }
 

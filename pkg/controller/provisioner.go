@@ -63,7 +63,6 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 		return nil, err
 	}
 
-	klog.Infof("created volume %s (%s) for initiator %s", volumeName, sizeStr, initiatorName)
 	portals := strings.Split(req.GetParameters()[portalsConfigKey], ",")
 	klog.Infof("generating volume spec, ISCSI portals: %s", portals)
 	volume := &csi.CreateVolumeResponse{
@@ -75,6 +74,7 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 		},
 	}
 
+	klog.Infof("created volume %s (%s) for initiator %s", volumeName, sizeStr, initiatorName)
 	klog.V(8).Infof("created volume %+v", volume)
 	return volume, nil
 

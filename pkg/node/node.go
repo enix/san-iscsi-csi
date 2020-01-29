@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
@@ -20,8 +21,11 @@ func NewDriver() *Driver {
 
 // NodeGetInfo returns info about the node
 func (d *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+	hostname, _ := os.Hostname()
+	fmt.Println("yolo")
 	return &csi.NodeGetInfoResponse{
-		NodeId: "uniqueNodeName", // FIXME
+		NodeId:            hostname,
+		MaxVolumesPerNode: 255,
 	}, nil
 }
 
@@ -33,7 +37,7 @@ func (d *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabi
 	}
 
 	for _, cap := range cl {
-		klog.Infof("enabling node service capability: %v", cap.String())
+		klog.Infof("enabled node service capability: %v", cap.String())
 		csc = append(csc, &csi.NodeServiceCapability{
 			Type: &csi.NodeServiceCapability_Rpc{
 				Rpc: &csi.NodeServiceCapability_RPC{
@@ -43,6 +47,7 @@ func (d *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabi
 		})
 	}
 
+	fmt.Println("asked caps")
 	return &csi.NodeGetCapabilitiesResponse{Capabilities: csc}, nil
 }
 
