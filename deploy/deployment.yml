@@ -26,7 +26,16 @@ spec:
           args:
             - --csi-address=/csi/csi.sock
             - --enable-leader-election
-          imagePullPolicy: "IfNotPresent"
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: csi-attacher
+          image: quay.io/k8scsi/csi-attacher:canary
+          args:
+            - --csi-address=/csi/csi.sock
+            - --leader-election
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
