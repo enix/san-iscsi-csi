@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -27,6 +26,7 @@ const (
 	storageClassAnnotationKey         = "storageClass"
 
 	maximumLUN                    = 255
+	volumeNameMaxLength           = 32
 	hostDoesNotExistsErrorCode    = -10386
 	hostMapDoesNotExistsErrorCode = -10074
 )
@@ -54,11 +54,9 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 		return nil, err
 	}
 
-	initiatorName := getInitiatorName(req)
-	iqnUniquePart := strings.Split(initiatorName, ":")[1]
-	volumeName := fmt.Sprintf("%s.%s", iqnUniquePart, req.GetName()[:12])
-	klog.Infof("creating volume %s (size %s) in pool %s", volumeName, sizeStr, parameters[poolConfigKey])
-	_, _, err = driver.dothillClient.CreateVolume(volumeName, sizeStr, parameters[poolConfigKey])
+	volumeID := uuid.NewUUID().String()[:volumeNameMaxLength]
+	klog.Infof("creating volume %s (size %s) in pool %s", volumeID, sizeStr, parameters[poolConfigKey])
+	_, _, err = driver.dothillClient.CreateVolume(volumeID, sizeStr, parameters[poolConfigKey])
 	if err != nil {
 		return nil, err
 	}
@@ -67,29 +65,16 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 	klog.Infof("generating volume spec, ISCSI portals: %s", portals)
 	volume := &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
-			VolumeId:      uuid.NewUUID().String(),
+			VolumeId:      volumeID,
 			CapacityBytes: req.GetCapacityRange().GetRequiredBytes(),
 			VolumeContext: req.GetParameters(),
 			ContentSource: req.GetVolumeContentSource(),
 		},
 	}
 
-	klog.Infof("created volume %s (%s) for initiator %s", volumeName, sizeStr, initiatorName)
+	klog.Infof("created volume %s (%s)", volumeID, sizeStr)
 	klog.V(8).Infof("created volume %+v", volume)
 	return volume, nil
-
-	// lun, err := driver.chooseLUN()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// klog.Infof("using LUN %d", lun)
-
-	// err = driver.mapVolume(volumeName, initiatorName, lun)
-	// if err != nil {
-	// 	// klog.Infof("volume %s couldn't be mapped, deleting it", volumeName)
-	// 	// driver.dothillClient.DeleteVolume(volumeName)
-	// 	return nil, err
-	// }
 }
 
 // Delete : Called when a PVC is deleted
@@ -150,75 +135,6 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 
 // return nil
 // }
-
-func (driver *Driver) chooseLUN() (int, error) {
-	klog.Infof("listing all LUN mappings")
-	volumes, status, err := driver.dothillClient.ShowHostMaps("")
-	if err != nil && status == nil {
-		return -1, err
-	}
-	if status.ReturnCode == hostMapDoesNotExistsErrorCode {
-		klog.Info("initiator does not exist, assuming there is no LUN mappings yet and using LUN 1")
-		return 1, nil
-	}
-	if err != nil {
-		return -1, err
-	}
-
-	sort.Sort(Volumes(volumes))
-	index := 1
-	for ; index < len(volumes); index++ {
-		if volumes[index].LUN-volumes[index-1].LUN > 1 {
-			return volumes[index-1].LUN + 1, nil
-		}
-	}
-
-	if volumes[len(volumes)-1].LUN+1 < maximumLUN {
-		return volumes[len(volumes)-1].LUN + 1, nil
-	}
-
-	return -1, errors.New("no more available LUNs")
-}
-
-func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error {
-	klog.Infof("trying to map volume %s for initiator %s on LUN %d", volumeName, initiatorName, lun)
-	_, status, err := driver.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
-	if err != nil && status == nil {
-		return err
-	}
-	if status.ReturnCode == hostDoesNotExistsErrorCode {
-		nodeName := strings.Split(initiatorName, ":")[1]
-		klog.Infof("initiator does not exist, creating it with nickname %s", nodeName)
-		_, _, err = driver.dothillClient.CreateHost(nodeName, initiatorName)
-		if err != nil {
-			return err
-		}
-		klog.Info("retrying to map volume")
-		_, _, err = driver.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
-		if err != nil {
-			return err
-		}
-	}
-
-	klog.Info("mapping was successful")
-	return nil
-}
-
-func getInitiatorName(req *csi.CreateVolumeRequest) string {
-	initiatorName := req.GetParameters()[initiatorNameConfigKey]
-	// overrideInitiatorName, overrideExists := options.PVC.Annotations[initiatorNameConfigKey]
-	// if overrideExists {
-	// 	initiatorName = overrideInitiatorName
-	// 	klog.Infof("custom initiator name was specified in PVC annotation: %s", initiatorName)
-	// } else if options.Parameters[uniqueInitiatorNameByPvcConfigKey] == "true" {
-	// 	year, month, _ := time.Now().Date()
-	// 	uniquePart := fmt.Sprintf("%d", rand.Int())[:8]
-	// 	initiatorName = fmt.Sprintf("iqn.%d-%02d.local.cluster:%s", year, int(month), uniquePart)
-	// 	klog.Infof("generated initiator name: %s", initiatorName)
-	// }
-
-	return initiatorName
-}
 
 func runPreflightChecks(parameters map[string]string, capabilities []*csi.VolumeCapability) error {
 	checkIfKeyExistsInConfig := func(key string) error {

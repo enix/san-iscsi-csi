@@ -57,19 +57,6 @@ func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeReq
 	return nil, status.Error(codes.Unimplemented, "DeleteVolume unimplemented yet")
 }
 
-// ControllerPublishVolume attaches the given volume to the node
-func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
-	fmt.Println("ControllerPublishVolume call")
-	fmt.Println("go it")
-	return nil, status.Error(codes.Unimplemented, "ControllerPublishVolume unimplemented yet")
-}
-
-// ControllerUnpublishVolume deattaches the given volume from the node
-func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
-	fmt.Println("ControllerUnpublishVolume call")
-	return nil, status.Error(codes.Unimplemented, "ControllerUnpublishVolume unimplemented yet")
-}
-
 // ValidateVolumeCapabilities checks whether the volume capabilities requested
 // are supported.
 func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
