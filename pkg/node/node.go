@@ -2,10 +2,15 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/enix/dothill-storage-controller/pkg/common"
 	"github.com/kubernetes-csi/csi-lib-iscsi/iscsi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -52,22 +57,46 @@ func (d *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabi
 
 // NodePublishVolume mounts the volume mounted to the staging path to the target path
 func (d *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	klog.V(8).Infof("NodePublishVolume %+v", req)
+	klog.Infof("publishing volume %s", req.GetVolumeId())
+
+	portals := strings.Split(req.GetVolumeContext()[common.PortalsConfigKey], ",")
+	klog.Infof("ISCSI portals: %s", portals)
+
+	lun, _ := strconv.ParseInt(req.GetPublishContext()["lun"], 10, 32)
+	klog.Infof("LUN: %d", lun)
+
+	klog.Info("initiating ISCSI connection...")
 	path, err := iscsi.Connect(iscsi.Connector{
 		Targets: []iscsi.TargetInfo{{
-			Iqn:    "iqn.2015-11.com.hpe:storage.msa2050.18323cc9ed",
-			Portal: "10.14.84.211",
+			Iqn:    req.GetVolumeContext()[common.TargetIQNConfigKey],
+			Portal: portals[0],
 			Port:   "3260",
 		}},
-		Lun:       3,
+		Lun:       int32(lun),
 		Multipath: true,
 	})
 
 	if err != nil {
 		return nil, err
 	}
+	klog.Infof("attached device at %s", path)
 
-	fmt.Println(path)
+	fsType := req.GetVolumeContext()[common.FsTypeConfigKey]
+	klog.Infof("creating %s filesystem on device", fsType)
+	out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), path).CombinedOutput()
+	if err != nil {
+		return nil, errors.New(string(out))
+	}
 
+	klog.Infof("mounting volume at %s", req.GetTargetPath())
+	os.Mkdir(req.GetTargetPath(), 00755)
+	out, err = exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
+	if err != nil {
+		return nil, errors.New(string(out))
+	}
+
+	klog.Infof("succesfully mounted volume at %s", req.GetTargetPath())
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 

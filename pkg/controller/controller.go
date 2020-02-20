@@ -7,6 +7,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-api-go"
+	"github.com/enix/dothill-storage-controller/pkg/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
@@ -102,8 +103,8 @@ func (driver *Driver) ListSnapshots(ctx context.Context, req *csi.ListSnapshotsR
 }
 
 func (driver *Driver) configureClient(credentials map[string]string, apiAddr string) error {
-	username := string(credentials[usernameSecretKey])
-	password := string(credentials[passwordSecretKey])
+	username := string(credentials[common.UsernameSecretKey])
+	password := string(credentials[common.PasswordSecretKey])
 	klog.Infof("using dothill API at address %s", apiAddr)
 	if driver.dothillClient.Addr == apiAddr && driver.dothillClient.Username == username {
 		klog.Info("dothill client is already configured for this API, skipping login")

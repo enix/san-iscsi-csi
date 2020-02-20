@@ -15,6 +15,25 @@ import (
 // PluginName is the public name to be used in storage class etc.
 const PluginName = "dothill.csi.enix.io"
 
+// Configuration constants
+const (
+	FsTypeConfigKey                   = "fsType"
+	PoolConfigKey                     = "pool"
+	TargetIQNConfigKey                = "iqn"
+	PortalsConfigKey                  = "portals"
+	InitiatorNameConfigKey            = "initiatorName"
+	APIAddressConfigKey               = "apiAddress"
+	UniqueInitiatorNameByPvcConfigKey = "uniqueInitiatorNameByPvc"
+	UsernameSecretKey                 = "username"
+	PasswordSecretKey                 = "password"
+	StorageClassAnnotationKey         = "storageClass"
+
+	MaximumLUN                    = 255
+	VolumeNameMaxLength           = 32
+	HostDoesNotExistsErrorCode    = -10386
+	HostMapDoesNotExistsErrorCode = -10074
+)
+
 // Driver contains main resources needed by the driver
 // and references the underlying specific driver
 type Driver struct {

@@ -3,32 +3,14 @@ package controller
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/enix/dothill-storage-controller/pkg/common"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
-)
-
-const (
-	fsTypeConfigKey                   = "fsType"
-	poolConfigKey                     = "pool"
-	targetIQNConfigKey                = "iqn"
-	portalsConfigKey                  = "portals"
-	initiatorNameConfigKey            = "initiatorName"
-	apiAddressConfigKey               = "apiAddress"
-	uniqueInitiatorNameByPvcConfigKey = "uniqueInitiatorNameByPvc"
-	usernameSecretKey                 = "username"
-	passwordSecretKey                 = "password"
-	storageClassAnnotationKey         = "storageClass"
-
-	maximumLUN                    = 255
-	volumeNameMaxLength           = 32
-	hostDoesNotExistsErrorCode    = -10386
-	hostMapDoesNotExistsErrorCode = -10074
 )
 
 // CreateVolume creates a new volume from the given request. The function is
@@ -49,25 +31,23 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 		return nil, err
 	}
 
-	err = driver.configureClient(req.GetSecrets(), parameters[apiAddressConfigKey])
+	err = driver.configureClient(req.GetSecrets(), parameters[common.APIAddressConfigKey])
 	if err != nil {
 		return nil, err
 	}
 
-	volumeID := uuid.NewUUID().String()[:volumeNameMaxLength]
-	klog.Infof("creating volume %s (size %s) in pool %s", volumeID, sizeStr, parameters[poolConfigKey])
-	_, _, err = driver.dothillClient.CreateVolume(volumeID, sizeStr, parameters[poolConfigKey])
+	volumeID := uuid.NewUUID().String()[:common.VolumeNameMaxLength]
+	klog.Infof("creating volume %s (size %s) in pool %s", volumeID, sizeStr, parameters[common.PoolConfigKey])
+	_, _, err = driver.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
 	if err != nil {
 		return nil, err
 	}
 
-	portals := strings.Split(req.GetParameters()[portalsConfigKey], ",")
-	klog.Infof("generating volume spec, ISCSI portals: %s", portals)
 	volume := &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      volumeID,
-			CapacityBytes: req.GetCapacityRange().GetRequiredBytes(),
 			VolumeContext: req.GetParameters(),
+			CapacityBytes: req.GetCapacityRange().GetRequiredBytes(),
 			ContentSource: req.GetVolumeContentSource(),
 		},
 	}
@@ -146,24 +126,24 @@ func runPreflightChecks(parameters map[string]string, capabilities []*csi.Volume
 		return nil
 	}
 
-	if err := checkIfKeyExistsInConfig(fsTypeConfigKey); err != nil {
+	if err := checkIfKeyExistsInConfig(common.FsTypeConfigKey); err != nil {
 		return err
 	}
-	if err := checkIfKeyExistsInConfig(poolConfigKey); err != nil {
+	if err := checkIfKeyExistsInConfig(common.PoolConfigKey); err != nil {
 		return err
 	}
-	if err := checkIfKeyExistsInConfig(targetIQNConfigKey); err != nil {
+	if err := checkIfKeyExistsInConfig(common.TargetIQNConfigKey); err != nil {
 		return err
 	}
-	if err := checkIfKeyExistsInConfig(portalsConfigKey); err != nil {
+	if err := checkIfKeyExistsInConfig(common.PortalsConfigKey); err != nil {
 		return err
 	}
-	if err := checkIfKeyExistsInConfig(initiatorNameConfigKey); err != nil {
-		if err2 := checkIfKeyExistsInConfig(uniqueInitiatorNameByPvcConfigKey); err2 != nil {
+	if err := checkIfKeyExistsInConfig(common.InitiatorNameConfigKey); err != nil {
+		if err2 := checkIfKeyExistsInConfig(common.UniqueInitiatorNameByPvcConfigKey); err2 != nil {
 			return errors.Wrap(err, err2.Error())
 		}
 	}
-	if err := checkIfKeyExistsInConfig(apiAddressConfigKey); err != nil {
+	if err := checkIfKeyExistsInConfig(common.APIAddressConfigKey); err != nil {
 		return err
 	}
 

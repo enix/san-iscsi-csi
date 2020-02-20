@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/enix/dothill-storage-controller/pkg/common"
 	"k8s.io/klog"
 )
 
@@ -20,7 +22,7 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 	initiatorName := getInitiatorName(req)
 	klog.Infof("attach request for initiator %s, volume id : %s", initiatorName, req.GetVolumeId())
 
-	err := driver.configureClient(req.GetSecrets(), req.GetVolumeContext()[apiAddressConfigKey])
+	err := driver.configureClient(req.GetSecrets(), req.GetVolumeContext()[common.APIAddressConfigKey])
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +40,10 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 		return nil, err
 	}
 
-	klog.Info("succesfully mapped volume %s for initiator %s", req.GetVolumeId(), initiatorName)
-	return &csi.ControllerPublishVolumeResponse{}, nil
+	klog.Infof("succesfully mapped volume %s for initiator %s", req.GetVolumeId(), initiatorName)
+	return &csi.ControllerPublishVolumeResponse{
+		PublishContext: map[string]string{"lun": strconv.Itoa(lun)},
+	}, nil
 }
 
 // ControllerUnpublishVolume deattaches the given volume from the node
@@ -55,7 +59,7 @@ func (driver *Driver) chooseLUN() (int, error) {
 	if err != nil && status == nil {
 		return -1, err
 	}
-	if status.ReturnCode == hostMapDoesNotExistsErrorCode {
+	if status.ReturnCode == common.HostMapDoesNotExistsErrorCode {
 		klog.Info("initiator does not exist, assuming there is no LUN mappings yet and using LUN 1")
 		return 1, nil
 	}
@@ -71,7 +75,7 @@ func (driver *Driver) chooseLUN() (int, error) {
 		}
 	}
 
-	if volumes[len(volumes)-1].LUN+1 < maximumLUN {
+	if volumes[len(volumes)-1].LUN+1 < common.MaximumLUN {
 		return volumes[len(volumes)-1].LUN + 1, nil
 	}
 
@@ -84,7 +88,7 @@ func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error
 	if err != nil && status == nil {
 		return err
 	}
-	if status.ReturnCode == hostDoesNotExistsErrorCode {
+	if status.ReturnCode == common.HostDoesNotExistsErrorCode {
 		nodeName := strings.Split(initiatorName, ":")[1]
 		klog.Infof("initiator does not exist, creating it with nickname %s", nodeName)
 		_, _, err = driver.dothillClient.CreateHost(nodeName, initiatorName)
@@ -100,12 +104,11 @@ func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error
 		return err
 	}
 
-	klog.Info("mapping was successful")
 	return nil
 }
 
 func getInitiatorName(req *csi.ControllerPublishVolumeRequest) string {
-	initiatorName := req.GetVolumeContext()[initiatorNameConfigKey]
+	initiatorName := req.GetVolumeContext()[common.InitiatorNameConfigKey]
 	// overrideInitiatorName, overrideExists := options.PVC.Annotations[initiatorNameConfigKey]
 	// if overrideExists {
 	// 	initiatorName = overrideInitiatorName
