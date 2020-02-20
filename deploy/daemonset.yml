@@ -30,10 +30,10 @@ spec:
         #       mountPath: /csi
         - name: driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
-          args:
-            - --v=5
-            - --csi-address=/csi/csi.sock
-            - --kubelet-registration-path=/var/lib/kubelet/plugins/dothill.csi.enix.io/csi.sock
+          command:
+            - sh
+            - -c
+            - mkdir -p /csi/dev && /node-driver-registrar --v=5 --csi-address=/csi/csi.sock --kubelet-registration-path=/var/lib/kubelet/plugins/dothill.csi.enix.io/csi.sock
           lifecycle:
             preStop:
               exec:
@@ -60,5 +60,5 @@ spec:
             type: Directory
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/dothill.csi.enix.io/
+            path: /var/lib/kubelet/plugins/dothill.csi.enix.io
             type: DirectoryOrCreate
