@@ -8,8 +8,6 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"k8s.io/klog"
 )
 
@@ -47,7 +45,8 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 // ControllerUnpublishVolume deattaches the given volume from the node
 func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
 	fmt.Println("ControllerUnpublishVolume call")
-	return nil, status.Error(codes.Unimplemented, "ControllerUnpublishVolume unimplemented yet")
+	return &csi.ControllerUnpublishVolumeResponse{}, nil
+	// return nil, status.Error(codes.Unimplemented, "ControllerUnpublishVolume unimplemented yet")
 }
 
 func (driver *Driver) chooseLUN() (int, error) {

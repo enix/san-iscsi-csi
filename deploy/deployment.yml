@@ -45,7 +45,7 @@ spec:
             - socat
             - -v
             - UNIX-LISTEN:/csi/csi.sock,reuseaddr,fork
-            - TCP:10.14.255.81:10000
+            - TCP:10.14.145.17:10000
           volumeMounts:
             - name: socket-dir
               mountPath: /csi

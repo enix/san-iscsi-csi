@@ -2,7 +2,10 @@ package common
 
 import (
 	"net"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc"
@@ -51,12 +54,25 @@ func (driver *Driver) Start(bind string) {
 		klog.Fatalf("cannot start a driver which does not implement anything")
 	}
 
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+	)
+	go func() {
+		_ = <-sigc
+		driver.Stop()
+	}()
+
 	klog.Infof("driver listening on %s", bind)
 	driver.server.Serve(socket)
 }
 
 // Stop shuts down the driver
 func (driver *Driver) Stop() {
+	klog.Info("gracefully stopping...")
 	driver.server.GracefulStop()
 	driver.socket.Close()
 }

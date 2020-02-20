@@ -43,16 +43,16 @@ spec:
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
-        - name: tcp-node
-          image: alpine/socat
-          command:
-            - socat
-            - -v
-            - UNIX-LISTEN:/csi/csi.sock,reuseaddr,fork
-            - TCP:10.14.255.81:10001
-          volumeMounts:
-            - name: plugin-dir
-              mountPath: /csi
+        # - name: tcp-node
+        #   image: alpine/socat
+        #   command:
+        #     - socat
+        #     - -v
+        #     - UNIX-LISTEN:/csi/csi.sock,reuseaddr,fork
+        #     - TCP:xx.xx.xx.xx:xxxx
+        #   volumeMounts:
+        #     - name: plugin-dir
+        #       mountPath: /csi
       volumes:
         - name: registration-dir
           hostPath:
