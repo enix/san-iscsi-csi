@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
@@ -19,7 +20,9 @@ import (
 )
 
 // Driver is the implementation of csi.NodeServer
-type Driver struct{}
+type Driver struct {
+	mutex sync.Mutex
+}
 
 // NewDriver is a convenience function for creating a node driver
 func NewDriver() *Driver {
@@ -31,7 +34,7 @@ func NewDriver() *Driver {
 }
 
 // NodeGetInfo returns info about the node
-func (d *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+func (driver *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	initiatorName, err := readInitiatorName()
 	if err != nil {
 		return nil, err
@@ -44,7 +47,7 @@ func (d *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (
 }
 
 // NodeGetCapabilities returns the supported capabilities of the node server
-func (d *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
+func (driver *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
 	var csc []*csi.NodeServiceCapability
 	cl := []csi.NodeServiceCapability_RPC_Type{
 		// csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
@@ -65,8 +68,9 @@ func (d *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabi
 }
 
 // NodePublishVolume mounts the volume mounted to the staging path to the target path
-func (d *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	klog.V(8).Infof("NodePublishVolume %+v", req)
+func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	driver.beginRoutine(&common.DriverCtx{Req: req})
+	defer driver.endRoutine()
 	klog.Infof("publishing volume %s", req.GetVolumeId())
 
 	portals := strings.Split(req.GetVolumeContext()[common.PortalsConfigKey], ",")
@@ -128,9 +132,10 @@ func (d *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolu
 }
 
 // NodeUnpublishVolume unmounts the volume from the target path
-func (d *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+	driver.beginRoutine(&common.DriverCtx{Req: req})
+	defer driver.endRoutine()
 	klog.Infof("unpublishing volume %s", req.GetVolumeId())
-	// return &csi.NodeUnpublishVolumeResponse{}, nil
 
 	_, err := os.Stat(req.GetTargetPath())
 	if err == nil {
@@ -162,14 +167,14 @@ func (d *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublish
 }
 
 // NodeExpandVolume finalizes volume expansion on the node
-func (d *Driver) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
+func (driver *Driver) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
 	fmt.Println("NodeExpandVolume call")
 	return nil, status.Error(codes.Unimplemented, "NodeExpandVolume unimplemented yet")
 }
 
 // NodeGetVolumeStats return info about a given volume
 // Will not be called as the plugin does not have the GET_VOLUME_STATS capability
-func (d *Driver) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
+func (driver *Driver) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeGetVolumeStats is unimplemented and should not be called")
 }
 
@@ -178,14 +183,24 @@ func (d *Driver) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVolumeS
 // volume to a staging path. Once mounted, NodePublishVolume will make sure to
 // mount it to the appropriate path
 // Will not be called as the plugin does not have the STAGE_UNSTAGE_VOLUME capability
-func (d *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+func (driver *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeStageVolume is unimplemented and should not be called")
 }
 
 // NodeUnstageVolume unstages the volume from the staging path
 // Will not be called as the plugin does not have the STAGE_UNSTAGE_VOLUME capability
-func (d *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+func (driver *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeUnstageVolume is unimplemented and should not be called")
+}
+
+func (driver *Driver) beginRoutine(ctx *common.DriverCtx) {
+	driver.mutex.Lock()
+	ctx.BeginRoutine()
+}
+
+func (driver *Driver) endRoutine() {
+	klog.Infof("=== [ROUTINE END] ===\n\n")
+	driver.mutex.Unlock()
 }
 
 func readInitiatorName() (string, error) {

@@ -14,17 +14,17 @@ import (
 
 // ControllerPublishVolume attaches the given volume to the node
 func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
-	driver.lock.Lock()
-	defer driver.lock.Unlock()
-	defer driver.dothillClient.HTTPClient.CloseIdleConnections()
-
-	initiatorName := getInitiatorName(req.GetVolumeContext())
-	klog.Infof("attach request for initiator %s, volume id : %s", initiatorName, req.GetVolumeId())
-
-	err := driver.configureClient(req.GetSecrets(), req.GetVolumeContext()[common.APIAddressConfigKey])
+	err := driver.beginRoutine(&common.DriverCtx{
+		Req:         req,
+		Credentials: req.GetSecrets(),
+	})
+	defer driver.endRoutine()
 	if err != nil {
 		return nil, err
 	}
+
+	initiatorName := getInitiatorName(req.GetVolumeContext())
+	klog.Infof("attach request for initiator %s, volume id : %s", initiatorName, req.GetVolumeId())
 
 	lun, err := driver.chooseLUN()
 	if err != nil {
@@ -47,10 +47,17 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 
 // ControllerUnpublishVolume deattaches the given volume from the node
 func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
-	klog.Infof("unmapping volume %s from all initiators", req.GetVolumeId())
-	// return &csi.ControllerUnpublishVolumeResponse{}, nil
+	err := driver.beginRoutine(&common.DriverCtx{
+		Req:         req,
+		Credentials: req.GetSecrets(),
+	})
+	defer driver.endRoutine()
+	if err != nil {
+		return nil, err
+	}
 
-	_, _, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), "")
+	klog.Infof("unmapping volume %s from all initiators", req.GetVolumeId())
+	_, _, err = driver.dothillClient.UnmapVolume(req.GetVolumeId(), "")
 	if err != nil {
 		return nil, err
 	}

@@ -16,29 +16,24 @@ import (
 // CreateVolume creates a new volume from the given request. The function is
 // idempotent.
 func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	driver.lock.Lock()
-	defer driver.lock.Unlock()
-	defer driver.dothillClient.HTTPClient.CloseIdleConnections()
+	err := driver.beginRoutine(&common.DriverCtx{
+		Req:         req,
+		Credentials: req.GetSecrets(),
+		Parameters:  req.GetParameters(),
+		VolumeCaps:  req.GetVolumeCapabilities(),
+	})
+	defer driver.endRoutine()
+	if err != nil {
+		return nil, err
+	}
 
-	klog.V(9).Infof("CreateVolume() called with: %+v", req)
-	parameters := req.GetParameters()
 	size := req.GetCapacityRange().GetRequiredBytes()
 	sizeStr := fmt.Sprintf("%diB", size)
 	klog.Infof("received %s volume request\n", sizeStr)
 
-	err := runPreflightChecks(parameters, req.GetVolumeCapabilities())
-	if err != nil {
-		return nil, err
-	}
-
-	err = driver.configureClient(req.GetSecrets(), parameters[common.APIAddressConfigKey])
-	if err != nil {
-		return nil, err
-	}
-
 	volumeID := uuid.NewUUID().String()[:common.VolumeNameMaxLength]
-	klog.Infof("creating volume %s (size %s) in pool %s", volumeID, sizeStr, parameters[common.PoolConfigKey])
-	_, _, err = driver.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
+	klog.Infof("creating volume %s (size %s) in pool %s", volumeID, sizeStr, req.GetParameters()[common.PoolConfigKey])
+	_, _, err = driver.dothillClient.CreateVolume(volumeID, sizeStr, req.GetParameters()[common.PoolConfigKey])
 	if err != nil {
 		return nil, err
 	}
@@ -59,10 +54,17 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 
 // DeleteVolume deletes the given volume. The function is idempotent.
 func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
-	klog.Infof("deleting volume %s", req.GetVolumeId())
-	// return &csi.DeleteVolumeResponse{}, nil
+	err := driver.beginRoutine(&common.DriverCtx{
+		Req:         req,
+		Credentials: req.GetSecrets(),
+	})
+	defer driver.endRoutine()
+	if err != nil {
+		return nil, err
+	}
 
-	_, _, err := driver.dothillClient.DeleteVolume(req.GetVolumeId())
+	klog.Infof("deleting volume %s", req.GetVolumeId())
+	_, _, err = driver.dothillClient.DeleteVolume(req.GetVolumeId())
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +75,10 @@ func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeReq
 
 func runPreflightChecks(parameters map[string]string, capabilities []*csi.VolumeCapability) error {
 	checkIfKeyExistsInConfig := func(key string) error {
+		if parameters == nil {
+			return nil
+		}
+
 		klog.V(2).Infof("checking for %s in storage class parameters", key)
 		_, ok := parameters[key]
 		if !ok {
@@ -102,9 +108,11 @@ func runPreflightChecks(parameters map[string]string, capabilities []*csi.Volume
 		return err
 	}
 
-	for _, capability := range capabilities {
-		if capability.GetAccessMode().GetMode() != csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER {
-			return status.Error(codes.FailedPrecondition, "dothill storage only supports ReadWriteOnce access mode")
+	if capabilities != nil {
+		for _, capability := range capabilities {
+			if capability.GetAccessMode().GetMode() != csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER {
+				return status.Error(codes.FailedPrecondition, "dothill storage only supports ReadWriteOnce access mode")
+			}
 		}
 	}
 

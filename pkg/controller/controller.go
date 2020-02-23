@@ -16,14 +16,14 @@ import (
 // Driver is the implementation of csi.ControllerServer
 type Driver struct {
 	dothillClient *dothill.Client
-	lock          sync.Mutex
+	mutex         sync.Mutex
 }
 
 // NewDriver is a convenience fn for creating a controller driver
 func NewDriver() *Driver {
-	return &Driver{
-		dothillClient: dothill.NewClient(),
-	}
+	client := dothill.NewClient()
+	client.Addr = "https://10.14.3.38"
+	return &Driver{dothillClient: client}
 }
 
 // ControllerGetCapabilities returns the capabilities of the controller service.
@@ -39,7 +39,7 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 	}
 
 	for _, cap := range cl {
-		klog.Infof("enabled controller service capability: %v", cap.String())
+		klog.V(4).Infof("enabled controller service capability: %v", cap.String())
 		csc = append(csc, &csi.ControllerServiceCapability{
 			Type: &csi.ControllerServiceCapability_Rpc{
 				Rpc: &csi.ControllerServiceCapability_RPC{
@@ -50,25 +50,6 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 	}
 
 	return &csi.ControllerGetCapabilitiesResponse{Capabilities: csc}, nil
-}
-
-// ValidateVolumeCapabilities checks whether the volume capabilities requested
-// are supported.
-func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
-	fmt.Println("ValidateVolumeCapabilities call")
-	return nil, status.Error(codes.Unimplemented, "ValidateVolumeCapabilities unimplemented yet")
-}
-
-// ListVolumes returns a list of all requested volumes
-func (driver *Driver) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
-	fmt.Println("ListVolumes call")
-	return nil, status.Error(codes.Unimplemented, "ListVolumes unimplemented yet")
-}
-
-// GetCapacity returns the capacity of the storage pool
-func (driver *Driver) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
-	fmt.Println("GetCapacity call")
-	return nil, status.Error(codes.Unimplemented, "GetCapacity unimplemented yet")
 }
 
 // ControllerExpandVolume expands a volume to the given new size
@@ -95,19 +76,54 @@ func (driver *Driver) ListSnapshots(ctx context.Context, req *csi.ListSnapshotsR
 	return nil, status.Error(codes.Unimplemented, "ListSnapshots unimplemented yet")
 }
 
-func (driver *Driver) configureClient(credentials map[string]string, apiAddr string) error {
+// ValidateVolumeCapabilities checks whether the volume capabilities requested
+// are supported.
+func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ValidateVolumeCapabilities is unimplemented and should not be called")
+}
+
+// ListVolumes returns a list of all requested volumes
+func (driver *Driver) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListVolumes is unimplemented and should not be called")
+}
+
+// GetCapacity returns the capacity of the storage pool
+func (driver *Driver) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "GetCapacity is unimplemented and should not be called")
+}
+
+func (driver *Driver) beginRoutine(ctx *common.DriverCtx) error {
+	driver.mutex.Lock()
+	ctx.BeginRoutine()
+
+	if err := runPreflightChecks(ctx.Parameters, ctx.VolumeCaps); err != nil {
+		return err
+	}
+
+	if ctx.Credentials == nil {
+		return nil
+	}
+
+	return driver.configureClient(ctx.Credentials)
+}
+
+func (driver *Driver) endRoutine() {
+	driver.dothillClient.HTTPClient.CloseIdleConnections()
+	klog.Infof("=== [ROUTINE END] ===\n\n")
+	driver.mutex.Unlock()
+}
+
+func (driver *Driver) configureClient(credentials map[string]string) error {
 	username := string(credentials[common.UsernameSecretKey])
 	password := string(credentials[common.PasswordSecretKey])
-	klog.Infof("using dothill API at address %s", apiAddr)
-	if driver.dothillClient.Addr == apiAddr && driver.dothillClient.Username == username {
-		klog.Info("dothill client is already configured for this API, skipping login")
+	klog.Infof("using dothill API at address %s", driver.dothillClient.Addr)
+	if driver.dothillClient.Username == username {
+		klog.Info("dothill client is already logged in with this account, skipping login")
 		return nil
 	}
 
 	driver.dothillClient.Username = username
 	driver.dothillClient.Password = password
-	driver.dothillClient.Addr = apiAddr
-
 	klog.Infof("login into %s as user %s", driver.dothillClient.Addr, driver.dothillClient.Username)
 	err := driver.dothillClient.Login()
 	if err != nil {

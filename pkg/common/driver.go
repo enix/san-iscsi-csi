@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -40,6 +41,14 @@ type Driver struct {
 	impl   csi.IdentityServer
 	socket net.Listener
 	server *grpc.Server
+}
+
+// DriverCtx contains data common to most calls
+type DriverCtx struct {
+	Credentials map[string]string
+	Parameters  map[string]string
+	VolumeCaps  []*csi.VolumeCapability
+	Req         interface{}
 }
 
 // NewDriver is a convenience function for creating an abstract driver
@@ -85,7 +94,7 @@ func (driver *Driver) Start(bind string) {
 		driver.Stop()
 	}()
 
-	klog.Infof("driver listening on %s", bind)
+	klog.Infof("driver listening on %s\n\n", bind)
 	driver.server.Serve(socket)
 }
 
@@ -94,4 +103,15 @@ func (driver *Driver) Stop() {
 	klog.Info("gracefully stopping...")
 	driver.server.GracefulStop()
 	driver.socket.Close()
+}
+
+// BeginRoutine logs every RPC
+func (ctx *DriverCtx) BeginRoutine() {
+	pc, _, _, _ := runtime.Caller(2)
+	caller := runtime.FuncForPC(pc)
+	callerNameParts := strings.Split(caller.Name(), ".")
+	klog.Infof("=== [ROUTINE START] %s ===", callerNameParts[len(callerNameParts)-1])
+
+	// TODO: find a way to hide credentials
+	// klog.V(8).Infof("ARGUMENTS: %+v", ctx.Req)
 }
