@@ -23,6 +23,10 @@ type Driver struct{}
 
 // NewDriver is a convenience function for creating a node driver
 func NewDriver() *Driver {
+	if klog.V(8) {
+		iscsi.EnableDebugLogging(os.Stderr)
+	}
+
 	return &Driver{}
 }
 
@@ -81,15 +85,22 @@ func (d *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolu
 		})
 	}
 	connector := &iscsi.Connector{
-		Targets:   targets,
-		Lun:       int32(lun),
-		Multipath: true,
+		Targets: targets,
+		Lun:     int32(lun),
 	}
 	path, err := iscsi.Connect(*connector)
 	if err != nil {
 		return nil, err
 	}
 	klog.Infof("attached device at %s", path)
+
+	connector.DevicePath = path[4:]
+	if connector.DevicePath[1:4] == "dm-" {
+		klog.Info("device is using multipath")
+		connector.Multipath = true
+	} else {
+		klog.Warning("device is NOT using multipath")
+	}
 
 	fsType := req.GetVolumeContext()[common.FsTypeConfigKey]
 	klog.Infof("creating %s filesystem on device", fsType)
@@ -105,7 +116,6 @@ func (d *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolu
 		return nil, errors.New(string(out))
 	}
 
-	connector.DevicePath = path[4:]
 	iscsiInfoPath := fmt.Sprintf("/var/lib/kubelet/plugins/%s/iscsi-%s.json", common.PluginName, req.GetVolumeId())
 	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
 	err = iscsi.PersistConnector(connector, iscsiInfoPath)
@@ -141,13 +151,13 @@ func (d *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublish
 	}
 
 	klog.Info("detaching ISCSI device")
-	iscsi.EnableDebugLogging(os.Stdout)
 	err = iscsi.DisconnectVolume(*connector)
 	if err != nil {
 		klog.Error(err)
 		return nil, err
 	}
 
+	klog.Info("successfully detached ISCSI device")
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
@@ -190,7 +200,7 @@ func readInitiatorName() (string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if equal := strings.Index(line, "="); equal >= 0 {
-			if key := strings.TrimSpace(line[:equal]); key == "InitiatorName" {
+			if strings.TrimSpace(line[:equal]) == "InitiatorName" {
 				return strings.TrimSpace(line[equal+1:]), nil
 			}
 		}
