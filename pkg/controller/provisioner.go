@@ -57,64 +57,19 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 	return volume, nil
 }
 
-// Delete : Called when a PVC is deleted
-// func (driver *Driver) Delete(volume *v1.PersistentVolume) error {
-// p.lock.Lock()
-// defer p.lock.Unlock()
-// defer p.dothillClient.HTTPClient.CloseIdleConnections()
+// DeleteVolume deletes the given volume. The function is idempotent.
+func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
+	klog.Infof("deleting volume %s", req.GetVolumeId())
+	// return &csi.DeleteVolumeResponse{}, nil
 
-// klog.V(2).Infof("Delete() called with: %+v", volume)
-// klog.Infof("received delete request for volume %s", volume.ObjectMeta.Name)
-// initiatorName := volume.ObjectMeta.Annotations[initiatorNameConfigKey]
-// storageClassName := volume.ObjectMeta.Annotations[storageClassAnnotationKey]
-// klog.Infof("fetching storage class %s", storageClassName)
-// storageClass, err := p.kubeClient.StorageV1().StorageClasses().Get(storageClassName, metav1.GetOptions{})
-// if err != nil {
-// 	return err
-// }
-// klog.V(2).Info(storageClass)
+	_, _, err := driver.dothillClient.DeleteVolume(req.GetVolumeId())
+	if err != nil {
+		return nil, err
+	}
 
-// if err = runPreflightChecks(storageClass.Parameters, nil); err != nil {
-// 	return err
-// }
-
-// err = p.configureClient(storageClass.Parameters)
-// if err != nil {
-// 	return err
-// }
-
-// klog.Infof("unmapping volume %s from initiator %s", volume.ObjectMeta.Name, initiatorName)
-// _, _, err = p.dothillClient.UnmapVolume(volume.ObjectMeta.Name, initiatorName)
-// if err != nil {
-// 	return err
-// }
-
-// klog.Infof("deleting volume %s", volume.ObjectMeta.Name)
-// _, _, err = p.dothillClient.DeleteVolume(volume.ObjectMeta.Name)
-// if err != nil {
-// 	return err
-// }
-
-// klog.Infof("listing LUN mappings for %s", initiatorName)
-// volumes, _, err := p.dothillClient.ShowHostMaps(initiatorName)
-// if err != nil {
-// 	return err
-// }
-
-// if len(volumes) == 0 {
-// 	klog.Infof("no more mappings, deleting host %s", initiatorName)
-// 	_, _, err := p.dothillClient.DeleteHost(initiatorName)
-// 	if err != nil {
-// 		klog.Error(errors.Wrap(err, "host deletion failed, skipping"))
-// 		return nil
-// 	}
-// 	klog.Info("delete was successful")
-// } else {
-// 	klog.Infof("not deleting host %s as other mappings exists", initiatorName)
-// }
-
-// return nil
-// }
+	klog.Infof("successfully deleted volume %s", req.GetVolumeId())
+	return &csi.DeleteVolumeResponse{}, nil
+}
 
 func runPreflightChecks(parameters map[string]string, capabilities []*csi.VolumeCapability) error {
 	checkIfKeyExistsInConfig := func(key string) error {

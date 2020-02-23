@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,7 +18,7 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 	defer driver.lock.Unlock()
 	defer driver.dothillClient.HTTPClient.CloseIdleConnections()
 
-	initiatorName := getInitiatorName(req)
+	initiatorName := getInitiatorName(req.GetVolumeContext())
 	klog.Infof("attach request for initiator %s, volume id : %s", initiatorName, req.GetVolumeId())
 
 	err := driver.configureClient(req.GetSecrets(), req.GetVolumeContext()[common.APIAddressConfigKey])
@@ -48,9 +47,16 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 
 // ControllerUnpublishVolume deattaches the given volume from the node
 func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
-	fmt.Println("ControllerUnpublishVolume call")
+	klog.Infof("unmapping volume %s from initiator %s", req.GetVolumeId(), req.GetNodeId())
+	// return &csi.ControllerUnpublishVolumeResponse{}, nil
+
+	_, _, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), req.GetNodeId())
+	if err != nil {
+		return nil, err
+	}
+
+	klog.Infof("successfully unmapped volume %s from initiator %s", req.GetVolumeId(), req.GetNodeId())
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
-	// return nil, status.Error(codes.Unimplemented, "ControllerUnpublishVolume unimplemented yet")
 }
 
 func (driver *Driver) chooseLUN() (int, error) {
@@ -107,8 +113,8 @@ func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error
 	return nil
 }
 
-func getInitiatorName(req *csi.ControllerPublishVolumeRequest) string {
-	initiatorName := req.GetVolumeContext()[common.InitiatorNameConfigKey]
+func getInitiatorName(volumeContext map[string]string) string {
+	initiatorName := volumeContext[common.InitiatorNameConfigKey]
 	// overrideInitiatorName, overrideExists := options.PVC.Annotations[initiatorNameConfigKey]
 	// if overrideExists {
 	// 	initiatorName = overrideInitiatorName

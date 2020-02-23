@@ -52,13 +52,6 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 	return &csi.ControllerGetCapabilitiesResponse{Capabilities: csc}, nil
 }
 
-// DeleteVolume deletes the given volume. The function is idempotent.
-func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
-	fmt.Println("DeleteVolume call")
-	return &csi.DeleteVolumeResponse{}, nil
-	// return nil, status.Error(codes.Unimplemented, "DeleteVolume unimplemented yet")
-}
-
 // ValidateVolumeCapabilities checks whether the volume capabilities requested
 // are supported.
 func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {

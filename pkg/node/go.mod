@@ -10,4 +10,8 @@ require (
 	k8s.io/klog v1.0.0
 )
 
-replace github.com/enix/dothill-storage-controller/pkg/common => ../common
+replace (
+	github.com/enix/dothill-storage-controller/pkg/common => ../common
+
+	github.com/kubernetes-csi/csi-lib-iscsi => github.com/27149chen/csi-lib-iscsi v0.0.0-20200113115836-da1b94e79a4c
+)

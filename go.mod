@@ -15,4 +15,6 @@ replace (
 	github.com/enix/dothill-storage-controller/pkg/common => ./pkg/common
 	github.com/enix/dothill-storage-controller/pkg/controller => ./pkg/controller
 	github.com/enix/dothill-storage-controller/pkg/node => ./pkg/node
+
+	github.com/kubernetes-csi/csi-lib-iscsi => github.com/27149chen/csi-lib-iscsi v0.0.0-20200113115836-da1b94e79a4c
 )

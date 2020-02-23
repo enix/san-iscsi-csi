@@ -1,4 +1,6 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+github.com/27149chen/csi-lib-iscsi v0.0.0-20200113115836-da1b94e79a4c h1:wqhbsgK+Vb0OJZCcuEIMzolYOFS4iMFcechxTCVcJxY=
+github.com/27149chen/csi-lib-iscsi v0.0.0-20200113115836-da1b94e79a4c/go.mod h1:IDEfmJabVL88aINfRD/WNlI+/BuWit4KkbLaMYKt+fc=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
