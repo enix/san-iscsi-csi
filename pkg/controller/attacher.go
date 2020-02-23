@@ -47,15 +47,15 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 
 // ControllerUnpublishVolume deattaches the given volume from the node
 func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
-	klog.Infof("unmapping volume %s from initiator %s", req.GetVolumeId(), req.GetNodeId())
+	klog.Infof("unmapping volume %s from all initiators", req.GetVolumeId())
 	// return &csi.ControllerUnpublishVolumeResponse{}, nil
 
-	_, _, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), req.GetNodeId())
+	_, _, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), "")
 	if err != nil {
 		return nil, err
 	}
 
-	klog.Infof("successfully unmapped volume %s from initiator %s", req.GetVolumeId(), req.GetNodeId())
+	klog.Infof("successfully unmapped volume %s from all initiators", req.GetVolumeId())
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
