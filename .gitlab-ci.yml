@@ -6,7 +6,7 @@ k8s sanity tests:
   stage: test
   image: golang:1.12-alpine3.9
   before_script:
-    - apk add --update git gcc musl-dev
+    - apk add --update git gcc musl-dev bash
   script:
     - test/sanity
   except:

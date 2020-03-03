@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -57,34 +56,10 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 	return &csi.ControllerGetCapabilitiesResponse{Capabilities: csc}, nil
 }
 
-// ControllerExpandVolume expands a volume to the given new size
-func (driver *Driver) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
-	fmt.Println("ControllerExpandVolume call")
-	return nil, status.Error(codes.Unimplemented, "ControllerExpandVolume unimplemented yet")
-}
-
-// CreateSnapshot creates a snapshot of the given volume
-func (driver *Driver) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
-	fmt.Println("CreateSnapshot call")
-	return nil, status.Error(codes.Unimplemented, "CreateSnapshot unimplemented yet")
-}
-
-// DeleteSnapshot deletes a snapshot of the given volume
-func (driver *Driver) DeleteSnapshot(ctx context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
-	fmt.Println("DeleteSnapshot call")
-	return nil, status.Error(codes.Unimplemented, "DeleteSnapshot unimplemented yet")
-}
-
-// ListSnapshots list existing snapshots
-func (driver *Driver) ListSnapshots(ctx context.Context, req *csi.ListSnapshotsRequest) (*csi.ListSnapshotsResponse, error) {
-	fmt.Println("ListSnapshots call")
-	return nil, status.Error(codes.Unimplemented, "ListSnapshots unimplemented yet")
-}
-
 // ValidateVolumeCapabilities checks whether the volume capabilities requested
 // are supported.
 func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ValidateVolumeCapabilities is unimplemented and should not be called")
+	return nil, status.Error(codes.Unimplemented, "ok is unimplemented and should not be called")
 }
 
 // ListVolumes returns a list of all requested volumes
