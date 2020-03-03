@@ -24,7 +24,9 @@ func Test(t *testing.T) {
 	defer node.Stop()
 
 	sanity.Test(t, &sanity.Config{
-		Address:           nodeSocketPath,
-		ControllerAddress: controllerSocketPath,
+		Address:                  nodeSocketPath,
+		ControllerAddress:        controllerSocketPath,
+		SecretsFile:              "../../test/secrets.yml",
+		TestVolumeParametersFile: "../../test/config.yml",
 	})
 }

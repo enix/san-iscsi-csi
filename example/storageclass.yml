@@ -7,8 +7,6 @@ provisioner: dothill.csi.enix.io
 parameters:
   pool: B
   fsType: ext4
-  initiatorName: iqn.2019-05.io.enix:arthurs-dev-cluster
-  uniqueInitiatorNameByPvc: "false"
   iqn: iqn.2015-11.com.hpe:storage.msa2050.18323cc9ed
   portals: 10.14.84.211,10.14.84.212
 

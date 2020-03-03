@@ -3,7 +3,6 @@ package node
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,6 +13,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
 	"github.com/kubernetes-csi/csi-lib-iscsi/iscsi"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
@@ -69,6 +69,16 @@ func (driver *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 
 // NodePublishVolume mounts the volume mounted to the staging path to the target path
 func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	if len(req.GetVolumeId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot publish volume with empty id")
+	}
+	if len(req.GetTargetPath()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot publish volume at an empty path")
+	}
+	if req.GetVolumeCapability() == nil {
+		return nil, status.Error(codes.InvalidArgument, "cannot publish volume without capabilities")
+	}
+
 	driver.beginRoutine(&common.DriverCtx{Req: req})
 	defer driver.endRoutine()
 	klog.Infof("publishing volume %s", req.GetVolumeId())
@@ -133,6 +143,13 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 // NodeUnpublishVolume unmounts the volume from the target path
 func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+	if len(req.GetVolumeId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot unpublish volume with empty id")
+	}
+	if len(req.GetTargetPath()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot publish volume at an empty path")
+	}
+
 	driver.beginRoutine(&common.DriverCtx{Req: req})
 	defer driver.endRoutine()
 	klog.Infof("unpublishing volume %s", req.GetVolumeId())
@@ -152,7 +169,8 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
 	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
-		return nil, err
+		klog.Error(errors.Wrap(err, "assuming ISCSI connection is already closed"))
+		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
 	klog.Info("detaching ISCSI device")
@@ -161,6 +179,9 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		klog.Error(err)
 		return nil, err
 	}
+
+	klog.Infof("deleting ISCSI connection info file %s", iscsiInfoPath)
+	os.Remove(iscsiInfoPath)
 
 	klog.Info("successfully detached ISCSI device")
 	return &csi.NodeUnpublishVolumeResponse{}, nil

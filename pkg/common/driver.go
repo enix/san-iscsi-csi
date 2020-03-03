@@ -18,16 +18,14 @@ const PluginName = "dothill.csi.enix.io"
 
 // Configuration constants
 const (
-	FsTypeConfigKey                   = "fsType"
-	PoolConfigKey                     = "pool"
-	TargetIQNConfigKey                = "iqn"
-	PortalsConfigKey                  = "portals"
-	InitiatorNameConfigKey            = "initiatorName"
-	APIAddressConfigKey               = "apiAddress"
-	UniqueInitiatorNameByPvcConfigKey = "uniqueInitiatorNameByPvc"
-	UsernameSecretKey                 = "username"
-	PasswordSecretKey                 = "password"
-	StorageClassAnnotationKey         = "storageClass"
+	FsTypeConfigKey           = "fsType"
+	PoolConfigKey             = "pool"
+	TargetIQNConfigKey        = "iqn"
+	PortalsConfigKey          = "portals"
+	APIAddressConfigKey       = "apiAddress"
+	UsernameSecretKey         = "username"
+	PasswordSecretKey         = "password"
+	StorageClassAnnotationKey = "storageClass"
 
 	MaximumLUN          = 255
 	VolumeNameMaxLength = 32
@@ -44,8 +42,8 @@ type Driver struct {
 // DriverCtx contains data common to most calls
 type DriverCtx struct {
 	Credentials map[string]string
-	Parameters  map[string]string
-	VolumeCaps  []*csi.VolumeCapability
+	Parameters  *map[string]string
+	VolumeCaps  *[]*csi.VolumeCapability
 	Req         interface{}
 }
 

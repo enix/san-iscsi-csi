@@ -17,6 +17,7 @@ const (
 	hostDoesNotExistsErrorCode    = -10386
 	hostMapDoesNotExistsErrorCode = -10074
 	unmapFailedErrorCode          = -10509
+	volumeNotFoundErrorCode       = -10075
 )
 
 // Driver is the implementation of csi.ControllerServer
@@ -121,6 +122,11 @@ func (driver *Driver) configureClient(credentials map[string]string) error {
 	username := string(credentials[common.UsernameSecretKey])
 	password := string(credentials[common.PasswordSecretKey])
 	apiAddr := string(credentials[common.APIAddressConfigKey])
+
+	if len(apiAddr) == 0 || len(username) == 0 || len(password) == 0 {
+		return status.Error(codes.InvalidArgument, "at least one field is missing in credentials secret")
+	}
+
 	klog.Infof("using dothill API at address %s", apiAddr)
 	if driver.dothillClient.Addr == apiAddr && driver.dothillClient.Username == username {
 		klog.Info("dothill client is already configured for this API, skipping login")
@@ -133,9 +139,50 @@ func (driver *Driver) configureClient(credentials map[string]string) error {
 	klog.Infof("login into %s as user %s", driver.dothillClient.Addr, driver.dothillClient.Username)
 	err := driver.dothillClient.Login()
 	if err != nil {
-		return err
+		return status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	klog.Info("login was successful")
+	return nil
+}
+
+func runPreflightChecks(parameters *map[string]string, capabilities *[]*csi.VolumeCapability) error {
+	checkIfKeyExistsInConfig := func(key string) error {
+		if parameters == nil {
+			return nil
+		}
+
+		klog.V(2).Infof("checking for %s in storage class parameters", key)
+		_, ok := (*parameters)[key]
+		if !ok {
+			return status.Errorf(codes.InvalidArgument, "'%s' is missing from configuration", key)
+		}
+		return nil
+	}
+
+	if err := checkIfKeyExistsInConfig(common.FsTypeConfigKey); err != nil {
+		return err
+	}
+	if err := checkIfKeyExistsInConfig(common.PoolConfigKey); err != nil {
+		return err
+	}
+	if err := checkIfKeyExistsInConfig(common.TargetIQNConfigKey); err != nil {
+		return err
+	}
+	if err := checkIfKeyExistsInConfig(common.PortalsConfigKey); err != nil {
+		return err
+	}
+
+	if capabilities != nil {
+		if len(*capabilities) == 0 {
+			return status.Error(codes.InvalidArgument, "missing volume capabilities")
+		}
+		for _, capability := range *capabilities {
+			if capability.GetAccessMode().GetMode() != csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER {
+				return status.Error(codes.FailedPrecondition, "dothill storage only supports ReadWriteOnce access mode")
+			}
+		}
+	}
+
 	return nil
 }

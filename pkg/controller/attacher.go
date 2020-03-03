@@ -9,11 +9,23 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"k8s.io/klog"
 )
 
 // ControllerPublishVolume attaches the given volume to the node
 func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
+	if len(req.GetVolumeId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot publish volume with empty ID")
+	}
+	if len(req.GetNodeId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot publish volume to a node with empty ID")
+	}
+	if req.GetVolumeCapability() == nil {
+		return nil, status.Error(codes.InvalidArgument, "cannot publish volume without capabilities")
+	}
+
 	err := driver.beginRoutine(&common.DriverCtx{
 		Req:         req,
 		Credentials: req.GetSecrets(),
@@ -23,7 +35,7 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 		return nil, err
 	}
 
-	initiatorName := getInitiatorName(req.GetVolumeContext())
+	initiatorName := req.GetNodeId()
 	klog.Infof("attach request for initiator %s, volume id : %s", initiatorName, req.GetVolumeId())
 
 	lun, err := driver.chooseLUN()
@@ -47,6 +59,10 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 
 // ControllerUnpublishVolume deattaches the given volume from the node
 func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
+	if len(req.GetVolumeId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot unpublish volume with empty ID")
+	}
+
 	err := driver.beginRoutine(&common.DriverCtx{
 		Req:         req,
 		Credentials: req.GetSecrets(),
@@ -59,7 +75,7 @@ func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.Co
 	klog.Infof("unmapping volume %s from all initiators", req.GetVolumeId())
 	_, status, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), "")
 	if err != nil {
-		if status.ReturnCode == unmapFailedErrorCode {
+		if status != nil && status.ReturnCode == unmapFailedErrorCode {
 			klog.Info("unmap failed, assuming volume is already unmapped")
 			return &csi.ControllerUnpublishVolumeResponse{}, nil
 		}
@@ -102,12 +118,17 @@ func (driver *Driver) chooseLUN() (int, error) {
 
 func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error {
 	klog.Infof("trying to map volume %s for initiator %s on LUN %d", volumeName, initiatorName, lun)
-	_, status, err := driver.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
-	if err != nil && status == nil {
-		return err
+	_, metadata, err := driver.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
+	if err != nil && metadata == nil {
+		return status.Error(codes.Internal, err.Error())
 	}
-	if status.ReturnCode == hostDoesNotExistsErrorCode {
-		nodeName := strings.Split(initiatorName, ":")[1]
+	if metadata.ReturnCode == hostDoesNotExistsErrorCode {
+		nodeIDParts := strings.Split(initiatorName, ":")
+		if len(nodeIDParts) != 2 {
+			return status.Error(codes.InvalidArgument, "specified node ID is not a valid IQN")
+		}
+
+		nodeName := nodeIDParts[1]
 		klog.Infof("initiator does not exist, creating it with nickname %s", nodeName)
 		_, _, err = driver.dothillClient.CreateHost(nodeName, initiatorName)
 		if err != nil {
@@ -118,25 +139,27 @@ func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error
 		if err != nil {
 			return err
 		}
+	} else if metadata.ReturnCode == volumeNotFoundErrorCode {
+		return status.Errorf(codes.NotFound, "volume %s not found", volumeName)
 	} else if err != nil {
-		return err
+		return status.Error(codes.Internal, err.Error())
 	}
 
 	return nil
 }
 
-func getInitiatorName(volumeContext map[string]string) string {
-	initiatorName := volumeContext[common.InitiatorNameConfigKey]
-	// overrideInitiatorName, overrideExists := options.PVC.Annotations[initiatorNameConfigKey]
-	// if overrideExists {
-	// 	initiatorName = overrideInitiatorName
-	// 	klog.Infof("custom initiator name was specified in PVC annotation: %s", initiatorName)
-	// } else if options.Parameters[uniqueInitiatorNameByPvcConfigKey] == "true" {
-	// 	year, month, _ := time.Now().Date()
-	// 	uniquePart := fmt.Sprintf("%d", rand.Int())[:8]
-	// 	initiatorName = fmt.Sprintf("iqn.%d-%02d.local.cluster:%s", year, int(month), uniquePart)
-	// 	klog.Infof("generated initiator name: %s", initiatorName)
-	// }
+// func getInitiatorName(volumeContext map[string]string) string {
+// 	initiatorName := volumeContext[common.InitiatorNameConfigKey]
+// 	overrideInitiatorName, overrideExists := options.PVC.Annotations[initiatorNameConfigKey]
+// 	if overrideExists {
+// 		initiatorName = overrideInitiatorName
+// 		klog.Infof("custom initiator name was specified in PVC annotation: %s", initiatorName)
+// 	} else if options.Parameters[uniqueInitiatorNameByPvcConfigKey] == "true" {
+// 		year, month, _ := time.Now().Date()
+// 		uniquePart := fmt.Sprintf("%d", rand.Int())[:8]
+// 		initiatorName = fmt.Sprintf("iqn.%d-%02d.local.cluster:%s", year, int(month), uniquePart)
+// 		klog.Infof("generated initiator name: %s", initiatorName)
+// 	}
 
-	return initiatorName
-}
+// 	return initiatorName
+// }

@@ -2,7 +2,7 @@
 /vendor
 
 # test cluster config
-kubeconfig
+test/.env
 
 # v1.x files
 _legacy

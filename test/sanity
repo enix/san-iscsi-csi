@@ -1,0 +1,17 @@
+#! /usr/bin/env bash
+
+secretsFileTmpl="secrets.template.yml"
+secretsFile="secrets.yml"
+
+function setup {
+	cd $(dirname $0)
+	envsubst < ${secretsFileTmpl} > ${secretsFile}
+}
+
+function teardown {
+	rm secrets.yml
+}
+
+setup
+go test ../cmd/controller $@
+teardown

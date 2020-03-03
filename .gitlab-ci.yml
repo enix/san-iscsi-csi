@@ -8,10 +8,9 @@ k8s sanity tests:
   before_script:
     - apk add --update git gcc musl-dev
   script:
-    - go test ./cmd/controller
+    - test/sanity
   except:
     - tags
-  allow_failure: true # TODO: remove me
 
 build dirty docker image:
   stage: test
