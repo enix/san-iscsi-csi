@@ -13,6 +13,12 @@ import (
 	"k8s.io/klog"
 )
 
+const (
+	hostDoesNotExistsErrorCode    = -10386
+	hostMapDoesNotExistsErrorCode = -10074
+	unmapFailedErrorCode          = -10509
+)
+
 // Driver is the implementation of csi.ControllerServer
 type Driver struct {
 	dothillClient *dothill.Client

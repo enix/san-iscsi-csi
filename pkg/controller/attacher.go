@@ -57,8 +57,13 @@ func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.Co
 	}
 
 	klog.Infof("unmapping volume %s from all initiators", req.GetVolumeId())
-	_, _, err = driver.dothillClient.UnmapVolume(req.GetVolumeId(), "")
+	_, status, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), "")
 	if err != nil {
+		if status.ReturnCode == unmapFailedErrorCode {
+			klog.Info("unmap failed, assuming volume is already unmapped")
+			return &csi.ControllerUnpublishVolumeResponse{}, nil
+		}
+
 		return nil, err
 	}
 
@@ -72,7 +77,7 @@ func (driver *Driver) chooseLUN() (int, error) {
 	if err != nil && status == nil {
 		return -1, err
 	}
-	if status.ReturnCode == common.HostMapDoesNotExistsErrorCode {
+	if status.ReturnCode == hostMapDoesNotExistsErrorCode {
 		klog.Info("initiator does not exist, assuming there is no LUN mappings yet and using LUN 1")
 		return 1, nil
 	}
@@ -101,7 +106,7 @@ func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error
 	if err != nil && status == nil {
 		return err
 	}
-	if status.ReturnCode == common.HostDoesNotExistsErrorCode {
+	if status.ReturnCode == hostDoesNotExistsErrorCode {
 		nodeName := strings.Split(initiatorName, ":")[1]
 		klog.Infof("initiator does not exist, creating it with nickname %s", nodeName)
 		_, _, err = driver.dothillClient.CreateHost(nodeName, initiatorName)

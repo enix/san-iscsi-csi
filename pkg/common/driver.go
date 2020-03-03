@@ -29,10 +29,8 @@ const (
 	PasswordSecretKey                 = "password"
 	StorageClassAnnotationKey         = "storageClass"
 
-	MaximumLUN                    = 255
-	VolumeNameMaxLength           = 32
-	HostDoesNotExistsErrorCode    = -10386
-	HostMapDoesNotExistsErrorCode = -10074
+	MaximumLUN          = 255
+	VolumeNameMaxLength = 32
 )
 
 // Driver contains main resources needed by the driver
