@@ -2,10 +2,15 @@
 
 secretsFileTmpl="secrets.template.yml"
 secretsFile="secrets.yml"
+inititatorNameFile="/etc/iscsi/initiatorname.iscsi"
 
 function setup {
 	cd $(dirname $0)
 	envsubst < ${secretsFileTmpl} > ${secretsFile}
+	cat ${inititatorNameFile} > /dev/null
+	if [ $? -ne 0 ]; then
+		echo "InitiatorName=iqn.2020-01.io.enix:sanity-test-cluster" > ${inititatorNameFile}
+	fi
 }
 
 function teardown {
@@ -14,4 +19,7 @@ function teardown {
 
 setup
 go test ../cmd/controller $@
+out=$?
 teardown
+
+exit ${out}
