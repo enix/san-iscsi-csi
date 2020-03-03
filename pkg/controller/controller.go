@@ -21,9 +21,7 @@ type Driver struct {
 
 // NewDriver is a convenience fn for creating a controller driver
 func NewDriver() *Driver {
-	client := dothill.NewClient()
-	client.Addr = "https://10.14.3.38"
-	return &Driver{dothillClient: client}
+	return &Driver{dothillClient: dothill.NewClient()}
 }
 
 // ControllerGetCapabilities returns the capabilities of the controller service.
@@ -116,14 +114,16 @@ func (driver *Driver) endRoutine() {
 func (driver *Driver) configureClient(credentials map[string]string) error {
 	username := string(credentials[common.UsernameSecretKey])
 	password := string(credentials[common.PasswordSecretKey])
-	klog.Infof("using dothill API at address %s", driver.dothillClient.Addr)
-	if driver.dothillClient.Username == username {
-		klog.Info("dothill client is already logged in with this account, skipping login")
+	apiAddr := string(credentials[common.APIAddressConfigKey])
+	klog.Infof("using dothill API at address %s", apiAddr)
+	if driver.dothillClient.Addr == apiAddr && driver.dothillClient.Username == username {
+		klog.Info("dothill client is already configured for this API, skipping login")
 		return nil
 	}
 
 	driver.dothillClient.Username = username
 	driver.dothillClient.Password = password
+	driver.dothillClient.Addr = apiAddr
 	klog.Infof("login into %s as user %s", driver.dothillClient.Addr, driver.dothillClient.Username)
 	err := driver.dothillClient.Login()
 	if err != nil {
