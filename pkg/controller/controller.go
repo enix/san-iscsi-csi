@@ -19,6 +19,17 @@ const (
 	volumeNotFoundErrorCode       = -10075
 )
 
+var volumeCapabilities = []*csi.VolumeCapability{
+	&csi.VolumeCapability{
+		AccessType: &csi.VolumeCapability_Mount{
+			Mount: &csi.VolumeCapability_MountVolume{},
+		},
+		AccessMode: &csi.VolumeCapability_AccessMode{
+			Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+		},
+	},
+}
+
 // Driver is the implementation of csi.ControllerServer
 type Driver struct {
 	dothillClient *dothill.Client
@@ -59,7 +70,26 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 // ValidateVolumeCapabilities checks whether the volume capabilities requested
 // are supported.
 func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ok is unimplemented and should not be called")
+	if len(req.GetVolumeId()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot validate volume with empty ID")
+	}
+	if len(req.GetVolumeCapabilities()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "cannot validate volume without capabilities")
+	}
+
+	err := driver.beginRoutine(&common.DriverCtx{
+		Req: req,
+	})
+	defer driver.endRoutine()
+	if err != nil {
+		return nil, err
+	}
+
+	return &csi.ValidateVolumeCapabilitiesResponse{
+		Confirmed: &csi.ValidateVolumeCapabilitiesResponse_Confirmed{
+			VolumeCapabilities: volumeCapabilities,
+		},
+	}, nil
 }
 
 // ListVolumes returns a list of all requested volumes
