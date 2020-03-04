@@ -124,11 +124,11 @@ func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error
 	}
 	if metadata.ReturnCode == hostDoesNotExistsErrorCode {
 		nodeIDParts := strings.Split(initiatorName, ":")
-		if len(nodeIDParts) != 2 {
+		if len(nodeIDParts) < 2 {
 			return status.Error(codes.InvalidArgument, "specified node ID is not a valid IQN")
 		}
 
-		nodeName := nodeIDParts[1]
+		nodeName := strings.Join(nodeIDParts[1:], ":")
 		klog.Infof("initiator does not exist, creating it with nickname %s", nodeName)
 		_, _, err = driver.dothillClient.CreateHost(nodeName, initiatorName)
 		if err != nil {

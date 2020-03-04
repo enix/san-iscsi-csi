@@ -54,7 +54,7 @@ func (driver *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 	}
 
 	for _, cap := range cl {
-		klog.Infof("enabled node service capability: %v", cap.String())
+		klog.V(4).Infof("enabled node service capability: %v", cap.String())
 		csc = append(csc, &csi.NodeServiceCapability{
 			Type: &csi.NodeServiceCapability_Rpc{
 				Rpc: &csi.NodeServiceCapability_RPC{
@@ -90,12 +90,11 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	klog.Infof("LUN: %d", lun)
 
 	klog.Info("initiating ISCSI connection...")
-	targets := make([]iscsi.TargetInfo, 1)
+	targets := make([]iscsi.TargetInfo, 0)
 	for _, portal := range portals {
 		targets = append(targets, iscsi.TargetInfo{
 			Iqn:    req.GetVolumeContext()[common.TargetIQNConfigKey],
 			Portal: portal,
-			Port:   "3260",
 		})
 	}
 	connector := &iscsi.Connector{
@@ -104,6 +103,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 	path, err := iscsi.Connect(*connector)
 	if err != nil {
+		klog.Error(err)
 		return nil, err
 	}
 	klog.Infof("attached device at %s", path)
@@ -120,6 +120,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	klog.Infof("creating %s filesystem on device", fsType)
 	out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), path).CombinedOutput()
 	if err != nil {
+		klog.Error(string(out))
 		return nil, errors.New(string(out))
 	}
 
@@ -127,6 +128,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	os.Mkdir(req.GetTargetPath(), 00755)
 	out, err = exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
 	if err != nil {
+		klog.Error(string(out))
 		return nil, errors.New(string(out))
 	}
 
@@ -134,6 +136,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
 	err = iscsi.PersistConnector(connector, iscsiInfoPath)
 	if err != nil {
+		klog.Error(err)
 		return nil, err
 	}
 
@@ -179,6 +182,13 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		klog.Error(err)
 		return nil, err
 	}
+
+	// klog.Info("rescaning ISCSI sessions")
+	// out, err := exec.Command("iscsiadm", "-m", "session", "--rescan").CombinedOutput()
+	// if err != nil {
+	// 	klog.Error(errors.New(string(out)))
+	// 	return nil, errors.New(string(out))
+	// }
 
 	klog.Infof("deleting ISCSI connection info file %s", iscsiInfoPath)
 	os.Remove(iscsiInfoPath)
