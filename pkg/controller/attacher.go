@@ -72,8 +72,8 @@ func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.Co
 		return nil, err
 	}
 
-	klog.Infof("unmapping volume %s from all initiators", req.GetVolumeId())
-	_, status, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), "")
+	klog.Infof("unmapping volume %s from initiator %s", req.GetVolumeId(), req.GetNodeId())
+	_, status, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), req.GetNodeId())
 	if err != nil {
 		if status != nil && status.ReturnCode == unmapFailedErrorCode {
 			klog.Info("unmap failed, assuming volume is already unmapped")
