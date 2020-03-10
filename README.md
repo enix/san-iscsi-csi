@@ -13,21 +13,23 @@ Should work with its rebrands like :
 
 ### Quickstart
 
-#### Install ISCSI and multipath on your node(s)
+#### Install ISCSI on your node(s)
 
 - Debian/Ubuntu
 ```sh
-apt install open-iscsi multipath-tools
+apt install open-iscsi
 ```
 
 - CentOS/RHEL
 ```sh
-yum -y install iscsi-initiator-utils device-mapper-multipath
+yum -y install iscsi-initiator-utils
 ```
+
+> Please note that multipath is currently not working, so it **should not** be installed!
 
 #### Deploy the provisioner to your cluster
 
-As the image is on a private registry for now, make sure you have a secret named `regcred` accessible from the `kube-system` namespace that allows to pull from `docker-registry.enix.io`.
+> As the image is on a private registry for now, make sure you have a secret named `regcred` accessible from the `kube-system` namespace that allows to pull from `docker-registry.enix.io`.
 
 ```sh
 kubectl apply -f deploy/
@@ -35,7 +37,7 @@ kubectl apply -f deploy/
 
 #### Create a secret containing the Dothill API credentials
 
-Make sure to update the username and password in the file before blindly running this!
+Make sure to update the fields in the file before blindly running this!
 
 ```sh
 kubectl apply -f example/secret.yml
@@ -43,7 +45,7 @@ kubectl apply -f example/secret.yml
 
 #### Create the storage class
 
-Again, open the file and update all the fields so it match your configuration.
+Again, open the file and update all the fields so it matches your configuration.
 
 ```sh
 kubectl apply -f example/storageclass.yml
@@ -51,7 +53,7 @@ kubectl apply -f example/storageclass.yml
 
 #### Run a test pod
 
-To make sure everything went well, there's a example pod you can deploy in the `example/` directory. If the pod reach the `Running` status, you're good to go!
+To make sure everything went well, there's a example pod you can deploy in the `example/` directory. If the pod reaches the `Running` status, you're good to go!
 
 ```sh
 kubectl apply -f example/pod.yml
@@ -68,20 +70,20 @@ Logging can be modified using the `-v` flag :
 - `-v 0` : Standard logs to follow what's going on (default if not specified)
 - `-v 9` : Debug logs (quite awful to see)
 
-By default the `rc` image is launched with `-v 0`. For advanced logging configuration, see [klog](https://github.com/kubernetes/klog).
+For advanced logging configuration, see [klog](https://github.com/kubernetes/klog).
 
 #### Development
 
 You can start the drivers over TCP so your remote dev cluster can connect to them.
 
 ```
-go run ./cmd/<driver> -transport=tcp -bind=0.0.0.0:10000
+go run ./cmd/<driver> -bind=tcp://0.0.0.0:10000
 ```
 
 ### Testing
 
-You can run sanity checks by using:
+You can run sanity checks by using the `sanity` helper script in the `test/` directory:
 
 ```
-go test ./cmd/<driver>
+./test/sanity
 ```
