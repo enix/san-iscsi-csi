@@ -37,6 +37,7 @@ func NewDriver() *Driver {
 func (driver *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	initiatorName, err := readInitiatorName()
 	if err != nil {
+		klog.Error(err)
 		return nil, err
 	}
 
@@ -183,12 +184,12 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, err
 	}
 
-	// klog.Info("rescaning ISCSI sessions")
-	// out, err := exec.Command("iscsiadm", "-m", "session", "--rescan").CombinedOutput()
-	// if err != nil {
-	// 	klog.Error(errors.New(string(out)))
-	// 	return nil, errors.New(string(out))
-	// }
+	klog.Info("rescaning ISCSI sessions")
+	out, err := exec.Command("iscsiadm", "-m", "session", "--rescan").CombinedOutput()
+	if err != nil {
+		klog.Error(errors.New(string(out)))
+		return nil, errors.New(string(out))
+	}
 
 	klog.Infof("deleting ISCSI connection info file %s", iscsiInfoPath)
 	os.Remove(iscsiInfoPath)

@@ -111,6 +111,7 @@ func (driver *Driver) beginRoutine(ctx *common.DriverCtx) error {
 	}
 
 	if ctx.Credentials == nil {
+		klog.Info("skipping login as this RPC does not require any API call")
 		return nil
 	}
 
