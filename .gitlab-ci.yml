@@ -11,7 +11,9 @@ build dirty docker image:
     - apk add --update make git
     - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - VERSION="$(git log | head -n 1 | awk '{ print $2 }')" make push
+    - git log | head -n 1 | awk '{ print $2 }'
+    - echo $CI_COMMIT_SHA
+    - VERSION="${CI_COMMIT_SHA}" make push
   except:
     - tags
 
