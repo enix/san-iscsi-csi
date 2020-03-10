@@ -1,16 +1,17 @@
 stages:
-  - test
+  - build
   - release
 
-build:
-  stage: test
+build dirty docker image:
+  stage: build
   image: docker:stable
   services:
     - docker:dind
   before_script:
-    - apk add --update make
+    - apk add --update make git
+    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
   script:
-    - make
+    - VERSION=dirty make push
   except:
     - tags
 

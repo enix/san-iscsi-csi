@@ -1,0 +1,17 @@
+#! /usr/bin/env bash
+
+csc=$(which csc)
+
+fsType="ext4"
+pool="B"
+iqn="iqn.2015-11.com.hpe:storage.msa2050.18323cc9ed"
+portals="10.14.84.211,10.14.84.212"
+
+function setup {
+	cd $(dirname $0)
+	export CSI_ENDPOINT="tcp://localhost:10000"
+	export X_CSI_SECRETS="apiAddress=${DOTHILL_API_ADDR}, username=${DOTHILL_USERNAME}, password=${DOTHILL_PASSWORD}"
+}
+
+setup
+${csc} --params "fsType=${fsType},pool=${pool},iqn=${iqn},portals=${portals}" $@

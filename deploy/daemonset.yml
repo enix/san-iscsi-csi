@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dothill-node-server
+
+spec:
+  selector:
+    matchLabels:
+      name: dothill-node-server
+  template:
+    metadata:
+      labels:
+        name: dothill-node-server
+    spec:
+      hostNetwork: true
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: dothill-node
+          image: docker-registry.enix.io/enix/dothill-provisioner:rc
+          command:
+            - dothill-node
+          securityContext:
+            privileged: true
+          volumeMounts:
+            # mounting the full host fs is required for iscsiadm commands to work properly
+            # see https://www.docker.com/blog/road-to-containing-iscsi/
+            - name: host-fs
+              mountPath: /host
+            - name: device-dir
+              mountPath: /dev
+            - name: iscsi-dir
+              mountPath: /etc/iscsi
+            - name: plugin-dir
+              mountPath: /var/lib/kubelet/plugins/dothill.csi.enix.io
+            - name: mountpoint-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+        - name: driver-registrar
+          image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
+          args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/plugins/dothill.csi.enix.io/csi.sock
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /registration/dothill.csi.enix.io /registration/dothill.csi.enix.io-reg.sock"]
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+        # - name: tcp-node
+        #   image: alpine/socat
+        #   command:
+        #     - socat
+        #     - -v
+        #     - UNIX-LISTEN:/csi/csi.sock,reuseaddr,fork
+        #     - TCP:xx.xx.xx.xx:xxxx
+        #   volumeMounts:
+        #     - name: plugin-dir
+        #       mountPath: /csi
+      volumes:
+        - name: host-fs
+          hostPath:
+            path: /
+        - name: device-dir
+          hostPath:
+            path: /dev
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+        - name: iscsi-dir
+          hostPath:
+            path: /etc/iscsi
+        - name: mountpoint-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/dothill.csi.enix.io
+            type: DirectoryOrCreate

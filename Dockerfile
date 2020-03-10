@@ -1,25 +1,34 @@
-FROM enix/go-dep:0.5 AS build
+FROM golang:1.12-alpine3.9 AS build
 
 ARG version
 
-WORKDIR /go/src/enix.io/dothil-provisioner
+RUN apk add --update make git
 
-RUN apk add --update make
+WORKDIR /app
 
-COPY . .
+COPY cmd cmd
+COPY pkg pkg
+COPY go.* ./
+COPY Makefile ./
 
-RUN dep ensure -update
+RUN echo -e "package common\nconst Version = \"${version}\"" > pkg/common/version.go
 
-RUN echo -e "package main\nconst version = \"${version}\"" > src/version.go
+RUN BIN="/dothill" make controller
 
-RUN BIN="/go/bin/dothill-provisioner" make bin
+RUN BIN="/dothill" make node
 
 ###########################################
 
 FROM alpine:3.7
 
-COPY --from=build /go/bin/dothill-provisioner /usr/local/bin/dothill-provisioner
+RUN apk add --update dosfstools e2fsprogs xfsprogs jfsutils
 
-RUN chmod +x /usr/local/bin/dothill-provisioner
+RUN echo -e '#! /bin/sh\nchroot /host /usr/bin/env -i PATH="/bin:/sbin:/usr/bin" iscsiadm $@' > /usr/local/bin/iscsiadm
 
-ENTRYPOINT [ "/usr/local/bin/dothill-provisioner" ]
+RUN echo -e '#! /bin/sh\nchroot /host /usr/bin/env -i PATH="/bin:/sbin:/usr/bin" multipath $@' > /usr/local/bin/multipath
+
+COPY --from=build /dothill-* /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/iscsiadm /usr/local/bin/multipath /usr/local/bin/dothill-*
+
+CMD [ "/usr/local/bin/dothill-controller" ]
