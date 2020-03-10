@@ -2,32 +2,28 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: dothill-node
+  name: dothill-node-server
 
 spec:
   selector:
     matchLabels:
-      name: dothill-node
+      name: dothill-node-server
   template:
     metadata:
       labels:
-        name: dothill-node
+        name: dothill-node-server
     spec:
       imagePullSecrets:
         - name: regcred
       containers:
-        # - name: dothill-node
-        #   image: docker-registry.enix.io/enix/dothill-provisioner:rc
-        #   command:
-        #     - dothill-node
-        #     - -bind=unix:///csi/csi.sock
-        #   lifecycle:
-        #     preStop:
-        #       exec:
-        #         command: ["/bin/sh", "-c", "rm -rf /csi/csi.sock"]
-        #   volumeMounts:
-        #     - name: plugin-dir
-        #       mountPath: /csi
+        - name: dothill-node
+          image: docker-registry.enix.io/enix/dothill-provisioner:dirty
+          command:
+            - dothill-node
+            - -bind=unix:///csi/csi.sock
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
         - name: driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
           args:
