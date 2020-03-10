@@ -17,7 +17,7 @@ spec:
       serviceAccount: csi-provisioner
       containers:
         - name: dothill-controller
-          image: docker-registry.enix.io/enix/dothill-provisioner:dirty
+          image: docker-registry.enix.io/enix/dothill-provisioner:rc
           command:
             - dothill-controller
             - -bind=unix:///csi/csi.sock

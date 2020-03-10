@@ -13,17 +13,30 @@ spec:
       labels:
         name: dothill-node-server
     spec:
+      hostNetwork: true
       imagePullSecrets:
         - name: regcred
       containers:
         - name: dothill-node
-          image: docker-registry.enix.io/enix/dothill-provisioner:dirty
+          image: docker-registry.enix.io/enix/dothill-provisioner:rc
           command:
             - dothill-node
-            - -bind=unix:///csi/csi.sock
+          securityContext:
+            privileged: true
           volumeMounts:
+            # mounting the full host fs is required for iscsiadm commands to work properly
+            # see https://www.docker.com/blog/road-to-containing-iscsi/
+            - name: host-fs
+              mountPath: /host
+            - name: device-dir
+              mountPath: /dev
+            - name: iscsi-dir
+              mountPath: /etc/iscsi
             - name: plugin-dir
-              mountPath: /csi
+              mountPath: /var/lib/kubelet/plugins/dothill.csi.enix.io
+            - name: mountpoint-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
         - name: driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.2
           args:
@@ -50,10 +63,21 @@ spec:
         #     - name: plugin-dir
         #       mountPath: /csi
       volumes:
+        - name: host-fs
+          hostPath:
+            path: /
+        - name: device-dir
+          hostPath:
+            path: /dev
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry/
-            type: Directory
+        - name: iscsi-dir
+          hostPath:
+            path: /etc/iscsi
+        - name: mountpoint-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
         - name: plugin-dir
           hostPath:
             path: /var/lib/kubelet/plugins/dothill.csi.enix.io
