@@ -70,14 +70,19 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 // ValidateVolumeCapabilities checks whether the volume capabilities requested
 // are supported.
 func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
-	if len(req.GetVolumeId()) == 0 {
+	volumeID := req.GetVolumeId()
+	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot validate volume with empty ID")
 	}
 	if len(req.GetVolumeCapabilities()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot validate volume without capabilities")
 	}
+	_, _, err := driver.dothillClient.ShowVolumes(volumeID)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "cannot validate volume not found")
+	}
 
-	err := driver.beginRoutine(&common.DriverCtx{
+	err = driver.beginRoutine(&common.DriverCtx{
 		Req: req,
 	})
 	defer driver.endRoutine()
