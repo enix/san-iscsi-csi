@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
@@ -10,6 +11,28 @@ import (
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
 )
+
+func (driver *Driver) checkVolumeExists(volumeID string, size int64) (bool, error) {
+	data, responseStatus, err := driver.dothillClient.ShowVolumes(volumeID)
+	if err != nil && responseStatus.ReturnCode != -10058 {
+		return false, err
+	}
+
+	for _, object := range data.Objects {
+		if object.Name == "volume" && object.PropertiesMap["volume-name"].Data == volumeID {
+			blocks, _ := strconv.ParseInt(object.PropertiesMap["blocks"].Data, 10, 64)
+			blocksize, _ := strconv.ParseInt(object.PropertiesMap["blocksize"].Data, 10, 64)
+
+			if blocks * blocksize == size {
+				return true, nil
+			} else {
+				return true, status.Error(codes.AlreadyExists, "cannot create volume with same name but different capacity than the existing one")
+			}
+		}
+	}
+
+	return false, nil
+}
 
 // CreateVolume creates a new volume from the given request. The function is
 // idempotent.
@@ -36,7 +59,7 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 		size = 4096
 	}
 
-	sizeStr := fmt.Sprintf("%diB", size)
+	sizeStr := fmt.Sprintf("%dB", size)
 	klog.Infof("received %s volume request\n", sizeStr)
 
 	volumeID := req.GetName()
@@ -45,9 +68,17 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 	}
 
 	klog.Infof("creating volume %s (size %s) in pool %s", volumeID, sizeStr, parameters[common.PoolConfigKey])
-	_, _, err = driver.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
+
+	volumeExists, err := driver.checkVolumeExists(volumeID, size)
 	if err != nil {
 		return nil, err
+	}
+
+	if !volumeExists {
+		_, _, err = driver.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	volume := &csi.CreateVolumeResponse{

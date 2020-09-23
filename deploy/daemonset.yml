@@ -3,6 +3,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: dothill-node-server
+  namespace: kube-system
 
 spec:
   selector:

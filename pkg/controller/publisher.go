@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -13,6 +14,22 @@ import (
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
 )
+
+func (driver *Driver) showHosts(hostName string) (interface{}, error) {
+	data, _, err := driver.dothillClient.Request("/show/hosts/")
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, object := range data.Objects {
+		if object.Name == "hosts" && object.PropertiesMap["host-id"].Data == hostName {
+			return object, nil
+		}
+	}
+
+	return nil, errors.New("host not found")
+}
 
 // ControllerPublishVolume attaches the given volume to the node
 func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
@@ -36,7 +53,11 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 	}
 
 	initiatorName := req.GetNodeId()
-	klog.Infof("attach request for initiator %s, volume id : %s", initiatorName, req.GetVolumeId())
+	_, err = driver.showHosts(initiatorName)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("cannot map volume, reason: \"%v\"", err.Error()))
+	}
+	klog.Infof("attach request for initiator %s, volume id: %s", initiatorName, req.GetVolumeId())
 
 	lun, err := driver.chooseLUN()
 	if err != nil {
@@ -107,6 +128,10 @@ func (driver *Driver) chooseLUN() (int, error) {
 		if volumes[index].LUN-volumes[index-1].LUN > 1 {
 			return volumes[index-1].LUN + 1, nil
 		}
+	}
+
+	if len(volumes) == 0 {
+		return 1, nil
 	}
 
 	if volumes[len(volumes)-1].LUN+1 < common.MaximumLUN {
