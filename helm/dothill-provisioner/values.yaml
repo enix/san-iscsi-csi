@@ -5,7 +5,7 @@
 imagePullSecretsName: regcred
 
 image:
-  repository: docker-registry.enix.io/enix/dothill-provisioner
+  repository: docker.io/enix/dothill-provisioner
 
 csiProvisioner:
   image:
