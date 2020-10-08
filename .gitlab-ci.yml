@@ -55,11 +55,27 @@ push helm chart:
   only:
     - tags
 
+release-candidate:
+  stage: release
+  image: docker:stable
+  services:
+    - docker:dind
+  before_script:
+    - apk add --update make
+    - docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
+  script:
+    - VERSION="rc-$CI_PIPELINE_ID" make push
+  only:
+    - master
+  except:
+    - tags
+
 semantic-release:
   stage: release
   image: enix/semantic-release:gitlab
   script:
     - npx semantic-release --ci
+  when: manual
   only:
     - master
   except:
