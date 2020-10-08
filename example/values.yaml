@@ -1,0 +1,13 @@
+storageClasses:
+  - name: my-maravelous-storage
+    pool: A
+    fsType: ext4
+    iqn: your-iqn
+    portals: comma-separated-ips
+    secretName: default
+
+secrets:
+  default:
+    apiAddress: your-base64-encoded-api-address
+    username: your-base64-encoded-username
+    password: your-base64-encoded-password
