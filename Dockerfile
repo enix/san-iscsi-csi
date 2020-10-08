@@ -6,9 +6,15 @@ RUN apk add --update make git
 
 WORKDIR /app
 
+COPY ./go.* ./
+COPY ./pkg/controller/go.* ./pkg/controller/
+COPY ./pkg/node/go.* ./pkg/node/
+COPY ./pkg/common/go.* ./pkg/common/
+
+RUN go mod download
+
 COPY cmd cmd
 COPY pkg pkg
-COPY go.* ./
 COPY Makefile ./
 
 RUN echo -e "package common\nconst Version = \"${version}\"" > pkg/common/version.go
