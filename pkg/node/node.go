@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"regexp"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
@@ -118,16 +119,14 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	fsType := req.GetVolumeContext()[common.FsTypeConfigKey]
-	klog.Infof("creating %s filesystem on device", fsType)
-	out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), path).CombinedOutput()
+	err = ensureFsType(fsType, path)
 	if err != nil {
-		klog.Error(string(out))
-		return nil, errors.New(string(out))
+		return nil, err
 	}
 
 	klog.Infof("mounting volume at %s", req.GetTargetPath())
 	os.Mkdir(req.GetTargetPath(), 00755)
-	out, err = exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
+	out, err := exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
 	if err != nil {
 		klog.Error(string(out))
 		return nil, errors.New(string(out))
@@ -233,6 +232,74 @@ func (driver *Driver) beginRoutine(ctx *common.DriverCtx) {
 func (driver *Driver) endRoutine() {
 	klog.Infof("=== [ROUTINE END] ===\n\n")
 	driver.mutex.Unlock()
+}
+
+// see https://github.com/kubernetes-csi/driver-registrar/blob/795af1899f3c94dd0c6dda2a25ed301123479bb9/vendor/k8s.io/kubernetes/pkg/util/mount/mount_linux.go#L543
+func getDiskFormat(disk string) (string, error) {
+	args := []string{"-p", "-s", "TYPE", "-s", "PTTYPE", "-o", "export", disk}
+	klog.V(4).Infof("Attempting to determine if disk %q is formatted using blkid with args: (%v)", disk, args)
+	output, err := exec.Command("blkid", args...).CombinedOutput()
+	klog.V(4).Infof("Output: %q, err: %v", output, err)
+
+	if err != nil {
+		if exit, ok := err.(*exec.ExitError); ok {
+			if exit.ExitCode() == 2 {
+				// Disk device is unformatted.
+				// For `blkid`, if the specified token (TYPE/PTTYPE, etc) was
+				// not found, or no (specified) devices could be identified, an
+				// exit code of 2 is returned.
+				return "", nil
+			}
+		}
+		klog.Errorf("Could not determine if disk %q is formatted (%v)", disk, err)
+		return "", err
+	}
+
+	var fsType, ptType string
+
+	re := regexp.MustCompile(`([A-Z]+)="([^"]+)"`)
+	matches := re.FindAllSubmatch(output, -1)
+	for _, match := range matches {
+		if len(match) != 3 {
+			return "", fmt.Errorf("blkid returns invalid output: %s", output)
+		}
+		// TYPE is filesystem type, and PTTYPE is partition table type, according
+		// to https://www.kernel.org/pub/linux/utils/util-linux/v2.21/libblkid-docs/.
+		if string(match[1]) == "TYPE" {
+			fsType = string(match[2])
+		} else if string(match[1]) == "PTTYPE" {
+			ptType = string(match[2])
+		}
+	}
+
+	if len(ptType) > 0 {
+		klog.V(4).Infof("Disk %s detected partition table type: %s", ptType)
+		// Returns a special non-empty string as filesystem type, then kubelet
+		// will not format it.
+		return "unknown data, probably partitions", nil
+	}
+
+	return fsType, nil
+}
+
+
+func ensureFsType(fsType string, disk string) (error) {
+	currentFsType, err := getDiskFormat(disk)
+
+	if err != nil {
+		return err
+	}
+
+	if currentFsType != "ext4" {
+		klog.Infof("creating %s filesystem on device %s", fsType, disk)
+		out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), disk).CombinedOutput()
+		if err != nil {
+			klog.Error(string(out))
+			return errors.New(string(out))
+		}
+	}
+
+	return nil
 }
 
 func readInitiatorName() (string, error) {
