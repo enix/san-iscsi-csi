@@ -27,7 +27,7 @@ spec:
           command:
             - dothill-controller
             - -bind=unix:///csi/csi.sock
-{{- include "dothill.extraArgs" .Values | indent 10 }}
+{{- include "dothill.extraArgs" .Values.controller | indent 10 }}
           volumeMounts:
             - name: socket-dir
               mountPath: /csi

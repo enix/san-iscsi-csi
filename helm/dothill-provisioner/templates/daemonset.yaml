@@ -24,7 +24,8 @@ spec:
         - name: {{ .Release.Name }}-node
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
-            - {{ .Release.Name }}-node
+            - dothill-node
+{{- include "dothill.extraArgs" .Values.node | indent 10 }}
           securityContext:
             privileged: true
           volumeMounts:
