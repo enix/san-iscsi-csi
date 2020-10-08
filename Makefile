@@ -1,5 +1,5 @@
 ifeq ($(REGISTRY),)
-	REGISTRY = docker-registry.enix.io/enix
+	REGISTRY = docker.io/enix
 endif
 
 ifeq ($(VERSION),)
@@ -7,18 +7,20 @@ ifeq ($(VERSION),)
 endif
 
 ifeq ($(BIN),)
-	BIN = dothill-provisioner
+	BIN = dothill
 endif
 
-IMAGE = $(REGISTRY)/$(BIN):$(VERSION)
-
-SRC		=	./src
+IMAGE = $(REGISTRY)/dothill-provisioner:$(VERSION)
 
 all:		image
 .PHONY: all
 
-bin:
-	go build -v -o $(BIN)	$(SRC)
+controller:
+	go build -v -o $(BIN)-controller ./cmd/controller
+.PHONY: bin
+
+node:
+	go build -v -o $(BIN)-node ./cmd/node
 .PHONY: bin
 
 image:

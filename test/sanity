@@ -1,0 +1,31 @@
+#! /usr/bin/env bash
+
+set -e
+
+function teardown {
+	rm -vf ${secretsFile} /tmp/{controller,node}.sock
+}
+
+trap teardown EXIT
+
+secretsFileTmpl="secrets.template.yml"
+secretsFile="secrets.yml"
+inititatorNameFile="/etc/iscsi/initiatorname.iscsi"
+
+function setup {
+	cd $(dirname $0)
+	set -a; . .env; set +a
+	envsubst < ${secretsFileTmpl} > ${secretsFile}
+	if [ ! -f ${inititatorNameFile} ]; then
+		>&2 echo "/etc/iscsi/initiatorname.iscsi is missing, please run the following commands"
+		>&2 echo -e "  sudo mkdir -p /etc/iscsi"
+		>&2 echo -e "  sudo sh -c 'echo \"InitiatorName=iqn.2020-01.io.enix:sanity-test-cluster\" > ${inititatorNameFile}'"
+		exit 1
+	fi
+}
+
+setup
+go test ../cmd/controller $@
+out=$?
+
+exit ${out}

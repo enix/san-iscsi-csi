@@ -1,4 +1,4 @@
-package main
+package controller
 
 import dothill "github.com/enix/dothill-api-go"
 
