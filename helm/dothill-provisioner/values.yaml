@@ -4,6 +4,8 @@
 
 imagePullSecretsName: regcred
 
+kubeletPath: /var/lib/kubelet
+
 image:
   repository: docker.io/enix/dothill-provisioner
 
