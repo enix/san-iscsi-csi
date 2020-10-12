@@ -8,7 +8,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: dothill-storage
+  storageClassName: my-marvelous-storage
   resources:
     requests:
       storage: 100Gi
