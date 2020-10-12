@@ -17,6 +17,7 @@ spec:
         name: {{ .Release.Name }}-node-server
 {{ include "dothill.labels" . | indent 8 }}
     spec:
+      {{ if .Values.pspAdmissionControllerEnabled }}serviceAccount: csi-node-registrar{{ end }}
       hostNetwork: true
       imagePullSecrets:
         - name: {{ .Values.imagePullSecretsName }}
