@@ -30,8 +30,10 @@ spec:
           volumeMounts:
             # mounting the full host fs is required for iscsiadm commands to work properly
             # see https://www.docker.com/blog/road-to-containing-iscsi/
-            - name: host-fs
-              mountPath: /host
+            - name: iscsiadm
+              mountPath: /sbin/iscsiadm
+            - name: iscsid
+              mountPath: /sbin/iscsid            
             - name: device-dir
               mountPath: /dev
             - name: iscsi-dir
@@ -57,9 +59,12 @@ spec:
             - name: registration-dir
               mountPath: /registration
       volumes:
-        - name: host-fs
+        - name: iscsiadm
           hostPath:
-            path: /
+            path: /sbin/iscsiadm
+        - name: iscsid
+          hostPath:
+            path: /sbin/iscsid
         - name: device-dir
           hostPath:
             path: /dev
