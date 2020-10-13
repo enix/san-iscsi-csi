@@ -258,7 +258,7 @@ func getDiskFormat(disk string) (string, error) {
 
 	var fsType, ptType string
 
-	re := regexp.MustCompile(`([A-Z]+)="([^"]+)"`)
+	re := regexp.MustCompile(`([A-Z]+)="?([^"\n]+)"?`) // Handles alpine and debian outputs
 	matches := re.FindAllSubmatch(output, -1)
 	for _, match := range matches {
 		if len(match) != 3 {
@@ -291,6 +291,7 @@ func ensureFsType(fsType string, disk string) (error) {
 		return err
 	}
 
+	klog.V(1).Infof("detected filesystem: %q", currentFsType)
 	if currentFsType != "ext4" {
 		klog.Infof("creating %s filesystem on device %s", fsType, disk)
 		out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), disk).CombinedOutput()
