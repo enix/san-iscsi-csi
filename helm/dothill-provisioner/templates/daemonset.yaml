@@ -19,8 +19,6 @@ spec:
     spec:
       {{ if .Values.pspAdmissionControllerEnabled }}serviceAccount: csi-node-registrar{{ end }}
       hostNetwork: true
-      imagePullSecrets:
-        - name: {{ .Values.imagePullSecretsName }}
       containers:
         - name: {{ .Release.Name }}-node
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
