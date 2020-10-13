@@ -24,6 +24,8 @@ spec:
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
             - dothill-node
+            - -kubeletpath={{ .Values.kubeletPath }}
+            - -bind=unix://{{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io/csi.sock
 {{- include "dothill.extraArgs" .Values.node | indent 10 }}
           securityContext:
             privileged: true
@@ -39,15 +41,15 @@ spec:
             - name: iscsi-dir
               mountPath: /etc/iscsi
             - name: plugin-dir
-              mountPath: /var/lib/kubelet/plugins/dothill.csi.enix.io
+              mountPath: {{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io
             - name: mountpoint-dir
-              mountPath: /var/lib/kubelet/pods
+              mountPath: {{ .Values.kubeletPath }}/pods
               mountPropagation: Bidirectional
         - name: driver-registrar
           image: {{ .Values.csiNodeRegistrar.image.repository }}:{{ .Values.csiNodeRegistrar.image.tag }}
           args:
             - --csi-address=/csi/csi.sock
-            - --kubelet-registration-path=/var/lib/kubelet/plugins/dothill.csi.enix.io/csi.sock
+            - --kubelet-registration-path={{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io/csi.sock
 {{- include "dothill.extraArgs" .Values.csiNodeRegistrar | indent 10 }}
           lifecycle:
             preStop:
