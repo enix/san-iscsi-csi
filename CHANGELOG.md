@@ -1,3 +1,15 @@
+# [2.0.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v1.4.0...v2.0.0) (2020-10-14)
+
+
+### Bug Fixes
+
+* **ci:** fix chart version ([352a224](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/352a22410c8bb8a1e1f6005d1559d5094792d7d7))
+
+
+### BREAKING CHANGES
+
+* **ci:** complete project rewrite as a CSI plugin
+
 # [1.4.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v1.3.0...v1.4.0) (2020-10-14)
 
 
