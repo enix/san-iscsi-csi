@@ -23,15 +23,16 @@ import (
 // Driver is the implementation of csi.NodeServer
 type Driver struct {
 	mutex sync.Mutex
+	kubeletPath string
 }
 
 // NewDriver is a convenience function for creating a node driver
-func NewDriver() *Driver {
+func NewDriver(kubeletPath string) *Driver {
 	if klog.V(8) {
 		iscsi.EnableDebugLogging(os.Stderr)
 	}
 
-	return &Driver{}
+	return &Driver{kubeletPath: kubeletPath}
 }
 
 // NodeGetInfo returns info about the node
@@ -132,7 +133,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, errors.New(string(out))
 	}
 
-	iscsiInfoPath := fmt.Sprintf("/var/lib/kubelet/plugins/%s/iscsi-%s.json", common.PluginName, req.GetVolumeId())
+	iscsiInfoPath := fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", driver.kubeletPath, common.PluginName, req.GetVolumeId())
 	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
 	err = iscsi.PersistConnector(connector, iscsiInfoPath)
 	if err != nil {
@@ -168,7 +169,7 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		os.Remove(req.GetTargetPath())
 	}
 
-	iscsiInfoPath := fmt.Sprintf("/var/lib/kubelet/plugins/%s/iscsi-%s.json", common.PluginName, req.GetVolumeId())
+	iscsiInfoPath := fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", driver.kubeletPath, common.PluginName, req.GetVolumeId())
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
 	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
@@ -257,7 +258,7 @@ func getDiskFormat(disk string) (string, error) {
 
 	var fsType, ptType string
 
-	re := regexp.MustCompile(`([A-Z]+)="([^"]+)"`)
+	re := regexp.MustCompile(`([A-Z]+)="?([^"\n]+)"?`) // Handles alpine and debian outputs
 	matches := re.FindAllSubmatch(output, -1)
 	for _, match := range matches {
 		if len(match) != 3 {
@@ -290,6 +291,7 @@ func ensureFsType(fsType string, disk string) (error) {
 		return err
 	}
 
+	klog.V(1).Infof("detected filesystem: %q", currentFsType)
 	if currentFsType != "ext4" {
 		klog.Infof("creating %s filesystem on device %s", fsType, disk)
 		out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), disk).CombinedOutput()

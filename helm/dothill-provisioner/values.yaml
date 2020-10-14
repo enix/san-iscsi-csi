@@ -2,7 +2,7 @@
 # # This is a YAML-formatted file.
 # # Declare variables to be passed into your templates.
 
-imagePullSecretsName: regcred
+kubeletPath: /var/lib/kubelet
 
 image:
   repository: docker.io/enix/dothill-provisioner

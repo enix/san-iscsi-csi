@@ -1,5 +1,5 @@
 storageClasses:
-  - name: my-maravelous-storage
+  - name: my-marvelous-storage
     pool: A
     fsType: ext4
     iqn: your-iqn

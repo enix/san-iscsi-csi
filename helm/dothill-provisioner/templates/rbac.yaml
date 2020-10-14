@@ -69,7 +69,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
-    namespace: kube-system
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: external-provisioner-runner-dothill
@@ -93,6 +93,13 @@ rules:
 - apiGroups: ["coordination.k8s.io"]
   resources: ["leases"]
   verbs: ["get", "watch", "list", "delete", "update", "create"]
+{{ if .Values.pspAdmissionControllerEnabled }}
+- apiGroups: ["policy"]
+  resources: ["podsecuritypolicies"]
+  verbs:     ["use"]
+  resourceNames:
+  - dothill
+{{ end }}
 
 ---
 kind: RoleBinding
@@ -108,3 +115,43 @@ roleRef:
   kind: Role
   name: external-provisioner-cfg-dothill
   apiGroup: rbac.authorization.k8s.io
+
+
+{{ if .Values.pspAdmissionControllerEnabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csi-node-registrar
+  labels:
+{{ include "dothill.labels" . | indent 4 }}
+
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-node-registrar-cfg-dothill
+  labels:
+{{ include "dothill.labels" . | indent 4 }}
+rules:
+- apiGroups: ["policy"]
+  resources: ["podsecuritypolicies"]
+  verbs:     ["use"]
+  resourceNames:
+  - dothill
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-node-registrar-role-cfg-dothill
+  labels:
+{{ include "dothill.labels" . | indent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: csi-node-registrar
+roleRef:
+  kind: Role
+  name: csi-node-registrar-cfg-dothill
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}

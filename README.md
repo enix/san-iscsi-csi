@@ -29,26 +29,25 @@ yum -y install iscsi-initiator-utils
 
 #### Deploy the provisioner to your cluster
 
-> As the image is on a private registry for now, make sure you have a secret named `regcred` accessible from the `kube-system` namespace that allows to pull from `docker-registry.enix.io`.
+We are using Helm to deploy the provisioner, here is [how to install Helm](https://helm.sh/docs/intro/install/).
+
+Our charts are availables on [charts.enix.io](https://charts.enix.io/).
+
+##### Configure your release
+
+Create a `values.yaml` file. It should contain configuration for your release.
+
+You can find a [basic configuration snippet](./example/values.yaml) in the example directory.
+
+You can have as many storage classes and secrets as you want, they will be created in the same namespace as your release.
+
+##### Install the helm chart
+
+You should first add our charts repository, and then install the chart as follows.
 
 ```sh
-kubectl apply -f deploy/
-```
-
-#### Create a secret containing the Dothill API credentials
-
-Make sure to update the fields in the file before blindly running this!
-
-```sh
-kubectl apply -f example/secret.yml
-```
-
-#### Create the storage class
-
-Again, open the file and update all the fields so it matches your configuration.
-
-```sh
-kubectl apply -f example/storageclass.yml
+helm repo add enix https://charts.enix.io/
+helm install my-release enix/dothill-provisioner -f ./example/values.yaml
 ```
 
 #### Run a test pod
