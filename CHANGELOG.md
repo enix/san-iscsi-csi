@@ -1,3 +1,11 @@
+## [2.0.1](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.0.0...v2.0.1) (2020-10-14)
+
+
+### Bug Fixes
+
+* **ci:** prevent dirty build on release ([57deab8](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/57deab8f9ebaaaf9c811ea3e786cc52c6fa9d702))
+* **helm:** convert name to kebab-case to fix GitHub release name ([26655cb](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/26655cb73d493b5ef4e99b4d4507cb5a413da62f))
+
 # [2.0.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v1.4.0...v2.0.0) (2020-10-14)
 
 
