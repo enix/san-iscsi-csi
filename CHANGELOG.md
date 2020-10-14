@@ -1,3 +1,10 @@
+## [2.0.2](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.0.1...v2.0.2) (2020-10-14)
+
+
+### Bug Fixes
+
+* **ci:** push docker images tagged with the "v" prefix ([d3a2bfc](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/d3a2bfcc92de000b7033836944bb073661b1ad06))
+
 ## [2.0.1](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.0.0...v2.0.1) (2020-10-14)
 
 
