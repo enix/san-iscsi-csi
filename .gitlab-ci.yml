@@ -12,8 +12,8 @@ build dirty docker image:
     - docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
   script:
     - VERSION=dirty make push
-  except:
-    - tags
+  rules:
+    - if: $CI_COMMIT_TAG == null && $CI_COMMIT_MESSAGE !~ /^chore\(release\):/
 
 build and push:
   stage: release
