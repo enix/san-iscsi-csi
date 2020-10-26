@@ -30,12 +30,23 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
-            # mounting the full host fs is required for iscsiadm commands to work properly
-            # see https://www.docker.com/blog/road-to-containing-iscsi/
-            - name: iscsiadm
-              mountPath: /sbin/iscsiadm
-            - name: iscsid
-              mountPath: /sbin/iscsid            
+            - name: device-dir
+              mountPath: /dev
+            - name: iscsi-dir
+              mountPath: /etc/iscsi
+            - name: plugin-dir
+              mountPath: {{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io
+            - name: mountpoint-dir
+              mountPath: {{ .Values.kubeletPath }}/pods
+              mountPropagation: Bidirectional
+        - name: {{ .Release.Name }}-iscsid
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          command:
+            - iscsid
+            - --foreground
+          securityContext:
+            privileged: true
+          volumeMounts:
             - name: device-dir
               mountPath: /dev
             - name: iscsi-dir
