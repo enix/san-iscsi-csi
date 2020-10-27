@@ -19,6 +19,20 @@ spec:
     spec:
       {{ if .Values.pspAdmissionControllerEnabled }}serviceAccount: csi-node-registrar{{ end }}
       hostNetwork: true
+      initContainers:
+        - name: generate-unique-initiator-name
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          command:
+            - sh
+            - -c
+            - >
+              [ -f /host/iscsi/initiatorname.iscsi ] || (
+                cp /etc/iscsi/* /host/iscsi &&
+                sed -re "s/(InitiatorName=).*/\1$(iscsi-iname -p iqn.2013-10.io.enix)/" /etc/iscsi/initiatorname.iscsi > /host/iscsi/initiatorname.iscsi
+              )
+          volumeMounts:
+            - name: iscsi-dir
+              mountPath: /host/iscsi
       containers:
         - name: {{ .Release.Name }}-node
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
@@ -88,12 +102,6 @@ spec:
             - name: registration-dir
               mountPath: /registration
       volumes:
-        - name: iscsiadm
-          hostPath:
-            path: /sbin/iscsiadm
-        - name: iscsid
-          hostPath:
-            path: /sbin/iscsid
         - name: device-dir
           hostPath:
             path: /dev
