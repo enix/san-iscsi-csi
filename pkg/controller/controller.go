@@ -147,7 +147,7 @@ func (driver *Driver) configureClient(credentials map[string]string) error {
 	driver.dothillClient.Username = username
 	driver.dothillClient.Password = password
 	driver.dothillClient.Addr = apiAddr
-	klog.Infof("login into %s as user %s", driver.dothillClient.Addr, driver.dothillClient.Username)
+	klog.Infof("login into %q as user %q", driver.dothillClient.Addr, driver.dothillClient.Username)
 	err := driver.dothillClient.Login()
 	if err != nil {
 		return status.Error(codes.Unauthenticated, err.Error())
