@@ -39,7 +39,15 @@ spec:
             - name: mountpoint-dir
               mountPath: {{ .Values.kubeletPath }}/pods
               mountPropagation: Bidirectional
-        - name: {{ .Release.Name }}-iscsid
+          ports:
+          - containerPort: 9808
+            name: healthz
+            protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+        - name: iscsid
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
             - iscsid
@@ -56,6 +64,14 @@ spec:
             - name: mountpoint-dir
               mountPath: {{ .Values.kubeletPath }}/pods
               mountPropagation: Bidirectional
+        - name: liveness-probe
+          image: quay.io/k8scsi/livenessprobe:v1.1.0
+          args:
+            - --csi-address=/csi/csi.sock
+{{- include "dothill.extraArgs" .Values.nodeLivenessProbe | indent 10 }}
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
         - name: driver-registrar
           image: {{ .Values.csiNodeRegistrar.image.repository }}:{{ .Values.csiNodeRegistrar.image.tag }}
           args:
