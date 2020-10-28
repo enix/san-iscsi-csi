@@ -15,7 +15,7 @@ func Test(t *testing.T) {
 	nodeSocketPath := "unix:///tmp/node.sock"
 
 	ctrl := common.NewDriver(controller.NewDriver())
-	node := common.NewDriver(node.NewDriver())
+	node := common.NewDriver(node.NewDriver("/var/lib/kubelet"))
 
 	go ctrl.Start(controllerSocketPath)
 	defer ctrl.Stop()
