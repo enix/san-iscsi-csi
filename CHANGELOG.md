@@ -1,3 +1,20 @@
+# [2.1.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.0.2...v2.1.0) (2020-10-28)
+
+
+### Bug Fixes
+
+* **node:** add missing discovery flag in iscsi connector ([9db3dc5](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/9db3dc50d93ce9be42da4f0aa3d0dade5189e0a7))
+* **testing:** fix compilation ([cbdeffd](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/cbdeffde1fdffb08e21abc49e8c5baca2abd3c25))
+
+
+### Features
+
+* **example:** add 2 examples ([82bfc10](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/82bfc10becc3813b6887438c5858268eac0dff7d))
+* **node:** add CSI liveness probe with iscsi_tcp kernel mod check ([08e84b3](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/08e84b30781b4fe41e8b25ec0a706397e65446d3)), closes [#50](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/50)
+* **node:** containerize iscsid  ([a90d306](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/a90d306b239e26838bf957e6eb72b9e0ca6e8372)), closes [#44](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/44) [#49](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/49)
+* **node:** generate unique iqn once per node ([cd98706](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/cd987064003d112c6253061aadc5634a721a88ea)), closes [#23](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/23)
+* **node:** load iscsi_tcp kernel module in initContainer ([4fe865d](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/4fe865d143d3721ad198e848b9279e4a5aafc634))
+
 ## [2.0.2](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.0.1...v2.0.2) (2020-10-14)
 
 
