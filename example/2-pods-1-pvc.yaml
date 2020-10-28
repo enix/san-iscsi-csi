@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: 2-pods-1-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: my-marvelous-storage
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-1
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    id: "1"
+  containers:
+  - image: alpine
+    command: ["/bin/sh", "-c", "echo one > /vol/pod-1 && ls -l /vol && cat /vol/pod-1"]
+    name: container
+    volumeMounts:
+    - mountPath: /vol
+      name: volume
+  volumes:
+  - name: volume
+    persistentVolumeClaim:
+      claimName: 2-pods-1-pvc
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-2
+spec:
+  restartPolicy: Never
+  nodeSelector:
+    id: "2"
+  containers:
+  - image: alpine
+    command: ["/bin/sh", "-c", "echo two > /vol/pod-2 && ls -l /vol && cat /vol/pod-2"]
+    name: container
+    volumeMounts:
+    - mountPath: /vol
+      name: volume
+  volumes:
+  - name: volume
+    persistentVolumeClaim:
+      claimName: 2-pods-1-pvc

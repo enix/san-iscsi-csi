@@ -1,0 +1,95 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jobclaim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: my-marvelous-storage
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: read-write-a
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            id: "1"
+          containers:
+          - image: alpine
+            name: read-write-a
+            args:
+            - sh
+            - -c
+            - 'ls -la /vol > /vol/ls-$(date +%s) && cat /vol/* | head -n 1000 > /vol/cat-$(date +%s)'
+            volumeMounts:
+            - mountPath: /vol
+              name: volume
+          volumes:
+          - name: volume
+            persistentVolumeClaim:
+              claimName: jobclaim
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: read-write-b
+spec:
+  schedule: "*/3 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            id: "2"
+          containers:
+          - image: alpine
+            name: read-write-b
+            args:
+            - sh
+            - -c
+            - 'ls -la /vol > /vol/ls-$(date +%s) && cat /vol/* | head -n 1000 > /vol/cat-$(date +%s)'
+            volumeMounts:
+            - mountPath: /vol
+              name: volume
+          volumes:
+          - name: volume
+            persistentVolumeClaim:
+              claimName: jobclaim
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: read-write-c
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            id: "3"
+          containers:
+          - image: alpine
+            name: read-write-c
+            args:
+            - sh
+            - -c
+            - 'ls -la /vol > /vol/ls-$(date +%s) && cat /vol/* | head -n 1000 > /vol/cat-$(date +%s)'
+            volumeMounts:
+            - mountPath: /vol
+              name: volume
+          volumes:
+          - name: volume
+            persistentVolumeClaim:
+              claimName: jobclaim
