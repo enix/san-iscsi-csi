@@ -20,19 +20,22 @@ spec:
       {{ if .Values.pspAdmissionControllerEnabled }}serviceAccount: csi-node-registrar{{ end }}
       hostNetwork: true
       initContainers:
-        - name: generate-unique-initiator-name
+        - name: init-iscsi
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
-            - sh
-            - -c
-            - >
-              [ -f /host/iscsi/initiatorname.iscsi ] || (
-                cp /etc/iscsi/* /host/iscsi &&
-                sed -re "s/(InitiatorName=).*/\1$(iscsi-iname -p iqn.2013-10.io.enix)/" /etc/iscsi/initiatorname.iscsi > /host/iscsi/initiatorname.iscsi
-              )
+            - /usr/local/bin/init-node.sh
+          securityContext:
+            capabilities:
+              add:
+                - SYS_MODULE
           volumeMounts:
             - name: iscsi-dir
               mountPath: /host/iscsi
+            - name: kernel-modules
+              mountPath: /lib/modules
+            - name: init-node
+              mountPath: /usr/local/bin/init-node.sh
+              subPath: init-node.sh
       containers:
         - name: {{ .Release.Name }}-node
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
@@ -118,3 +121,10 @@ spec:
           hostPath:
             path: {{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io
             type: DirectoryOrCreate
+        - name: kernel-modules
+          hostPath:
+            path: /lib/modules
+        - name: init-node
+          configMap:
+            name: init-node
+            defaultMode: 0700

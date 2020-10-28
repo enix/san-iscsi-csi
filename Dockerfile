@@ -30,7 +30,7 @@ RUN BIN="/dothill" make node
 FROM debian:buster
 
 RUN apt update \
- && apt install -y dosfstools e2fsprogs xfsprogs jfsutils libisns0 open-iscsi \
+ && apt install -y dosfstools e2fsprogs xfsprogs jfsutils libisns0 open-iscsi kmod \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /dothill-* /usr/local/bin/
