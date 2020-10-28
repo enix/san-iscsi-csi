@@ -101,8 +101,9 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		})
 	}
 	connector := &iscsi.Connector{
-		Targets: targets,
-		Lun:     int32(lun),
+		Targets:     targets,
+		Lun:         int32(lun),
+		DoDiscovery: true,
 	}
 	path, err := iscsi.Connect(*connector)
 	if err != nil {
