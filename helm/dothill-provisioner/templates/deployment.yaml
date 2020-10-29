@@ -35,7 +35,6 @@ spec:
           image: {{ .Values.csiProvisioner.image.repository }}:{{ .Values.csiProvisioner.image.tag }}
           args:
             - --csi-address=/csi/csi.sock
-            - --enable-leader-election
 {{- include "dothill.extraArgs" .Values.csiProvisioner | indent 10 }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
@@ -45,7 +44,6 @@ spec:
           image: {{ .Values.csiAttacher.image.repository }}:{{ .Values.csiAttacher.image.tag }}
           args:
             - --csi-address=/csi/csi.sock
-            - --leader-election
 {{- include "dothill.extraArgs" .Values.csiAttacher | indent 10 }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
