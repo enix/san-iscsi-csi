@@ -28,4 +28,3 @@ spec:
   - name: volume
     persistentVolumeClaim:
       claimName: claim
-      
