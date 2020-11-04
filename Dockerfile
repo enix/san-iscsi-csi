@@ -1,7 +1,5 @@
 FROM golang:1.12-buster AS build
 
-ARG version
-
 RUN apt update \
  && apt install -y make git \
  && rm -rf /var/lib/apt/lists/*
@@ -9,15 +7,14 @@ RUN apt update \
 WORKDIR /app
 
 COPY ./go.* ./
-COPY ./pkg/controller/go.* ./pkg/controller/
-COPY ./pkg/node/go.* ./pkg/node/
-COPY ./pkg/common/go.* ./pkg/common/
 
 RUN go mod download
 
 COPY cmd cmd
 COPY pkg pkg
 COPY Makefile ./
+
+ARG version
 
 RUN echo "package common\nconst Version = \"${version}\"" > ./pkg/common/version.go
 
