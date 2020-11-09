@@ -13,5 +13,5 @@ require (
 )
 
 replace (
-	github.com/kubernetes-csi/csi-lib-iscsi => github.com/27149chen/csi-lib-iscsi v0.0.0-20200113115836-da1b94e79a4c
+	github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi 9fff3f45a09f1c4904d599172f2498015e85d27a
 )
