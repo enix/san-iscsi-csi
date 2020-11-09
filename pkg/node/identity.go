@@ -31,6 +31,9 @@ func (d *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeRe
 	if !isKernelModLoaded("iscsi_tcp") {
 		return nil, status.Error(codes.FailedPrecondition, "kernel mod iscsi_tcp is not loaded")
 	}
+	if !isKernelModLoaded("dm_multipath") {
+		return nil, status.Error(codes.FailedPrecondition, "kernel mod dm_multipath is not loaded")
+	}
 
 	return &csi.ProbeResponse{}, nil
 }

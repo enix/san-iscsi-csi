@@ -17,11 +17,15 @@ all:		image
 
 controller:
 	go build -v -o $(BIN)-controller ./cmd/controller
-.PHONY: bin
+.PHONY: controller
 
 node:
 	go build -v -o $(BIN)-node ./cmd/node
-.PHONY: bin
+.PHONY: node
+
+test:
+	./test/sanity
+.PHONY: test
 
 image:
 	docker build -t $(IMAGE) --build-arg version=$(VERSION) .
@@ -32,5 +36,5 @@ push:		image
 .PHONY: push
 
 clean:
-	rm -f $(BIN)
+	rm -vf $(BIN)-controller $(BIN)-node
 .PHONY: clean

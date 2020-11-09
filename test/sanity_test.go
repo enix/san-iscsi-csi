@@ -26,7 +26,7 @@ func Test(t *testing.T) {
 	sanity.Test(t, &sanity.Config{
 		Address:                  nodeSocketPath,
 		ControllerAddress:        controllerSocketPath,
-		SecretsFile:              "../../test/secrets.yml",
-		TestVolumeParametersFile: "../../test/config.yml",
+		SecretsFile:              "./secrets.yml",
+		TestVolumeParametersFile: "./config.yml",
 	})
 }

@@ -25,7 +25,7 @@ function setup {
 }
 
 setup
-go test ../cmd/controller $@
+go test . $@
 out=$?
 
 exit ${out}

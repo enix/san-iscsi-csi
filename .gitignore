@@ -6,3 +6,7 @@ test/.env
 
 # v1.x files
 _legacy
+
+# binaries
+dothill-node
+dothill-controller
