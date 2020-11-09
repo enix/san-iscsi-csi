@@ -36,5 +36,5 @@ push:		image
 .PHONY: push
 
 clean:
-	rm -f $(BIN)
+	rm -vf $(BIN)-controller $(BIN)-node
 .PHONY: clean
