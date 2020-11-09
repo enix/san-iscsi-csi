@@ -9,6 +9,8 @@ github.com/container-storage-interface/spec v1.1.0/go.mod h1:6URME8mwIBbpVyZV93C
 github.com/container-storage-interface/spec v1.2.0 h1:bD9KIVgaVKKkQ/UbVUY9kCaH/CJbhNxe0eeB4JeJV2s=
 github.com/container-storage-interface/spec v1.2.0/go.mod h1:6URME8mwIBbpVyZV93Ce5St17xBiQJQY67NDsuohiy4=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/enix/csi-lib-iscsi v0.0.0-20201105174022-9fff3f45a09f h1:0erwSJ4i7dNXn6n910kV031pj59aJwqKeas0vWfF6/A=
+github.com/enix/csi-lib-iscsi v0.0.0-20201105174022-9fff3f45a09f/go.mod h1:rxkwLNfJ5rd0R/gX7pLQMg4wxiWGiw3Gdt9tj3KIrP4=
 github.com/enix/dothill-api-go v1.5.0 h1:bmnRxkt53Axwjm/U5JcNB7qzAHkFDjrcURON1q6kWoY=
 github.com/enix/dothill-api-go v1.5.0/go.mod h1:LchQqj/tHiZ3AU23geA+0EY9ia9L0MuzNIvqX9reipI=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
