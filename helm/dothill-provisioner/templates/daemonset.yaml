@@ -87,7 +87,7 @@ spec:
             - multipathd
             - -d
             - -s
-            - -v2
+{{- include "dothill.extraArgs" .Values.multipathd | indent 10 }}
           securityContext:
             privileged: true
           volumeMounts:
