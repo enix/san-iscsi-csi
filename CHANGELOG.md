@@ -1,3 +1,16 @@
+# [2.2.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.1.0...v2.2.0) (2020-11-09)
+
+
+### Bug Fixes
+
+* **node:** don't rescan iSCSI sessions after removing device ([84653ac](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/84653ac8746a59af046910e7f63ca1881b9c20df)), closes [#52](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/52)
+* **node:** upgrade csi-lib-iscsi to disconnect volumes properly ([4a8b64e](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/4a8b64ea4e977e21372c49c56a37a42c854639d9)), closes [#32](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/32)
+
+
+### Features
+
+* **node:** add support for multipathd ([480a6ed](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/480a6ed54b8afacf82f5ac4c9d2419e5701454a2)), closes [#33](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/33)
+
 # [2.1.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.0.2...v2.1.0) (2020-10-28)
 
 
