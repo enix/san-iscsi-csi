@@ -9,12 +9,12 @@ image:
 
 csiProvisioner:
   image:
-    repository: quay.io/k8scsi/csi-provisioner
-    tag: v1.6.0
+    repository: k8s.gcr.io/sig-storage/csi-provisioner
+    tag: v1.6.1
 
 csiAttacher:
   image:
-    repository: quay.io/k8scsi/csi-attacher
+    repository: k8s.gcr.io/sig-storage/csi-attacher
     tag: v2.2.0
 
 csiNodeRegistrar:
