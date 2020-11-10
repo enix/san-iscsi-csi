@@ -24,6 +24,7 @@ spec:
   restartPolicy: Never
   initContainers:
   - image: alpine
+    imagePullPolicy: IfNotPresent
     command: ["/bin/sh", "-c", "echo hello > /vol/test"]
     name: write
     volumeMounts:
@@ -31,6 +32,7 @@ spec:
       name: volume
   containers:
   - image: alpine
+    imagePullPolicy: IfNotPresent
     command: ["/bin/sh", "-c", "echo hello > /vol/test2 && diff /vol/test /vol/test2 -q && echo 'SUCCESS'"]
     name: read
     volumeMounts:
