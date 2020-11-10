@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/grpc"
 	"k8s.io/klog"
 )
 
@@ -33,6 +34,10 @@ func NewDriver(kubeletPath string) *Driver {
 	}
 
 	return &Driver{kubeletPath: kubeletPath}
+}
+
+func ServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return handler(ctx, req)
 }
 
 // NodeGetInfo returns info about the node

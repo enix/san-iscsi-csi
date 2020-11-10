@@ -48,10 +48,10 @@ type DriverCtx struct {
 }
 
 // NewDriver is a convenience function for creating an abstract driver
-func NewDriver(impl csi.IdentityServer) *Driver {
+func NewDriver(impl csi.IdentityServer, serverInterceptor grpc.UnaryServerInterceptor) *Driver {
 	return &Driver{
 		impl:   impl,
-		server: grpc.NewServer(),
+		server: grpc.NewServer(grpc.UnaryInterceptor(serverInterceptor)),
 	}
 }
 

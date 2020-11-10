@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -30,15 +31,33 @@ var volumeCapabilities = []*csi.VolumeCapability{
 	},
 }
 
+var csiMutexes = map[string]*sync.Mutex {
+	"/csi.v1.Controller/CreateVolume": &sync.Mutex{},
+	"/csi.v1.Controller/ControllerPublishVolume": &sync.Mutex{},
+	"/csi.v1.Controller/DeleteVolume": &sync.Mutex{},
+	"/csi.v1.Controller/ControllerUnpublishVolume": &sync.Mutex{},
+}
+
 // Driver is the implementation of csi.ControllerServer
 type Driver struct {
 	dothillClient *dothill.Client
-	mutex         sync.Mutex
 }
 
 // NewDriver is a convenience fn for creating a controller driver
 func NewDriver() *Driver {
 	return &Driver{dothillClient: dothill.NewClient()}
+}
+
+
+func ServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	if mutex, exists := csiMutexes[info.FullMethod]; exists {
+		mutex.Lock()
+		defer mutex.Unlock()
+	}
+
+	h, err := handler(ctx, req)
+
+	return h, err
 }
 
 // ControllerGetCapabilities returns the capabilities of the controller service.
@@ -108,7 +127,6 @@ func (driver *Driver) GetCapacity(ctx context.Context, req *csi.GetCapacityReque
 }
 
 func (driver *Driver) beginRoutine(ctx *common.DriverCtx) error {
-	driver.mutex.Lock()
 	ctx.BeginRoutine()
 
 	if err := runPreflightChecks(ctx.Parameters, ctx.VolumeCaps); err != nil {
@@ -126,7 +144,6 @@ func (driver *Driver) beginRoutine(ctx *common.DriverCtx) error {
 func (driver *Driver) endRoutine() {
 	driver.dothillClient.HTTPClient.CloseIdleConnections()
 	klog.Infof("=== [ROUTINE END] ===\n\n")
-	driver.mutex.Unlock()
 }
 
 func (driver *Driver) configureClient(credentials map[string]string) error {
