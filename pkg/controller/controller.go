@@ -43,21 +43,45 @@ type Driver struct {
 	dothillClient *dothill.Client
 }
 
+// DriverCtx contains data common to most calls
+type DriverCtx struct {
+	Credentials map[string]string
+	Parameters  *map[string]string
+	VolumeCaps  *[]*csi.VolumeCapability
+}
+
 // NewDriver is a convenience fn for creating a controller driver
 func NewDriver() *Driver {
 	return &Driver{dothillClient: dothill.NewClient()}
 }
 
 
-func ServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	if mutex, exists := csiMutexes[info.FullMethod]; exists {
-		mutex.Lock()
-		defer mutex.Unlock()
+func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if mutex, exists := csiMutexes[info.FullMethod]; exists {
+			mutex.Lock()
+			defer mutex.Unlock()
+		}
+
+		driverContext := DriverCtx{}
+		if reqWithSecrets, ok := req.(common.WithSecrets); ok {
+			driverContext.Credentials = reqWithSecrets.GetSecrets()
+		}
+		if reqWithParameters, ok := req.(common.WithParameters); ok {
+			driverContext.Parameters = reqWithParameters.GetParameters()
+		}
+		if reqWithVolumeCaps, ok := req.(common.WithVolumeCaps); ok {
+			driverContext.VolumeCaps = reqWithVolumeCaps.GetVolumeCapabilities()
+		}
+
+		err := driver.beginRoutine(&driverContext)
+		defer driver.endRoutine()
+		if err != nil  {
+			return nil, err
+		}
+
+		return handler(ctx, req)
 	}
-
-	h, err := handler(ctx, req)
-
-	return h, err
 }
 
 // ControllerGetCapabilities returns the capabilities of the controller service.
@@ -101,10 +125,6 @@ func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.V
 		return nil, status.Error(codes.NotFound, "cannot validate volume not found")
 	}
 
-	err = driver.beginRoutine(&common.DriverCtx{
-		Req: req,
-	})
-	defer driver.endRoutine()
 	if err != nil {
 		return nil, err
 	}
@@ -126,9 +146,7 @@ func (driver *Driver) GetCapacity(ctx context.Context, req *csi.GetCapacityReque
 	return nil, status.Error(codes.Unimplemented, "GetCapacity is unimplemented and should not be called")
 }
 
-func (driver *Driver) beginRoutine(ctx *common.DriverCtx) error {
-	ctx.BeginRoutine()
-
+func (driver *Driver) beginRoutine(ctx *DriverCtx) error {
 	if err := runPreflightChecks(ctx.Parameters, ctx.VolumeCaps); err != nil {
 		return err
 	}
@@ -143,7 +161,6 @@ func (driver *Driver) beginRoutine(ctx *common.DriverCtx) error {
 
 func (driver *Driver) endRoutine() {
 	driver.dothillClient.HTTPClient.CloseIdleConnections()
-	klog.Infof("=== [ROUTINE END] ===\n\n")
 }
 
 func (driver *Driver) configureClient(credentials map[string]string) error {

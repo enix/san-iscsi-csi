@@ -36,8 +36,14 @@ func NewDriver(kubeletPath string) *Driver {
 	return &Driver{kubeletPath: kubeletPath}
 }
 
-func ServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	return handler(ctx, req)
+func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if info.FullMethod == "/csi.v1.Node/PublishVolume" || info.FullMethod == "/csi.v1.Node/UnpublishVolume" {
+			driver.mutex.Lock()
+			defer driver.mutex.Unlock()
+		}
+		return handler(ctx, req)
+	}
 }
 
 // NodeGetInfo returns info about the node
@@ -87,8 +93,6 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume without capabilities")
 	}
 
-	driver.beginRoutine(&common.DriverCtx{Req: req})
-	defer driver.endRoutine()
 	klog.Infof("publishing volume %s", req.GetVolumeId())
 
 	portals := strings.Split(req.GetVolumeContext()[common.PortalsConfigKey], ",")
@@ -160,8 +164,6 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume at an empty path")
 	}
 
-	driver.beginRoutine(&common.DriverCtx{Req: req})
-	defer driver.endRoutine()
 	klog.Infof("unpublishing volume %s", req.GetVolumeId())
 
 	_, err := os.Stat(req.GetTargetPath())
@@ -222,16 +224,6 @@ func (driver *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 // Will not be called as the plugin does not have the STAGE_UNSTAGE_VOLUME capability
 func (driver *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeUnstageVolume is unimplemented and should not be called")
-}
-
-func (driver *Driver) beginRoutine(ctx *common.DriverCtx) {
-	driver.mutex.Lock()
-	ctx.BeginRoutine()
-}
-
-func (driver *Driver) endRoutine() {
-	klog.Infof("=== [ROUTINE END] ===\n\n")
-	driver.mutex.Unlock()
 }
 
 // see https://github.com/kubernetes-csi/driver-registrar/blob/795af1899f3c94dd0c6dda2a25ed301123479bb9/vendor/k8s.io/kubernetes/pkg/util/mount/mount_linux.go#L543

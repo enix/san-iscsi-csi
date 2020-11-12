@@ -4,9 +4,9 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
 	"syscall"
+	"context"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc"
@@ -34,24 +34,41 @@ const (
 // Driver contains main resources needed by the driver
 // and references the underlying specific driver
 type Driver struct {
-	impl   csi.IdentityServer
+	impl   DriverImpl
 	socket net.Listener
 	server *grpc.Server
 }
 
-// DriverCtx contains data common to most calls
-type DriverCtx struct {
-	Credentials map[string]string
-	Parameters  *map[string]string
-	VolumeCaps  *[]*csi.VolumeCapability
-	Req         interface{}
+type DriverImpl interface {
+	NewServerInterceptor() grpc.UnaryServerInterceptor
+}
+
+type WithSecrets interface {
+    GetSecrets() map[string]string
+}
+
+type WithParameters interface {
+    GetParameters() *map[string]string
+}
+
+type WithVolumeCaps interface {
+    GetVolumeCapabilities() *[]*csi.VolumeCapability
 }
 
 // NewDriver is a convenience function for creating an abstract driver
-func NewDriver(impl csi.IdentityServer, serverInterceptor grpc.UnaryServerInterceptor) *Driver {
+func NewDriver(impl DriverImpl) *Driver {
 	return &Driver{
 		impl:   impl,
-		server: grpc.NewServer(grpc.UnaryInterceptor(serverInterceptor)),
+		server: grpc.NewServer(grpc.UnaryInterceptor(newServerInterceptor(impl))),
+	}
+}
+
+func newServerInterceptor(impl DriverImpl) grpc.UnaryServerInterceptor {
+	serverInterceptor := impl.NewServerInterceptor()
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
+		defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
+		return serverInterceptor(ctx, req, info, handler)
 	}
 }
 
@@ -69,7 +86,9 @@ func (driver *Driver) Start(bind string) {
 	}
 	driver.socket = socket
 
-	csi.RegisterIdentityServer(driver.server, driver.impl)
+	if identity, ok := driver.impl.(csi.IdentityServer); ok {
+		csi.RegisterIdentityServer(driver.server, identity)
+	}
 	if controller, ok := driver.impl.(csi.ControllerServer); ok {
 		csi.RegisterControllerServer(driver.server, controller)
 	} else if node, ok := driver.impl.(csi.NodeServer); ok {
@@ -99,15 +118,4 @@ func (driver *Driver) Stop() {
 	klog.Info("gracefully stopping...")
 	driver.server.GracefulStop()
 	driver.socket.Close()
-}
-
-// BeginRoutine logs every RPC
-func (ctx *DriverCtx) BeginRoutine() {
-	pc, _, _, _ := runtime.Caller(2)
-	caller := runtime.FuncForPC(pc)
-	callerNameParts := strings.Split(caller.Name(), ".")
-	klog.Infof("=== [ROUTINE START] %s ===", callerNameParts[len(callerNameParts)-1])
-
-	// TODO: find a way to hide credentials
-	// klog.V(8).Infof("ARGUMENTS: %+v", ctx.Req)
 }

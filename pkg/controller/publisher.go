@@ -26,15 +26,6 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume without capabilities")
 	}
 
-	err := driver.beginRoutine(&common.DriverCtx{
-		Req:         req,
-		Credentials: req.GetSecrets(),
-	})
-	defer driver.endRoutine()
-	if err != nil {
-		return nil, err
-	}
-
 	initiatorName := req.GetNodeId()
 	klog.Infof("attach request for initiator %s, volume id : %s", initiatorName, req.GetVolumeId())
 
@@ -61,15 +52,6 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot unpublish volume with empty ID")
-	}
-
-	err := driver.beginRoutine(&common.DriverCtx{
-		Req:         req,
-		Credentials: req.GetSecrets(),
-	})
-	defer driver.endRoutine()
-	if err != nil {
-		return nil, err
 	}
 
 	klog.Infof("unmapping volume %s from initiator %s", req.GetVolumeId(), req.GetNodeId())
