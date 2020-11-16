@@ -15,6 +15,6 @@ func main() {
 	klog.InitFlags(nil)
 	flag.Set("logtostderr", "true")
 	flag.Parse()
-	klog.Infof("starting dothill storage controller v%s", common.Version)
+	klog.Infof("starting dothill storage controller %s", common.Version)
 	common.NewDriver(controller.NewDriver()).Start(*bind)
 }
