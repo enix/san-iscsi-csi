@@ -41,7 +41,7 @@ func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func (driver *Driver) GetMutex(fullMethod string) *sync.Mutex {
-	return fullMethod == "/csi.v1.Node/NodePublishVolume" || fullMethod == "/csi.v1.Node/NodeUnpublishVolume"
+	return nil
 }
 
 func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
