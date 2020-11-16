@@ -58,11 +58,6 @@ func NewDriver() *Driver {
 
 func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if mutex, exists := csiMutexes[info.FullMethod]; exists {
-			mutex.Lock()
-			defer mutex.Unlock()
-		}
-
 		driverContext := DriverCtx{}
 		if reqWithSecrets, ok := req.(common.WithSecrets); ok {
 			driverContext.Credentials = reqWithSecrets.GetSecrets()
@@ -82,6 +77,17 @@ func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
 
 		return handler(ctx, req)
 	}
+}
+
+func (driver *Driver) GetMutex(fullMethod string) *sync.Mutex {
+	if mutex, exists := csiMutexes[fullMethod]; exists {
+		return mutex
+	}
+	return nil
+}
+
+func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
+	return true
 }
 
 // ControllerGetCapabilities returns the capabilities of the controller service.

@@ -37,13 +37,15 @@ func NewDriver(kubeletPath string) *Driver {
 }
 
 func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if info.FullMethod == "/csi.v1.Node/PublishVolume" || info.FullMethod == "/csi.v1.Node/UnpublishVolume" {
-			driver.mutex.Lock()
-			defer driver.mutex.Unlock()
-		}
-		return handler(ctx, req)
-	}
+	return nil
+}
+
+func (driver *Driver) GetMutex(fullMethod string) *sync.Mutex {
+	return fullMethod == "/csi.v1.Node/NodePublishVolume" || fullMethod == "/csi.v1.Node/NodeUnpublishVolume"
+}
+
+func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
+	return fullMethod == "/csi.v1.Node/NodePublishVolume" || fullMethod == "/csi.v1.Node/NodeUnpublishVolume"
 }
 
 // NodeGetInfo returns info about the node

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"syscall"
 	"context"
+	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc"
@@ -41,6 +42,8 @@ type Driver struct {
 
 type DriverImpl interface {
 	NewServerInterceptor() grpc.UnaryServerInterceptor
+	GetMutex(fullMethod string) *sync.Mutex
+	ShouldLogRoutine(fullMethod string) bool
 }
 
 type WithSecrets interface {
@@ -66,8 +69,17 @@ func NewDriver(impl DriverImpl) *Driver {
 func newServerInterceptor(impl DriverImpl) grpc.UnaryServerInterceptor {
 	serverInterceptor := impl.NewServerInterceptor()
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
-		defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
+		if mutex := impl.GetMutex(info.FullMethod); mutex != nil {
+			mutex.Lock()
+			defer mutex.Unlock()
+		}
+		if impl.ShouldLogRoutine(info.FullMethod) {
+			klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
+			defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
+		}
+		if serverInterceptor == nil {
+			return handler(ctx, req)
+		}
 		return serverInterceptor(ctx, req, info, handler)
 	}
 }
