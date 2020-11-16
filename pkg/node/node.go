@@ -83,6 +83,12 @@ func (driver *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 	return &csi.NodeGetCapabilitiesResponse{Capabilities: csc}, nil
 }
 
+func disconnectTargets(targets *[]iscsi.TargetInfo) {
+	for _, target := range *targets {
+		iscsi.Disconnect(target.Iqn, []string{target.Portal})
+	}
+}
+
 // NodePublishVolume mounts the volume mounted to the staging path to the target path
 func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	if len(req.GetVolumeId()) == 0 {
@@ -127,8 +133,11 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if connector.DevicePath[1:4] == "dm-" {
 		klog.Info("device is using multipath")
 		connector.Multipath = true
+	} else if len(connector.Targets) > 1 {
+		disconnectTargets(&connector.Targets)
+		return nil, status.Error(codes.InvalidArgument, "multiple targets are asked but device is NOT using multipath")
 	} else {
-		klog.Warning("device is NOT using multipath")
+		klog.Info("device is NOT using multipath")
 	}
 
 	fsType := req.GetVolumeContext()[common.FsTypeConfigKey]
