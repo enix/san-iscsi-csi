@@ -19,11 +19,12 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc"
 	"k8s.io/klog"
+	"golang.org/x/sync/semaphore"
 )
 
 // Driver is the implementation of csi.NodeServer
 type Driver struct {
-	mutex sync.Mutex
+	semaphore *semaphore.Weighted
 	kubeletPath string
 }
 
@@ -33,11 +34,22 @@ func NewDriver(kubeletPath string) *Driver {
 		iscsi.EnableDebugLogging(os.Stderr)
 	}
 
-	return &Driver{kubeletPath: kubeletPath}
+	return &Driver{
+		semaphore: semaphore.NewWeighted(1),
+		kubeletPath: kubeletPath,
+	}
 }
 
 func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
-	return nil
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
+			if !driver.semaphore.TryAcquire(1) {
+				return nil, status.Error(codes.Aborted, "node busy: too many concurrent volume publishing, try later")
+			}
+			defer driver.semaphore.Release(1)
+		}
+		return handler(ctx, req)
+	}
 }
 
 func (driver *Driver) GetMutex(fullMethod string) *sync.Mutex {
