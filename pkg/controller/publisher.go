@@ -84,15 +84,15 @@ func (driver *Driver) chooseLUN() (int, error) {
 	}
 
 	sort.Sort(Volumes(volumes))
-	index := 1
-	for ; index < len(volumes); index++ {
+
+	if len(volumes) == 0 || volumes[0].LUN > 1 {
+		return 1, nil
+	}
+
+	for index := 1 ; index < len(volumes); index++ {
 		if volumes[index].LUN - volumes[index-1].LUN > 1 {
 			return volumes[index-1].LUN + 1, nil
 		}
-	}
-
-	if len(volumes) == 0 {
-		return 1, nil
 	}
 
 	if volumes[len(volumes)-1].LUN + 1 < common.MaximumLUN {
