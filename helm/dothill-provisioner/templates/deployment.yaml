@@ -56,3 +56,4 @@ spec:
       volumes:
         - name: socket-dir
           emptyDir:
+            medium: Memory
