@@ -55,35 +55,39 @@ func NewDriver() *Driver {
 	return &Driver{dothillClient: dothill.NewClient()}
 }
 
+func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor {
+	serverInterceptors := []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			if mutex, exists := csiMutexes[info.FullMethod]; exists {
+				mutex.Lock()
+				defer mutex.Unlock()
+			}
+			return handler(ctx, req)
+		},
+		logRoutineServerInterceptor,
+		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			driverContext := DriverCtx{}
+			if reqWithSecrets, ok := req.(common.WithSecrets); ok {
+				driverContext.Credentials = reqWithSecrets.GetSecrets()
+			}
+			if reqWithParameters, ok := req.(common.WithParameters); ok {
+				driverContext.Parameters = reqWithParameters.GetParameters()
+			}
+			if reqWithVolumeCaps, ok := req.(common.WithVolumeCaps); ok {
+				driverContext.VolumeCaps = reqWithVolumeCaps.GetVolumeCapabilities()
+			}
 
-func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		driverContext := DriverCtx{}
-		if reqWithSecrets, ok := req.(common.WithSecrets); ok {
-			driverContext.Credentials = reqWithSecrets.GetSecrets()
-		}
-		if reqWithParameters, ok := req.(common.WithParameters); ok {
-			driverContext.Parameters = reqWithParameters.GetParameters()
-		}
-		if reqWithVolumeCaps, ok := req.(common.WithVolumeCaps); ok {
-			driverContext.VolumeCaps = reqWithVolumeCaps.GetVolumeCapabilities()
-		}
+			err := driver.beginRoutine(&driverContext)
+			defer driver.endRoutine()
+			if err != nil  {
+				return nil, err
+			}
 
-		err := driver.beginRoutine(&driverContext)
-		defer driver.endRoutine()
-		if err != nil  {
-			return nil, err
-		}
-
-		return handler(ctx, req)
+			return handler(ctx, req)
+		},
 	}
-}
 
-func (driver *Driver) GetMutex(fullMethod string) *sync.Mutex {
-	if mutex, exists := csiMutexes[fullMethod]; exists {
-		return mutex
-	}
-	return nil
+	return &serverInterceptors
 }
 
 func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {

@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 	"regexp"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -40,20 +39,21 @@ func NewDriver(kubeletPath string) *Driver {
 	}
 }
 
-func (driver *Driver) NewServerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
-			if !driver.semaphore.TryAcquire(1) {
-				return nil, status.Error(codes.Aborted, "node busy: too many concurrent volume publishing, try later")
+func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor {
+	serverInterceptors := []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
+				if !driver.semaphore.TryAcquire(1) {
+					return nil, status.Error(codes.Aborted, "node busy: too many concurrent volume publication, try again later")
+				}
+				defer driver.semaphore.Release(1)
 			}
-			defer driver.semaphore.Release(1)
-		}
-		return handler(ctx, req)
+			return handler(ctx, req)
+		},
+		logRoutineServerInterceptor,
 	}
-}
 
-func (driver *Driver) GetMutex(fullMethod string) *sync.Mutex {
-	return nil
+	return &serverInterceptors
 }
 
 func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {

@@ -7,11 +7,11 @@ import (
 	"strings"
 	"syscall"
 	"context"
-	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc"
 	"k8s.io/klog"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
 )
 
 // PluginName is the public name to be used in storage class etc.
@@ -41,8 +41,7 @@ type Driver struct {
 }
 
 type DriverImpl interface {
-	NewServerInterceptor() grpc.UnaryServerInterceptor
-	GetMutex(fullMethod string) *sync.Mutex
+	NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor
 	ShouldLogRoutine(fullMethod string) bool
 }
 
@@ -62,25 +61,21 @@ type WithVolumeCaps interface {
 func NewDriver(impl DriverImpl) *Driver {
 	return &Driver{
 		impl:   impl,
-		server: grpc.NewServer(grpc.UnaryInterceptor(newServerInterceptor(impl))),
+		server: grpc.NewServer(
+			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+				*impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl))...
+			)),
+		),
 	}
 }
 
-func newServerInterceptor(impl DriverImpl) grpc.UnaryServerInterceptor {
-	serverInterceptor := impl.NewServerInterceptor()
+func newLogRoutineServerInterceptor(impl DriverImpl) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if mutex := impl.GetMutex(info.FullMethod); mutex != nil {
-			mutex.Lock()
-			defer mutex.Unlock()
-		}
 		if impl.ShouldLogRoutine(info.FullMethod) {
 			klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
 			defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
 		}
-		if serverInterceptor == nil {
-			return handler(ctx, req)
-		}
-		return serverInterceptor(ctx, req, info, handler)
+		return handler(ctx, req)
 	}
 }
 
