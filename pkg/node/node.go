@@ -192,11 +192,17 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	_, err := os.Stat(req.GetTargetPath())
 	if err == nil {
 		klog.Infof("unmounting volume at %s", req.GetTargetPath())
-		out, err := exec.Command("umount", req.GetTargetPath()).CombinedOutput()
-		if err != nil && !os.IsNotExist(err) {
-			klog.Error(errors.New(string(out)))
-			return nil, errors.New(string(out))
+		out, err := exec.Command("mountpoint", req.GetTargetPath()).CombinedOutput()
+		if err == nil {
+			out, err := exec.Command("umount", req.GetTargetPath()).CombinedOutput()
+			if err != nil && !os.IsNotExist(err) {
+				klog.Error(errors.New(string(out)))
+				return nil, errors.New(string(out))
+			}
+		} else {
+			klog.Warningf("assuming that volume is already unmounted: %s", out)
 		}
+
 		os.Remove(req.GetTargetPath())
 	}
 
@@ -204,7 +210,7 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
 	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
-		klog.Error(errors.Wrap(err, "assuming ISCSI connection is already closed"))
+		klog.Warning(errors.Wrap(err, "assuming that ISCSI connection is already closed"))
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
