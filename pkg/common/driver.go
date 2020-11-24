@@ -87,6 +87,9 @@ func (driver *Driver) Start(bind string) {
 		klog.Fatal("please specify a protocol in your bind URI (e.g. \"tcp://\")")
 	}
 
+	if parts[0][:4] == "unix" {
+		syscall.Unlink(parts[1])
+	}
 	socket, err := net.Listen(parts[0], parts[1])
 	if err != nil {
 		klog.Fatal(err)
