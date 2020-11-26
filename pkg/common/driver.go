@@ -4,13 +4,14 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
 	"syscall"
+	"context"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc"
 	"k8s.io/klog"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
 )
 
 // PluginName is the public name to be used in storage class etc.
@@ -34,24 +35,47 @@ const (
 // Driver contains main resources needed by the driver
 // and references the underlying specific driver
 type Driver struct {
-	impl   csi.IdentityServer
+	impl   DriverImpl
 	socket net.Listener
 	server *grpc.Server
 }
 
-// DriverCtx contains data common to most calls
-type DriverCtx struct {
-	Credentials map[string]string
-	Parameters  *map[string]string
-	VolumeCaps  *[]*csi.VolumeCapability
-	Req         interface{}
+type DriverImpl interface {
+	NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor
+	ShouldLogRoutine(fullMethod string) bool
+}
+
+type WithSecrets interface {
+    GetSecrets() map[string]string
+}
+
+type WithParameters interface {
+    GetParameters() *map[string]string
+}
+
+type WithVolumeCaps interface {
+    GetVolumeCapabilities() *[]*csi.VolumeCapability
 }
 
 // NewDriver is a convenience function for creating an abstract driver
-func NewDriver(impl csi.IdentityServer) *Driver {
+func NewDriver(impl DriverImpl) *Driver {
 	return &Driver{
 		impl:   impl,
-		server: grpc.NewServer(),
+		server: grpc.NewServer(
+			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+				*impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl))...
+			)),
+		),
+	}
+}
+
+func newLogRoutineServerInterceptor(impl DriverImpl) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if impl.ShouldLogRoutine(info.FullMethod) {
+			klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
+			defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
+		}
+		return handler(ctx, req)
 	}
 }
 
@@ -63,13 +87,18 @@ func (driver *Driver) Start(bind string) {
 		klog.Fatal("please specify a protocol in your bind URI (e.g. \"tcp://\")")
 	}
 
+	if parts[0][:4] == "unix" {
+		syscall.Unlink(parts[1])
+	}
 	socket, err := net.Listen(parts[0], parts[1])
 	if err != nil {
 		klog.Fatal(err)
 	}
 	driver.socket = socket
 
-	csi.RegisterIdentityServer(driver.server, driver.impl)
+	if identity, ok := driver.impl.(csi.IdentityServer); ok {
+		csi.RegisterIdentityServer(driver.server, identity)
+	}
 	if controller, ok := driver.impl.(csi.ControllerServer); ok {
 		csi.RegisterControllerServer(driver.server, controller)
 	} else if node, ok := driver.impl.(csi.NodeServer); ok {
@@ -99,15 +128,4 @@ func (driver *Driver) Stop() {
 	klog.Info("gracefully stopping...")
 	driver.server.GracefulStop()
 	driver.socket.Close()
-}
-
-// BeginRoutine logs every RPC
-func (ctx *DriverCtx) BeginRoutine() {
-	pc, _, _, _ := runtime.Caller(2)
-	caller := runtime.FuncForPC(pc)
-	callerNameParts := strings.Split(caller.Name(), ".")
-	klog.Infof("=== [ROUTINE START] %s ===", callerNameParts[len(callerNameParts)-1])
-
-	// TODO: find a way to hide credentials
-	// klog.V(8).Infof("ARGUMENTS: %+v", ctx.Req)
 }

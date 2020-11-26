@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 	"regexp"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -17,12 +16,14 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/grpc"
 	"k8s.io/klog"
+	"golang.org/x/sync/semaphore"
 )
 
 // Driver is the implementation of csi.NodeServer
 type Driver struct {
-	mutex sync.Mutex
+	semaphore *semaphore.Weighted
 	kubeletPath string
 }
 
@@ -32,7 +33,31 @@ func NewDriver(kubeletPath string) *Driver {
 		iscsi.EnableDebugLogging(os.Stderr)
 	}
 
-	return &Driver{kubeletPath: kubeletPath}
+	return &Driver{
+		semaphore: semaphore.NewWeighted(1),
+		kubeletPath: kubeletPath,
+	}
+}
+
+func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor {
+	serverInterceptors := []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
+				if !driver.semaphore.TryAcquire(1) {
+					return nil, status.Error(codes.Aborted, "node busy: too many concurrent volume publication, try again later")
+				}
+				defer driver.semaphore.Release(1)
+			}
+			return handler(ctx, req)
+		},
+		logRoutineServerInterceptor,
+	}
+
+	return &serverInterceptors
+}
+
+func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
+	return fullMethod == "/csi.v1.Node/NodePublishVolume" || fullMethod == "/csi.v1.Node/NodeUnpublishVolume"
 }
 
 // NodeGetInfo returns info about the node
@@ -82,8 +107,6 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume without capabilities")
 	}
 
-	driver.beginRoutine(&common.DriverCtx{Req: req})
-	defer driver.endRoutine()
 	klog.Infof("publishing volume %s", req.GetVolumeId())
 
 	portals := strings.Split(req.GetVolumeContext()[common.PortalsConfigKey], ",")
@@ -105,19 +128,17 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		Lun:         int32(lun),
 		DoDiscovery: true,
 	}
-	path, err := iscsi.Connect(*connector)
+	path, err := iscsi.Connect(connector)
 	if err != nil {
 		klog.Error(err)
 		return nil, err
 	}
 	klog.Infof("attached device at %s", path)
 
-	connector.DevicePath = path[4:]
-	if connector.DevicePath[1:4] == "dm-" {
+	if len(connector.Devices) > 1 {
 		klog.Info("device is using multipath")
-		connector.Multipath = true
 	} else {
-		klog.Warning("device is NOT using multipath")
+		klog.Info("device is NOT using multipath")
 	}
 
 	fsType := req.GetVolumeContext()[common.FsTypeConfigKey]
@@ -155,18 +176,22 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume at an empty path")
 	}
 
-	driver.beginRoutine(&common.DriverCtx{Req: req})
-	defer driver.endRoutine()
 	klog.Infof("unpublishing volume %s", req.GetVolumeId())
 
 	_, err := os.Stat(req.GetTargetPath())
 	if err == nil {
 		klog.Infof("unmounting volume at %s", req.GetTargetPath())
-		out, err := exec.Command("umount", req.GetTargetPath()).CombinedOutput()
-		if err != nil && !os.IsNotExist(err) {
-			klog.Error(errors.New(string(out)))
-			return nil, errors.New(string(out))
+		out, err := exec.Command("mountpoint", req.GetTargetPath()).CombinedOutput()
+		if err == nil {
+			out, err := exec.Command("umount", req.GetTargetPath()).CombinedOutput()
+			if err != nil && !os.IsNotExist(err) {
+				klog.Error(errors.New(string(out)))
+				return nil, errors.New(string(out))
+			}
+		} else {
+			klog.Warningf("assuming that volume is already unmounted: %s", out)
 		}
+
 		os.Remove(req.GetTargetPath())
 	}
 
@@ -174,12 +199,12 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
 	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
-		klog.Error(errors.Wrap(err, "assuming ISCSI connection is already closed"))
+		klog.Warning(errors.Wrap(err, "assuming that ISCSI connection is already closed"))
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
 	klog.Info("detaching ISCSI device")
-	err = iscsi.DisconnectVolume(*connector)
+	err = iscsi.DisconnectVolume(connector)
 	if err != nil {
 		klog.Error(err)
 		return nil, err
@@ -217,16 +242,6 @@ func (driver *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 // Will not be called as the plugin does not have the STAGE_UNSTAGE_VOLUME capability
 func (driver *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeUnstageVolume is unimplemented and should not be called")
-}
-
-func (driver *Driver) beginRoutine(ctx *common.DriverCtx) {
-	driver.mutex.Lock()
-	ctx.BeginRoutine()
-}
-
-func (driver *Driver) endRoutine() {
-	klog.Infof("=== [ROUTINE END] ===\n\n")
-	driver.mutex.Unlock()
 }
 
 // see https://github.com/kubernetes-csi/driver-registrar/blob/795af1899f3c94dd0c6dda2a25ed301123479bb9/vendor/k8s.io/kubernetes/pkg/util/mount/mount_linux.go#L543

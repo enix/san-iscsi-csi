@@ -41,24 +41,12 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 		return nil, status.Error(codes.InvalidArgument, "cannot create volume with empty name")
 	}
 
-	parameters := req.GetParameters()
-	caps := req.GetVolumeCapabilities()
-	err := driver.beginRoutine(&common.DriverCtx{
-		Req:         req,
-		Credentials: req.GetSecrets(),
-		Parameters:  &parameters,
-		VolumeCaps:  &caps,
-	})
-	defer driver.endRoutine()
-	if err != nil {
-		return nil, err
-	}
-
 	size := req.GetCapacityRange().GetRequiredBytes()
 	if size == 0 {
 		size = 4096
 	}
 
+	parameters := req.GetParameters()
 	sizeStr := fmt.Sprintf("%dB", size)
 	klog.Infof("received %s volume request\n", sizeStr)
 
@@ -99,15 +87,6 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot delete volume with empty ID")
-	}
-
-	err := driver.beginRoutine(&common.DriverCtx{
-		Req:         req,
-		Credentials: req.GetSecrets(),
-	})
-	defer driver.endRoutine()
-	if err != nil {
-		return nil, err
 	}
 
 	klog.Infof("deleting volume %s", req.GetVolumeId())

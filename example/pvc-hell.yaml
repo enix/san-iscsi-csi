@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: claim-{TEST_ID}
+  labels:
+    testName: pvc-hell
+
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: my-marvelous-storage
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-{TEST_ID}
+  labels:
+    testName: pvc-hell
+
+spec:
+  restartPolicy: Never
+  initContainers:
+  - image: alpine
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c", "echo hello > /vol/test"]
+    name: write
+    volumeMounts:
+    - mountPath: /vol
+      name: volume
+  containers:
+  - image: alpine
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c", "echo hello > /vol/test2 && diff /vol/test /vol/test2 -q && echo 'SUCCESS'"]
+    name: read
+    volumeMounts:
+    - mountPath: /vol
+      name: volume
+  volumes:
+  - name: volume
+    persistentVolumeClaim:
+      claimName: claim-{TEST_ID}
+---

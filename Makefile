@@ -12,8 +12,11 @@ endif
 
 IMAGE = $(REGISTRY)/dothill-provisioner:$(VERSION)
 
-all:		image
+all:		bin image
 .PHONY: all
+
+bin: controller node
+.PHONY: bin
 
 controller:
 	go build -v -o $(BIN)-controller ./cmd/controller
