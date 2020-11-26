@@ -1,3 +1,25 @@
+## [2.2.1](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.2.0...v2.2.1) (2020-11-26)
+
+
+### Bug Fixes
+
+* **controller:** choose lun per initiatorName instead of globally ([72d4210](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/72d4210a334ffb4ccd50da4be95353ccc2d9068b)), closes [#60](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/60)
+* **controller:** limit simultaneous CSI calls to 1 by type of call ([abe4dbd](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/abe4dbd723131107e7874292a658845539993bf5))
+* **controller:** limit worker-threads to 1 per CSI sidecar ([bf33878](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/bf33878712f8d1624987ba164aad4edbbe616217))
+* **controller:** store csi-socket in tmpfs to allow node to be drained ([a9a7329](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/a9a7329f0e5fca4352bd056bc32e36de501eebd1))
+* **helm:** fix controller leader election timeout on many new pvc ([a6976f2](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/a6976f2907a02036b8d3ac237de30b214e7dccf8))
+* **helm:** WaitForFirstConsumer volume binding mode instead of Immediate ([359aedd](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/359aeddaa33468aec0771d8efbeef8acbe7dfa8d)), closes [#58](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/58)
+* version printing ([ac6da3d](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/ac6da3d50f2aada01edeef3ca040b02885a21f22)), closes [#59](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/59)
+* **node:** don't disconnect target when multipath is not working ([0d3ed8f](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/0d3ed8f79b3a4b1902167d9a4f8793ee25b604e0))
+* **node:** don't give an error when a disk is already unmounted ([f7647ae](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/f7647aec557bfe02a2b8a4b23ae4cfcf9b300cbf))
+* **node:** errors when multipath is not used for multiple targets ([c3b7f5b](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/c3b7f5ba2c0d7c7d61272bb8cb60d9d16a19ae6b))
+* **node:** fix choose LUN with high value existing LUNs ([55b4aa3](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/55b4aa3159d5ee9502d564ce061d942b44da52f6))
+* **node:** handle gracefully already existing socket ([71fcb4d](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/71fcb4d36119a68387e71f7ce84be511796c13ee)), closes [#47](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/47)
+* **node:** limit NodePublishVolume concurrency to 1, fail otherwise ([3cbc6a9](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/3cbc6a9e91d05aa71e98bb80f564830c4137cdf5))
+* **node:** persist multipathd configuration ([0c2e14f](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/0c2e14fa54d6fe18890b977ef4a456bb29c86981))
+* **node:** remove mutex publish/unpublish mutex ([40f3518](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/40f3518ebee2892180751b93790ee66a72573024))
+* **node:** upgrade csi-lib-iscsi to fix devices ejection ([89feac7](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/89feac7f7039e4541a0bd2543a2a41a91b3c1c93))
+
 # [2.2.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.1.0...v2.2.0) (2020-11-09)
 
 
