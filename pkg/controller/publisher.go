@@ -27,9 +27,9 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 	}
 
 	initiatorName := req.GetNodeId()
-	klog.Infof("attach request for initiator %s, volume id : %s", initiatorName, req.GetVolumeId())
+	klog.Infof("attach request for initiator %s, volume id: %s", initiatorName, req.GetVolumeId())
 
-	lun, err := driver.chooseLUN()
+	lun, err := driver.chooseLUN(initiatorName)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +69,9 @@ func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.Co
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
-func (driver *Driver) chooseLUN() (int, error) {
+func (driver *Driver) chooseLUN(initiatorName string) (int, error) {
 	klog.Infof("listing all LUN mappings")
-	volumes, status, err := driver.dothillClient.ShowHostMaps("")
+	volumes, status, err := driver.dothillClient.ShowHostMaps(initiatorName)
 	if err != nil && status == nil {
 		return -1, err
 	}
@@ -85,16 +85,19 @@ func (driver *Driver) chooseLUN() (int, error) {
 
 	sort.Sort(Volumes(volumes))
 
+	klog.V(5).Infof("checking if LUN 1 is not already in use")
 	if len(volumes) == 0 || volumes[0].LUN > 1 {
 		return 1, nil
 	}
 
+	klog.V(5).Infof("searching for an available LUN between LUNs in use")
 	for index := 1 ; index < len(volumes); index++ {
 		if volumes[index].LUN - volumes[index-1].LUN > 1 {
 			return volumes[index-1].LUN + 1, nil
 		}
 	}
 
+	klog.V(5).Infof("checking if next LUN is not above maximum LUNs limit")
 	if volumes[len(volumes)-1].LUN + 1 < common.MaximumLUN {
 		return volumes[len(volumes)-1].LUN + 1, nil
 	}
