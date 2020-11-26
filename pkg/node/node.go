@@ -128,19 +128,15 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		Lun:         int32(lun),
 		DoDiscovery: true,
 	}
-	path, err := iscsi.Connect(*connector)
+	path, err := iscsi.Connect(connector)
 	if err != nil {
 		klog.Error(err)
 		return nil, err
 	}
 	klog.Infof("attached device at %s", path)
 
-	connector.DevicePath = path[4:]
-	if connector.DevicePath[1:4] == "dm-" {
+	if len(connector.Devices) > 1 {
 		klog.Info("device is using multipath")
-		connector.Multipath = true
-	} else if len(connector.Targets) > 1 {
-		return nil, status.Error(codes.InvalidArgument, "multiple targets are asked but device is NOT using multipath")
 	} else {
 		klog.Info("device is NOT using multipath")
 	}
@@ -208,7 +204,7 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 
 	klog.Info("detaching ISCSI device")
-	err = iscsi.DisconnectVolume(*connector)
+	err = iscsi.DisconnectVolume(connector)
 	if err != nil {
 		klog.Error(err)
 		return nil, err

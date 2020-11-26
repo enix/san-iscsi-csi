@@ -14,4 +14,4 @@ require (
 	k8s.io/klog v1.0.0
 )
 
-replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi b16636191f2e1b6bfb1e26621f1c98c5916ad9e4
+replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi v0.0.0-20201126164746-2b7cd782976b
