@@ -26,9 +26,8 @@ func (driver *Driver) checkVolumeExists(volumeID string, size int64) (bool, erro
 
 			if blocks*blocksize == size {
 				return true, nil
-			} else {
-				return true, status.Error(codes.AlreadyExists, "cannot create volume with same name but different capacity than the existing one")
 			}
+			return true, status.Error(codes.AlreadyExists, "cannot create volume with same name but different capacity than the existing one")
 		}
 	}
 

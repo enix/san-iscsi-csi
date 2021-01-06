@@ -6,24 +6,24 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
-	"regexp"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
 	"github.com/kubernetes-csi/csi-lib-iscsi/iscsi"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/grpc"
 	"k8s.io/klog"
-	"golang.org/x/sync/semaphore"
 )
 
 // Driver is the implementation of csi.NodeServer
 type Driver struct {
-	semaphore *semaphore.Weighted
+	semaphore   *semaphore.Weighted
 	kubeletPath string
 }
 
@@ -34,11 +34,12 @@ func NewDriver(kubeletPath string) *Driver {
 	}
 
 	return &Driver{
-		semaphore: semaphore.NewWeighted(1),
+		semaphore:   semaphore.NewWeighted(1),
 		kubeletPath: kubeletPath,
 	}
 }
 
+// NewServerInterceptors implements DriverImpl.NewServerInterceptors
 func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor {
 	serverInterceptors := []grpc.UnaryServerInterceptor{
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -56,6 +57,7 @@ func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.Una
 	return &serverInterceptors
 }
 
+// ShouldLogRoutine implements DriverImpl.ShouldLogRoutine
 func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
 	return fullMethod == "/csi.v1.Node/NodePublishVolume" || fullMethod == "/csi.v1.Node/NodeUnpublishVolume"
 }
@@ -292,8 +294,7 @@ func getDiskFormat(disk string) (string, error) {
 	return fsType, nil
 }
 
-
-func ensureFsType(fsType string, disk string) (error) {
+func ensureFsType(fsType string, disk string) error {
 	currentFsType, err := getDiskFormat(disk)
 
 	if err != nil {

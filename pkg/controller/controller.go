@@ -7,10 +7,10 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-api-go"
 	"github.com/enix/dothill-storage-controller/pkg/common"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 )
 
 var volumeCapabilities = []*csi.VolumeCapability{
-	&csi.VolumeCapability{
+	{
 		AccessType: &csi.VolumeCapability_Mount{
 			Mount: &csi.VolumeCapability_MountVolume{},
 		},
@@ -31,11 +31,11 @@ var volumeCapabilities = []*csi.VolumeCapability{
 	},
 }
 
-var csiMutexes = map[string]*sync.Mutex {
-	"/csi.v1.Controller/CreateVolume": &sync.Mutex{},
-	"/csi.v1.Controller/ControllerPublishVolume": &sync.Mutex{},
-	"/csi.v1.Controller/DeleteVolume": &sync.Mutex{},
-	"/csi.v1.Controller/ControllerUnpublishVolume": &sync.Mutex{},
+var csiMutexes = map[string]*sync.Mutex{
+	"/csi.v1.Controller/CreateVolume":              {},
+	"/csi.v1.Controller/ControllerPublishVolume":   {},
+	"/csi.v1.Controller/DeleteVolume":              {},
+	"/csi.v1.Controller/ControllerUnpublishVolume": {},
 }
 
 // Driver is the implementation of csi.ControllerServer
@@ -55,6 +55,7 @@ func NewDriver() *Driver {
 	return &Driver{dothillClient: dothill.NewClient()}
 }
 
+// NewServerInterceptors implements DriverImpl.NewServerInterceptors
 func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor {
 	serverInterceptors := []grpc.UnaryServerInterceptor{
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -79,7 +80,7 @@ func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.Una
 
 			err := driver.beginRoutine(&driverContext)
 			defer driver.endRoutine()
-			if err != nil  {
+			if err != nil {
 				return nil, err
 			}
 
@@ -90,6 +91,7 @@ func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.Una
 	return &serverInterceptors
 }
 
+// ShouldLogRoutine implements DriverImpl.ShouldLogRoutine
 func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
 	return true
 }

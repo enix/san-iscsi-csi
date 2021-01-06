@@ -91,14 +91,14 @@ func (driver *Driver) chooseLUN(initiatorName string) (int, error) {
 	}
 
 	klog.V(5).Infof("searching for an available LUN between LUNs in use")
-	for index := 1 ; index < len(volumes); index++ {
-		if volumes[index].LUN - volumes[index-1].LUN > 1 {
+	for index := 1; index < len(volumes); index++ {
+		if volumes[index].LUN-volumes[index-1].LUN > 1 {
 			return volumes[index-1].LUN + 1, nil
 		}
 	}
 
 	klog.V(5).Infof("checking if next LUN is not above maximum LUNs limit")
-	if volumes[len(volumes)-1].LUN + 1 < common.MaximumLUN {
+	if volumes[len(volumes)-1].LUN+1 < common.MaximumLUN {
 		return volumes[len(volumes)-1].LUN + 1, nil
 	}
 
