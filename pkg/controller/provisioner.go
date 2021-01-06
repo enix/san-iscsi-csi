@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
@@ -23,7 +24,7 @@ func (driver *Driver) checkVolumeExists(volumeID string, size int64) (bool, erro
 			blocks, _ := strconv.ParseInt(object.PropertiesMap["blocks"].Data, 10, 64)
 			blocksize, _ := strconv.ParseInt(object.PropertiesMap["blocksize"].Data, 10, 64)
 
-			if blocks * blocksize == size {
+			if blocks*blocksize == size {
 				return true, nil
 			} else {
 				return true, status.Error(codes.AlreadyExists, "cannot create volume with same name but different capacity than the existing one")
@@ -52,6 +53,8 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 
 	volumeID := req.GetName()
 	if len(volumeID) > common.VolumeNameMaxLength {
+		volumeID = volumeID[4:]
+		volumeID = strings.ReplaceAll(volumeID, "-", "")
 		volumeID = volumeID[:common.VolumeNameMaxLength]
 	}
 
