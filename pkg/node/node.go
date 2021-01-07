@@ -66,7 +66,6 @@ func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
 func (driver *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	initiatorName, err := readInitiatorName()
 	if err != nil {
-		klog.Error(err)
 		return nil, err
 	}
 
@@ -132,7 +131,6 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 	path, err := iscsi.Connect(connector)
 	if err != nil {
-		klog.Error(err)
 		return nil, err
 	}
 	klog.Infof("attached device at %s", path)
@@ -153,7 +151,6 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	os.Mkdir(req.GetTargetPath(), 00755)
 	out, err := exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
 	if err != nil {
-		klog.Error(string(out))
 		return nil, errors.New(string(out))
 	}
 
@@ -161,7 +158,6 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
 	err = iscsi.PersistConnector(connector, iscsiInfoPath)
 	if err != nil {
-		klog.Error(err)
 		return nil, err
 	}
 
@@ -187,7 +183,6 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		if err == nil {
 			out, err := exec.Command("umount", req.GetTargetPath()).CombinedOutput()
 			if err != nil && !os.IsNotExist(err) {
-				klog.Error(errors.New(string(out)))
 				return nil, errors.New(string(out))
 			}
 		} else {
@@ -208,7 +203,6 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	klog.Info("detaching ISCSI device")
 	err = iscsi.DisconnectVolume(connector)
 	if err != nil {
-		klog.Error(err)
 		return nil, err
 	}
 
@@ -263,8 +257,7 @@ func getDiskFormat(disk string) (string, error) {
 				return "", nil
 			}
 		}
-		klog.Errorf("Could not determine if disk %q is formatted (%v)", disk, err)
-		return "", err
+		return "", fmt.Errorf("Could not determine if disk %q is formatted (%v)", disk, err)
 	}
 
 	var fsType, ptType string
@@ -306,7 +299,6 @@ func ensureFsType(fsType string, disk string) error {
 		klog.Infof("creating %s filesystem on device %s", fsType, disk)
 		out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), disk).CombinedOutput()
 		if err != nil {
-			klog.Error(string(out))
 			return errors.New(string(out))
 		}
 	}

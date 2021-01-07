@@ -81,7 +81,13 @@ func newLogRoutineServerInterceptor(impl DriverImpl) grpc.UnaryServerInterceptor
 			klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
 			defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
 		}
-		return handler(ctx, req)
+
+		result, err := handler(ctx, req)
+		if err != nil {
+			klog.Error(err)
+		}
+
+		return result, err
 	}
 }
 

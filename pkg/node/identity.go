@@ -44,7 +44,6 @@ func isKernelModLoaded(modName string) bool {
 	err := exec.Command("grep", "^"+modName, "/proc/modules", "-q").Run()
 
 	if err != nil {
-		klog.Errorf("required kernel mod %q is not loaded", modName)
 		return false
 	}
 
