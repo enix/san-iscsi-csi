@@ -13,3 +13,13 @@ iscsiadm -m node --logout all
 iscsiadm -m discovery -t st -p 10.14.84.215
 iscsiadm -m node -L all
 ```
+
+## AttachVolume.Attach failed for volume "xxx" : CSINode xxx does not contain driver dothill.csi.enix.io
+
+Typically, this error happens when you use RancherOS. Since the kubelet path is `/opt/rke/var/lib/kubelet` instead of `/var/lib/kubelet`, the plugin cannot be registered using the default path.
+
+In order to fix this issue, paste the following line in your `value.yaml` and upgrade your helm release.
+
+```yaml
+kubeletPath: /opt/rke/var/lib/kubelet
+```
