@@ -1,3 +1,10 @@
+## [2.2.2](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.2.1...v2.2.2) (2021-01-07)
+
+
+### Bug Fixes
+
+* **node:** fix sda ejection when no device is found ([ecaa987](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/ecaa987960c7d53da8f7e46410e90795f57cf362))
+
 ## [2.2.1](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.2.0...v2.2.1) (2020-11-26)
 
 
