@@ -243,13 +243,14 @@ func (driver *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 // see https://github.com/kubernetes-csi/driver-registrar/blob/795af1899f3c94dd0c6dda2a25ed301123479bb9/vendor/k8s.io/kubernetes/pkg/util/mount/mount_linux.go#L543
 func getDiskFormat(disk string) (string, error) {
 	args := []string{"-p", "-s", "TYPE", "-s", "PTTYPE", "-o", "export", disk}
-	klog.V(4).Infof("Attempting to determine if disk %q is formatted using blkid with args: (%v)", disk, args)
+	klog.V(2).Infof("Attempting to determine if disk %q is formatted using blkid with args: (%v)", disk, args)
 	output, err := exec.Command("blkid", args...).CombinedOutput()
-	klog.V(4).Infof("Output: %q, err: %v", output, err)
+	klog.V(2).Infof("Output: %q, err: %v", output, err)
 
 	if err != nil {
 		if exit, ok := err.(*exec.ExitError); ok {
 			if exit.ExitCode() == 2 {
+				klog.V(2).Infof("Disk device is unformatted (%v)", err)
 				// Disk device is unformatted.
 				// For `blkid`, if the specified token (TYPE/PTTYPE, etc) was
 				// not found, or no (specified) devices could be identified, an
@@ -278,7 +279,7 @@ func getDiskFormat(disk string) (string, error) {
 	}
 
 	if len(ptType) > 0 {
-		klog.V(4).Infof("Disk %s detected partition table type: %s", ptType)
+		klog.V(2).Infof("Disk %s detected partition table type: %s", ptType)
 		// Returns a special non-empty string as filesystem type, then kubelet
 		// will not format it.
 		return "unknown data, probably partitions", nil
@@ -294,9 +295,13 @@ func ensureFsType(fsType string, disk string) error {
 		return err
 	}
 
-	klog.V(1).Infof("detected filesystem: %q", currentFsType)
-	if currentFsType != "ext4" {
-		klog.Infof("creating %s filesystem on device %s", fsType, disk)
+	klog.V(1).Infof("Detected filesystem: %q", currentFsType)
+	if currentFsType != fsType {
+		if currentFsType != "" {
+			return fmt.Errorf("Could not create %s filesystem on device %s since it already has one (%s)", fsType, disk, currentFsType)
+		}
+
+		klog.Infof("Creating %s filesystem on device %s", fsType, disk)
 		out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), disk).CombinedOutput()
 		if err != nil {
 			return errors.New(string(out))
