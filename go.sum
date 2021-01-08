@@ -14,6 +14,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/enix/csi-lib-iscsi v0.0.0-20210107141726-b560b80f506a h1:h3AfAoU/RfZvdbC5TE+Pp+UIHEnvwMZF2pBoagw8m5o=
 github.com/enix/csi-lib-iscsi v0.0.0-20210107141726-b560b80f506a/go.mod h1:rxkwLNfJ5rd0R/gX7pLQMg4wxiWGiw3Gdt9tj3KIrP4=
+github.com/enix/csi-lib-iscsi v0.0.0-20210108155627-f7c1d00691f0 h1:EE/cn43ju+gqD3vv2+MrfWmvwPZztAS88PDL4wONRLE=
+github.com/enix/csi-lib-iscsi v0.0.0-20210108155627-f7c1d00691f0/go.mod h1:rxkwLNfJ5rd0R/gX7pLQMg4wxiWGiw3Gdt9tj3KIrP4=
 github.com/enix/dothill-api-go v1.5.0 h1:bmnRxkt53Axwjm/U5JcNB7qzAHkFDjrcURON1q6kWoY=
 github.com/enix/dothill-api-go v1.5.0/go.mod h1:LchQqj/tHiZ3AU23geA+0EY9ia9L0MuzNIvqX9reipI=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
