@@ -147,6 +147,10 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, err
 	}
 
+	if err = checkFs(path); err != nil {
+		return nil, fmt.Errorf("Filesystem seems to be corrupted: %v", err)
+	}
+
 	klog.Infof("mounting volume at %s", req.GetTargetPath())
 	os.Mkdir(req.GetTargetPath(), 00755)
 	out, err := exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
@@ -238,6 +242,14 @@ func (driver *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 // Will not be called as the plugin does not have the STAGE_UNSTAGE_VOLUME capability
 func (driver *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeUnstageVolume is unimplemented and should not be called")
+}
+
+func checkFs(path string) error {
+	klog.Infof("Checking filesystem at %s", path)
+	if out, err := exec.Command("e2fsck", "-n", path).CombinedOutput(); err != nil {
+		return errors.New(string(out))
+	}
+	return nil
 }
 
 // see https://github.com/kubernetes-csi/driver-registrar/blob/795af1899f3c94dd0c6dda2a25ed301123479bb9/vendor/k8s.io/kubernetes/pkg/util/mount/mount_linux.go#L543
