@@ -66,7 +66,7 @@ func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
 func (driver *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	initiatorName, err := readInitiatorName()
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	return &csi.NodeGetInfoResponse{
@@ -131,7 +131,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 	path, err := iscsi.Connect(connector)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 	klog.Infof("attached device at %s", path)
 
@@ -144,25 +144,25 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	fsType := req.GetVolumeContext()[common.FsTypeConfigKey]
 	err = ensureFsType(fsType, path)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	if err = checkFs(path); err != nil {
-		return nil, fmt.Errorf("Filesystem seems to be corrupted: %v", err)
+		return nil, status.Errorf(codes.DataLoss, "Filesystem seems to be corrupted: %v", err)
 	}
 
 	klog.Infof("mounting volume at %s", req.GetTargetPath())
 	os.Mkdir(req.GetTargetPath(), 00755)
 	out, err := exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
 	if err != nil {
-		return nil, errors.New(string(out))
+		return nil, status.Error(codes.Internal, string(out))
 	}
 
 	iscsiInfoPath := fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", driver.kubeletPath, common.PluginName, req.GetVolumeId())
 	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
 	err = iscsi.PersistConnector(connector, iscsiInfoPath)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	klog.Infof("succesfully mounted volume at %s", req.GetTargetPath())
@@ -187,7 +187,7 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		if err == nil {
 			out, err := exec.Command("umount", req.GetTargetPath()).CombinedOutput()
 			if err != nil && !os.IsNotExist(err) {
-				return nil, errors.New(string(out))
+				return nil, status.Error(codes.Internal, string(out))
 			}
 		} else {
 			klog.Warningf("assuming that volume is already unmounted: %s", out)
@@ -302,7 +302,6 @@ func getDiskFormat(disk string) (string, error) {
 
 func ensureFsType(fsType string, disk string) error {
 	currentFsType, err := getDiskFormat(disk)
-
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -35,10 +34,7 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 	}
 	klog.Infof("using LUN %d", lun)
 
-	err = driver.mapVolume(req.GetVolumeId(), initiatorName, lun)
-	if err != nil {
-		// klog.Infof("volume %s couldn't be mapped, deleting it", req.GetVolumeId())
-		// driver.dothillClient.DeleteVolume(volumeName)
+	if err = driver.mapVolume(req.GetVolumeId(), initiatorName, lun); err != nil {
 		return nil, err
 	}
 
@@ -71,11 +67,11 @@ func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.Co
 
 func (driver *Driver) chooseLUN(initiatorName string) (int, error) {
 	klog.Infof("listing all LUN mappings")
-	volumes, status, err := driver.dothillClient.ShowHostMaps(initiatorName)
-	if err != nil && status == nil {
+	volumes, responseStatus, err := driver.dothillClient.ShowHostMaps(initiatorName)
+	if err != nil && responseStatus == nil {
 		return -1, err
 	}
-	if status.ReturnCode == hostMapDoesNotExistsErrorCode {
+	if responseStatus.ReturnCode == hostMapDoesNotExistsErrorCode {
 		klog.Info("initiator does not exist, assuming there is no LUN mappings yet and using LUN 1")
 		return 1, nil
 	}
@@ -102,14 +98,14 @@ func (driver *Driver) chooseLUN(initiatorName string) (int, error) {
 		return volumes[len(volumes)-1].LUN + 1, nil
 	}
 
-	return -1, errors.New("no more available LUNs")
+	return -1, status.Error(codes.ResourceExhausted, "no more available LUNs")
 }
 
 func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error {
 	klog.Infof("trying to map volume %s for initiator %s on LUN %d", volumeName, initiatorName, lun)
 	_, metadata, err := driver.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
 	if err != nil && metadata == nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 	if metadata.ReturnCode == hostDoesNotExistsErrorCode {
 		nodeIDParts := strings.Split(initiatorName, ":")
@@ -136,19 +132,3 @@ func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error
 
 	return nil
 }
-
-// func getInitiatorName(volumeContext map[string]string) string {
-// 	initiatorName := volumeContext[common.InitiatorNameConfigKey]
-// 	overrideInitiatorName, overrideExists := options.PVC.Annotations[initiatorNameConfigKey]
-// 	if overrideExists {
-// 		initiatorName = overrideInitiatorName
-// 		klog.Infof("custom initiator name was specified in PVC annotation: %s", initiatorName)
-// 	} else if options.Parameters[uniqueInitiatorNameByPvcConfigKey] == "true" {
-// 		year, month, _ := time.Now().Date()
-// 		uniquePart := fmt.Sprintf("%d", rand.Int())[:8]
-// 		initiatorName = fmt.Sprintf("iqn.%d-%02d.local.cluster:%s", year, int(month), uniquePart)
-// 		klog.Infof("generated initiator name: %s", initiatorName)
-// 	}
-
-// 	return initiatorName
-// }

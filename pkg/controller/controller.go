@@ -137,10 +137,6 @@ func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.V
 		return nil, status.Error(codes.NotFound, "cannot validate volume not found")
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	return &csi.ValidateVolumeCapabilitiesResponse{
 		Confirmed: &csi.ValidateVolumeCapabilitiesResponse_Confirmed{
 			VolumeCapabilities: volumeCapabilities,
