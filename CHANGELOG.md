@@ -1,3 +1,10 @@
+# [2.3.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.2.3...v2.3.0) (2021-01-12)
+
+
+### Features
+
+* **helm:** add daemonNodeSelector and daemonNodeAffinity ([0f41b0c](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/0f41b0cdebfe9116160bb93f59a09a2f7c4c1357)), closes [#63](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/63)
+
 ## [2.2.3](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.2.2...v2.2.3) (2021-01-12)
 
 
