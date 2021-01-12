@@ -3,12 +3,13 @@ package node
 import (
 	"context"
 
+	"os/exec"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-storage-controller/pkg/common"
-	"os/exec"
-	"k8s.io/klog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/klog"
 )
 
 // GetPluginInfo returns metadata of the plugin
@@ -40,10 +41,9 @@ func (d *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeRe
 
 func isKernelModLoaded(modName string) bool {
 	klog.V(5).Infof("verifiying that %q kernel mod is loaded", modName)
-	err := exec.Command("grep", "^" + modName, "/proc/modules", "-q").Run()
-	
+	err := exec.Command("grep", "^"+modName, "/proc/modules", "-q").Run()
+
 	if err != nil {
-		klog.Errorf("required kernel mod %q is not loaded", modName)
 		return false
 	}
 

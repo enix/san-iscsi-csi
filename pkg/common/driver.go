@@ -1,17 +1,17 @@
 package common
 
 import (
+	"context"
 	"net"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-	"context"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"k8s.io/klog"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
 )
 
 // PluginName is the public name to be used in storage class etc.
@@ -40,30 +40,36 @@ type Driver struct {
 	server *grpc.Server
 }
 
+// DriverImpl is the implementation of the specific driver
 type DriverImpl interface {
+	// NewServerInterceptors create server interceptors to be used as middlewares
 	NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor
+	// ShouldLogRoutine determine if a routine should be logged or not
 	ShouldLogRoutine(fullMethod string) bool
 }
 
+// WithSecrets is an interface for structs with secrets
 type WithSecrets interface {
-    GetSecrets() map[string]string
+	GetSecrets() map[string]string
 }
 
+// WithParameters is an interface for structs with parameters
 type WithParameters interface {
-    GetParameters() *map[string]string
+	GetParameters() *map[string]string
 }
 
+// WithVolumeCaps is an interface for structs with volume capabilities
 type WithVolumeCaps interface {
-    GetVolumeCapabilities() *[]*csi.VolumeCapability
+	GetVolumeCapabilities() *[]*csi.VolumeCapability
 }
 
 // NewDriver is a convenience function for creating an abstract driver
 func NewDriver(impl DriverImpl) *Driver {
 	return &Driver{
-		impl:   impl,
+		impl: impl,
 		server: grpc.NewServer(
 			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-				*impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl))...
+				*impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl))...,
 			)),
 		),
 	}
@@ -75,7 +81,13 @@ func newLogRoutineServerInterceptor(impl DriverImpl) grpc.UnaryServerInterceptor
 			klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
 			defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
 		}
-		return handler(ctx, req)
+
+		result, err := handler(ctx, req)
+		if err != nil {
+			klog.Error(err)
+		}
+
+		return result, err
 	}
 }
 
