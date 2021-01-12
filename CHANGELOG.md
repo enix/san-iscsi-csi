@@ -1,3 +1,14 @@
+## [2.2.3](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.2.2...v2.2.3) (2021-01-12)
+
+
+### Bug Fixes
+
+* **helm:** use a different component label for nodes and controller ([09bba25](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/09bba25422b1d97121168de6f5837b60f554bc38)), closes [#48](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/48)
+* **node:** check that a filesystem is healthy before mounting it ([4bae59f](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/4bae59f2074786522cab36022720041cc2eadc31)), closes [#66](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/66)
+* **node:** check transport type to use iscsi disks only ([0de5021](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/0de502138dbe2dd4c060c9cb90a5fff1c13d4556)), closes [#68](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/68)
+* **node:** fix csi-lib-iscsi commands error reporting ([ddcb3fd](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/ddcb3fd22345cfcb59f528d8eca6366526f227ba)), closes [#64](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/64)
+* **node:** support other filesystems than ext4 ([df77fd5](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/df77fd5bf21cb1d8ba4b935d730b5f58ea96ad79)), closes [#67](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/67)
+
 ## [2.2.2](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.2.1...v2.2.2) (2021-01-07)
 
 
