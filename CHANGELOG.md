@@ -1,3 +1,10 @@
+## [2.3.1](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.3.0...v2.3.1) (2021-01-19)
+
+
+### Bug Fixes
+
+* **controller:** prevent multi-attach by disallowing multi-mapping ([8f058cf](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/8f058cfdb5f7d89217324f7085c7bc6461b13c05))
+
 # [2.3.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.2.3...v2.3.0) (2021-01-12)
 
 
