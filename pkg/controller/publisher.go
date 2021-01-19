@@ -2,16 +2,43 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/enix/dothill-api-go"
 	"github.com/enix/dothill-storage-controller/pkg/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"
 )
+
+func CountVolumeMaps(client *dothill.Client, name string) (int, *dothill.ResponseStatus, error) {
+	if name != "" {
+		name = fmt.Sprintf("\"%s\"", name)
+	}
+	res, status, err := client.Request(fmt.Sprintf("/show/volume-maps/%s", name))
+	if err != nil {
+		return 0, status, err
+	}
+
+	count := 0
+	for _, rootObj := range res.Objects {
+		if rootObj.Name != "volume-view" {
+			continue
+		}
+
+		for _, object := range rootObj.Objects {
+			if object.Name == "host-view" && object.PropertiesMap["identifier"].Data != "all other hosts" {
+				count++
+			}
+		}
+	}
+
+	return count, status, err
+}
 
 // ControllerPublishVolume attaches the given volume to the node
 func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
@@ -27,6 +54,14 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 
 	initiatorName := req.GetNodeId()
 	klog.Infof("attach request for initiator %s, volume id: %s", initiatorName, req.GetVolumeId())
+
+	count, _, err := CountVolumeMaps(driver.dothillClient, req.GetVolumeId())
+	if err != nil {
+		return nil, err
+	}
+	if count > 0 {
+		return nil, status.Errorf(codes.FailedPrecondition, "volume %s is already attached to another node", req.GetVolumeId())
+	}
 
 	lun, err := driver.chooseLUN(initiatorName)
 	if err != nil {
