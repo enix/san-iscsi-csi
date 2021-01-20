@@ -1,27 +1,46 @@
-# # Default values for dothill.
-# # This is a YAML-formatted file.
-# # Declare variables to be passed into your templates.
+# Default values for kube-router.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
 
 kubeletPath: /var/lib/kubelet
+pspAdmissionControllerEnabled: false
 
 image:
   repository: docker.io/enix/dothill-provisioner
+  tag: ""
 
 csiProvisioner:
   image:
     repository: k8s.gcr.io/sig-storage/csi-provisioner
     tag: v1.6.1
   timeout: 30s
+  extraArgs: []
 
 csiAttacher:
   image:
     repository: k8s.gcr.io/sig-storage/csi-attacher
     tag: v2.2.1
   timeout: 30s
+  extraArgs: []
 
 csiNodeRegistrar:
-  extraArgs:
-    - --v=5
   image:
     repository: quay.io/k8scsi/csi-node-driver-registrar
     tag: v1.0.2
+  extraArgs: []
+
+controller:
+  extraArgs: []
+
+node:
+  extraArgs: []
+
+multipathd:
+  extraArgs: []
+
+nodeLivenessProbe:
+  extraArgs: []
+
+nodeServer:
+  nodeSelector:
+  nodeAffinity:
