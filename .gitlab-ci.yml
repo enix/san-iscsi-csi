@@ -30,9 +30,10 @@ build and push:
 
 push helm chart:
   stage: release
-  image: alpine
+  image: golang:alpine3.12
   before_script:
     - apk add --update git openssh
+    - GO111MODULE=on go get github.com/norwoodj/helm-docs/cmd/helm-docs
     - mkdir -p ~/.ssh
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
     - chmod 400 $GITHUB_DEPLOY_KEY
@@ -50,6 +51,8 @@ push helm chart:
       -e "s/version: 0\.0\.0-DIRTY/version: ${CI_COMMIT_TAG:1}/g"
       -e "s/appVersion: 0\.0\.0-DIRTY/appVersion: $CI_COMMIT_TAG/g"
       ./charts/dothill-provisioner/Chart.yaml
+    - helm-docs
+    - rm ./charts/dothill-provisioner/README.md.gotmpl
     - git add --all
     - >
       git commit -m "bump(dothill-provisioner): bump chart version to $CI_COMMIT_TAG"
