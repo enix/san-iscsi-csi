@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ .Release.Name }}-node-server
+  name: dothill-node-server
   labels:
     app.kubernetes.io/version: {{ .Chart.Version }}
     app.kubernetes.io/component: dynamic-provisionning-node
@@ -10,12 +10,12 @@ metadata:
 spec:
   selector:
     matchLabels:
-      name: {{ .Release.Name }}-node-server
+      name: dothill-node-server
 {{ include "dothill.labels" . | indent 6 }}
   template:
     metadata:
       labels:
-        name: {{ .Release.Name }}-node-server
+        name: dothill-node-server
 {{ include "dothill.labels" . | indent 8 }}
     spec:
       {{ if .Values.pspAdmissionControllerEnabled }}serviceAccount: csi-node-registrar{{ end }}
@@ -47,7 +47,7 @@ spec:
               mountPath: /usr/local/bin/init-node.sh
               subPath: init-node.sh
       containers:
-        - name: {{ .Release.Name }}-node
+        - name: dothill-node
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
             - dothill-node
