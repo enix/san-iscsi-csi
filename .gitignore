@@ -10,3 +10,6 @@ _legacy
 # binaries
 dothill-node
 dothill-controller
+
+# generated documentation
+/helm/*/README.md
