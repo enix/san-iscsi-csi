@@ -204,6 +204,11 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
+	if isVolumeInUse(connector.MountTargetDevice.GetPath()) {
+		klog.Info("volume is still in use on the node, thus it will not be detached")
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
 	klog.Info("detaching ISCSI device")
 	err = iscsi.DisconnectVolume(connector)
 	if err != nil {
@@ -345,4 +350,14 @@ func readInitiatorName() (string, error) {
 	}
 
 	return "", fmt.Errorf("InitiatorName key is missing from %s", initiatorNameFilePath)
+}
+
+func isVolumeInUse(devicePath string) bool {
+	_, err := exec.Command("findmnt", devicePath).CombinedOutput()
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			return false
+		}
+	}
+	return true
 }
