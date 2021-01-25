@@ -1,17 +1,16 @@
-package controller
+package common
 
 import (
 	"context"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/enix/dothill-storage-controller/pkg/common"
 )
 
 // GetPluginInfo returns metadata of the plugin
 func (driver *Driver) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
 	return &csi.GetPluginInfoResponse{
-		Name:          common.PluginName,
-		VendorVersion: common.Version,
+		Name:          PluginName,
+		VendorVersion: Version,
 	}, nil
 }
 
@@ -32,5 +31,5 @@ func (driver *Driver) GetPluginCapabilities(ctx context.Context, req *csi.GetPlu
 
 // Probe returns the health and readiness of the plugin
 func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	return &csi.ProbeResponse{}, nil
+	return driver.impl.Probe(ctx, req)
 }

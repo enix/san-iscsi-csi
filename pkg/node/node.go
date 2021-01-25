@@ -249,6 +249,31 @@ func (driver *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	return nil, status.Error(codes.Unimplemented, "NodeUnstageVolume is unimplemented and should not be called")
 }
 
+// Probe returns the health and readiness of the plugin
+func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	if !isKernelModLoaded("iscsi_tcp") {
+		return nil, status.Error(codes.FailedPrecondition, "kernel mod iscsi_tcp is not loaded")
+	}
+	if !isKernelModLoaded("dm_multipath") {
+		return nil, status.Error(codes.FailedPrecondition, "kernel mod dm_multipath is not loaded")
+	}
+
+	return &csi.ProbeResponse{}, nil
+}
+
+func isKernelModLoaded(modName string) bool {
+	klog.V(5).Infof("verifiying that %q kernel mod is loaded", modName)
+	err := exec.Command("grep", "^"+modName, "/proc/modules", "-q").Run()
+
+	if err != nil {
+		return false
+	}
+
+	klog.V(5).Infof("kernel mod %q is loaded", modName)
+
+	return true
+}
+
 func checkFs(path string) error {
 	klog.Infof("Checking filesystem at %s", path)
 	if out, err := exec.Command("e2fsck", "-n", path).CombinedOutput(); err != nil {

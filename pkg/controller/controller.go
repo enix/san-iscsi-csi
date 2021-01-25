@@ -159,6 +159,11 @@ func (driver *Driver) ControllerGetVolume(ctx context.Context, req *csi.Controll
 	return nil, status.Error(codes.Unimplemented, "ControllerGetVolume is unimplemented and should not be called")
 }
 
+// Probe returns the health and readiness of the plugin
+func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	return &csi.ProbeResponse{}, nil
+}
+
 func (driver *Driver) beginRoutine(ctx *DriverCtx) error {
 	if err := runPreflightChecks(ctx.Parameters, ctx.VolumeCaps); err != nil {
 		return err
