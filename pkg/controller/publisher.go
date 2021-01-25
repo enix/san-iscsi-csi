@@ -15,29 +15,30 @@ import (
 	"k8s.io/klog"
 )
 
-func CountVolumeMaps(client *dothill.Client, name string) (int, *dothill.ResponseStatus, error) {
+func getVolumeMapsHostNames(client *dothill.Client, name string) ([]string, *dothill.ResponseStatus, error) {
 	if name != "" {
 		name = fmt.Sprintf("\"%s\"", name)
 	}
 	res, status, err := client.Request(fmt.Sprintf("/show/volume-maps/%s", name))
 	if err != nil {
-		return 0, status, err
+		return []string{}, status, err
 	}
 
-	count := 0
+	hostNames := []string{}
 	for _, rootObj := range res.Objects {
 		if rootObj.Name != "volume-view" {
 			continue
 		}
 
 		for _, object := range rootObj.Objects {
-			if object.Name == "host-view" && object.PropertiesMap["identifier"].Data != "all other hosts" {
-				count++
+			hostName := object.PropertiesMap["identifier"].Data
+			if object.Name == "host-view" && hostName != "all other hosts" {
+				hostNames = append(hostNames, hostName)
 			}
 		}
 	}
 
-	return count, status, err
+	return hostNames, status, err
 }
 
 // ControllerPublishVolume attaches the given volume to the node
@@ -55,12 +56,14 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 	initiatorName := req.GetNodeId()
 	klog.Infof("attach request for initiator %s, volume id: %s", initiatorName, req.GetVolumeId())
 
-	count, _, err := CountVolumeMaps(driver.dothillClient, req.GetVolumeId())
+	hostNames, _, err := getVolumeMapsHostNames(driver.dothillClient, req.GetVolumeId())
 	if err != nil {
 		return nil, err
 	}
-	if count > 0 {
-		return nil, status.Errorf(codes.FailedPrecondition, "volume %s is already attached to another node", req.GetVolumeId())
+	for _, hostName := range hostNames {
+		if hostName != initiatorName {
+			return nil, status.Errorf(codes.FailedPrecondition, "volume %s is already attached to another node", req.GetVolumeId())
+		}
 	}
 
 	lun, err := driver.chooseLUN(initiatorName)
