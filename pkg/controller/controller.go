@@ -154,6 +154,11 @@ func (driver *Driver) GetCapacity(ctx context.Context, req *csi.GetCapacityReque
 	return nil, status.Error(codes.Unimplemented, "GetCapacity is unimplemented and should not be called")
 }
 
+// ControllerGetVolume fetch current information about a volume
+func (driver *Driver) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ControllerGetVolume is unimplemented and should not be called")
+}
+
 func (driver *Driver) beginRoutine(ctx *DriverCtx) error {
 	if err := runPreflightChecks(ctx.Parameters, ctx.VolumeCaps); err != nil {
 		return err

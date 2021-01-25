@@ -110,7 +110,7 @@ spec:
             - name: multipath-dir
               mountPath: /etc/multipath
         - name: liveness-probe
-          image: quay.io/k8scsi/livenessprobe:v1.1.0
+          image: {{.Values.nodeLivenessProbe.image.repository }}:{{ .Values.nodeLivenessProbe.image.tag }}
           args:
             - --csi-address=/csi/csi.sock
 {{- include "dothill.extraArgs" .Values.nodeLivenessProbe | indent 10 }}
@@ -123,10 +123,6 @@ spec:
             - --csi-address=/csi/csi.sock
             - --kubelet-registration-path={{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io/csi.sock
 {{- include "dothill.extraArgs" .Values.csiNodeRegistrar | indent 10 }}
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/dothill.csi.enix.io /registration/dothill.csi.enix.io-reg.sock"]
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi

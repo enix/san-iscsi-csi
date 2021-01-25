@@ -18,7 +18,7 @@ image:
 csiProvisioner:
   image:
     repository: k8s.gcr.io/sig-storage/csi-provisioner
-    tag: v1.6.1
+    tag: v2.1.0
   # -- Timeout for gRPC calls from the csi-provisioner to the controller
   timeout: 30s
   # -- Extra arguments for csi-provisioner controller sidecar
@@ -37,8 +37,8 @@ csiAttacher:
 # -- Node sidecar for plugin registration
 csiNodeRegistrar:
   image:
-    repository: quay.io/k8scsi/csi-node-driver-registrar
-    tag: v1.0.2
+    repository: k8s.gcr.io/sig-storage/csi-node-driver-registrar
+    tag: v2.1.0
   # -- Extra arguments for csi-node-registrar node sidecar
   extraArgs: []
 
@@ -56,6 +56,9 @@ multipathd:
 
 # -- Container that convert CSI liveness probe to kubernetes liveness/readiness probe
 nodeLivenessProbe:
+  image:
+    repository: quay.io/k8scsi/livenessprobe
+    tag: v2.2.0
   # -- Extra arguments for the node's liveness probe containers
   extraArgs: []
 
