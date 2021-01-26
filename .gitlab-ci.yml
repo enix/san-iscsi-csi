@@ -45,14 +45,14 @@ push helm chart:
       yes yes | git clone --single-branch --branch master git@github.com:enix/helm-charts.git"
     - rm -rf ./helm-charts/charts/dothill-provisioner
     - cp -R ./helm/dothill-provisioner ./helm-charts/charts/dothill-provisioner
-    - cd ./helm-charts
+    - cd ./helm-charts/charts/dothill-provisioner
     - >
       sed -i
       -e "s/version: 0\.0\.0-DIRTY/version: ${CI_COMMIT_TAG:1}/g"
       -e "s/appVersion: 0\.0\.0-DIRTY/appVersion: $CI_COMMIT_TAG/g"
-      ./charts/dothill-provisioner/Chart.yaml
+      ./Chart.yaml
     - helm-docs
-    - rm ./charts/dothill-provisioner/README.md.gotmpl
+    - rm ./README.md.gotmpl
     - git add --all
     - >
       git commit -m "bump(dothill-provisioner): bump chart version to $CI_COMMIT_TAG"
