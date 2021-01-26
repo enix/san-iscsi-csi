@@ -1,3 +1,11 @@
+## [2.3.2](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.3.1...v2.3.2) (2021-01-26)
+
+
+### Bug Fixes
+
+* **controller:** make ControllerPublishVolume idempotent again ([e1eade8](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/e1eade8641de9013d6c3baa6d7a848aece6fe490))
+* **node:** check if a volume is mounted somewhere else before ejecting ([8650885](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/8650885b1cfcf113f0d56aec9725d2788c97fb0e)), closes [#72](https://gitlab.enix.io/products/stx/dothill-provisioner/issues/72)
+
 ## [2.3.1](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.3.0...v2.3.1) (2021-01-19)
 
 
