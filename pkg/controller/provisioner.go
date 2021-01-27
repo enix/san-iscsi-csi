@@ -37,17 +37,13 @@ func (driver *Driver) checkVolumeExists(volumeID string, size int64) (bool, erro
 // CreateVolume creates a new volume from the given request. The function is
 // idempotent.
 func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	if len(req.GetName()) == 0 {
+	if req.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cannot create volume with empty name")
 	}
 
 	size := req.GetCapacityRange().GetRequiredBytes()
-	if size == 0 {
-		size = 4096
-	}
-
+	sizeStr := getSizeStr(size)
 	parameters := req.GetParameters()
-	sizeStr := fmt.Sprintf("%dB", size)
 	klog.Infof("received %s volume request\n", sizeStr)
 
 	volumeID := req.GetName()
@@ -103,4 +99,12 @@ func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeReq
 
 	klog.Infof("successfully deleted volume %s", req.GetVolumeId())
 	return &csi.DeleteVolumeResponse{}, nil
+}
+
+func getSizeStr(size int64) string {
+	if size == 0 {
+		size = 4096
+	}
+
+	return fmt.Sprintf("%dB", size)
 }

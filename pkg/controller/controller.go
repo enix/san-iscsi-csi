@@ -36,6 +36,7 @@ var csiMutexes = map[string]*sync.Mutex{
 	"/csi.v1.Controller/ControllerPublishVolume":   {},
 	"/csi.v1.Controller/DeleteVolume":              {},
 	"/csi.v1.Controller/ControllerUnpublishVolume": {},
+	"/csi.v1.Controller/ControllerExpandVolume":    {},
 }
 
 // Driver is the implementation of csi.ControllerServer
@@ -105,7 +106,7 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 		// csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 		// csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
 		// csi.ControllerServiceCapability_RPC_CLONE_VOLUME,
-		// csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
 	}
 
 	for _, cap := range cl {

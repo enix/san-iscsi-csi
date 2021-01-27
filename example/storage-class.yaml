@@ -2,6 +2,7 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 provisioner: dothill.csi.enix.io
 volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
 metadata:
   name: my-marvelous-storage
 parameters:
@@ -9,6 +10,8 @@ parameters:
   csi.storage.k8s.io/provisioner-secret-namespace: dothill-system
   csi.storage.k8s.io/controller-publish-secret-name: dothill-api
   csi.storage.k8s.io/controller-publish-secret-namespace: dothill-system
+  csi.storage.k8s.io/controller-expand-secret-name: dothill-api
+  csi.storage.k8s.io/controller-expand-secret-namespace: dothill-system
   fsType: ext4
   iqn: iqn.2015-11.com.hpe:storage.msa2050.2002518b4c
   pool: A
