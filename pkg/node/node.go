@@ -129,13 +129,13 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		Lun:         int32(lun),
 		DoDiscovery: true,
 	}
-	path, err := iscsi.Connect(connector)
+	path, err := connector.Connect()
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 	klog.Infof("attached device at %s", path)
 
-	if len(connector.Devices) > 1 {
+	if connector.IsMultipathEnabled() {
 		klog.Info("device is using multipath")
 	} else {
 		klog.Info("device is NOT using multipath")
@@ -160,7 +160,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	iscsiInfoPath := fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", driver.kubeletPath, common.PluginName, req.GetVolumeId())
 	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
-	err = iscsi.PersistConnector(connector, iscsiInfoPath)
+	err = connector.Persist(iscsiInfoPath)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -210,7 +210,7 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 
 	klog.Info("detaching ISCSI device")
-	err = iscsi.DisconnectVolume(connector)
+	err = connector.DisconnectVolume()
 	if err != nil {
 		return nil, err
 	}
