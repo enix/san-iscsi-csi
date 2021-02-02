@@ -1,3 +1,16 @@
+# [2.4.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.3.2...v2.4.0) (2021-02-02)
+
+
+### Bug Fixes
+
+* **controller:** expand volume by the right amount ([1009455](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/1009455049613e23bdb2a32c836e7ab3ba43466c))
+
+
+### Features
+
+* **controller:** volume expansion ([2dfdf8a](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/2dfdf8a83197b73653f2516a3d8b16703eca06a7))
+* **node:** volume expansion ([194b06b](https://gitlab.enix.io/products/stx/dothill-provisioner/commit/194b06bf72e71cbd44d1f9ebffcde24ea8d5e445))
+
 ## [2.3.2](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.3.1...v2.3.2) (2021-01-26)
 
 
