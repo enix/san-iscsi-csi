@@ -46,6 +46,8 @@ type DriverImpl interface {
 	NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor
 	// ShouldLogRoutine determine if a routine should be logged or not
 	ShouldLogRoutine(fullMethod string) bool
+	// Probe is an implementation of IdentityServer.Probe
+	Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error)
 }
 
 // WithSecrets is an interface for structs with secrets
@@ -108,9 +110,7 @@ func (driver *Driver) Start(bind string) {
 	}
 	driver.socket = socket
 
-	if identity, ok := driver.impl.(csi.IdentityServer); ok {
-		csi.RegisterIdentityServer(driver.server, identity)
-	}
+	csi.RegisterIdentityServer(driver.server, driver)
 	if controller, ok := driver.impl.(csi.ControllerServer); ok {
 		csi.RegisterControllerServer(driver.server, controller)
 	} else if node, ok := driver.impl.(csi.NodeServer); ok {

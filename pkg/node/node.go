@@ -59,7 +59,9 @@ func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.Una
 
 // ShouldLogRoutine implements DriverImpl.ShouldLogRoutine
 func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
-	return fullMethod == "/csi.v1.Node/NodePublishVolume" || fullMethod == "/csi.v1.Node/NodeUnpublishVolume"
+	return fullMethod == "/csi.v1.Node/NodePublishVolume" ||
+		fullMethod == "/csi.v1.Node/NodeUnpublishVolume" ||
+		fullMethod == "/csi.v1.Node/NodeExpandVolume"
 }
 
 // NodeGetInfo returns info about the node
@@ -79,7 +81,7 @@ func (driver *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoReque
 func (driver *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
 	var csc []*csi.NodeServiceCapability
 	cl := []csi.NodeServiceCapability_RPC_Type{
-		// csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
+		csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
 	}
 
 	for _, cap := range cl {
@@ -129,13 +131,13 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		Lun:         int32(lun),
 		DoDiscovery: true,
 	}
-	path, err := iscsi.Connect(connector)
+	path, err := connector.Connect()
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 	klog.Infof("attached device at %s", path)
 
-	if len(connector.Devices) > 1 {
+	if connector.IsMultipathEnabled() {
 		klog.Info("device is using multipath")
 	} else {
 		klog.Info("device is NOT using multipath")
@@ -158,9 +160,9 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.Internal, string(out))
 	}
 
-	iscsiInfoPath := fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", driver.kubeletPath, common.PluginName, req.GetVolumeId())
+	iscsiInfoPath := driver.getIscsiInfoPath(req.GetVolumeId())
 	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
-	err = iscsi.PersistConnector(connector, iscsiInfoPath)
+	err = connector.Persist(iscsiInfoPath)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -196,7 +198,7 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		os.Remove(req.GetTargetPath())
 	}
 
-	iscsiInfoPath := fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", driver.kubeletPath, common.PluginName, req.GetVolumeId())
+	iscsiInfoPath := driver.getIscsiInfoPath(req.GetVolumeId())
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
 	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
@@ -210,7 +212,7 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	}
 
 	klog.Info("detaching ISCSI device")
-	err = iscsi.DisconnectVolume(connector)
+	err = connector.DisconnectVolume()
 	if err != nil {
 		return nil, err
 	}
@@ -224,8 +226,32 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 
 // NodeExpandVolume finalizes volume expansion on the node
 func (driver *Driver) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
-	fmt.Println("NodeExpandVolume call")
-	return nil, status.Error(codes.Unimplemented, "NodeExpandVolume unimplemented yet")
+	iscsiInfoPath := driver.getIscsiInfoPath(req.GetVolumeId())
+	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	for i := range connector.Devices {
+		connector.Devices[i].Rescan()
+	}
+
+	if connector.IsMultipathEnabled() {
+		klog.V(2).Info("device is using multipath")
+		if err := iscsi.ResizeMultipathDevice(connector.MountTargetDevice); err != nil {
+			return nil, err
+		}
+	} else {
+		klog.V(2).Info("device is NOT using multipath")
+	}
+
+	klog.Infof("expanding filesystem on device %s", connector.MountTargetDevice.GetPath())
+	output, err := exec.Command("resize2fs", connector.MountTargetDevice.GetPath()).CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("could not resize filesystem: %v", output)
+	}
+
+	return &csi.NodeExpandVolumeResponse{}, nil
 }
 
 // NodeGetVolumeStats return info about a given volume
@@ -247,6 +273,35 @@ func (driver *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 // Will not be called as the plugin does not have the STAGE_UNSTAGE_VOLUME capability
 func (driver *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeUnstageVolume is unimplemented and should not be called")
+}
+
+// Probe returns the health and readiness of the plugin
+func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	if !isKernelModLoaded("iscsi_tcp") {
+		return nil, status.Error(codes.FailedPrecondition, "kernel mod iscsi_tcp is not loaded")
+	}
+	if !isKernelModLoaded("dm_multipath") {
+		return nil, status.Error(codes.FailedPrecondition, "kernel mod dm_multipath is not loaded")
+	}
+
+	return &csi.ProbeResponse{}, nil
+}
+
+func (driver *Driver) getIscsiInfoPath(volumeID string) string {
+	return fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", driver.kubeletPath, common.PluginName, volumeID)
+}
+
+func isKernelModLoaded(modName string) bool {
+	klog.V(5).Infof("verifiying that %q kernel mod is loaded", modName)
+	err := exec.Command("grep", "^"+modName, "/proc/modules", "-q").Run()
+
+	if err != nil {
+		return false
+	}
+
+	klog.V(5).Infof("kernel mod %q is loaded", modName)
+
+	return true
 }
 
 func checkFs(path string) error {

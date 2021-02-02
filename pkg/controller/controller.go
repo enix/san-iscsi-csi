@@ -36,6 +36,7 @@ var csiMutexes = map[string]*sync.Mutex{
 	"/csi.v1.Controller/ControllerPublishVolume":   {},
 	"/csi.v1.Controller/DeleteVolume":              {},
 	"/csi.v1.Controller/ControllerUnpublishVolume": {},
+	"/csi.v1.Controller/ControllerExpandVolume":    {},
 }
 
 // Driver is the implementation of csi.ControllerServer
@@ -105,7 +106,7 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 		// csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 		// csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
 		// csi.ControllerServiceCapability_RPC_CLONE_VOLUME,
-		// csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
 	}
 
 	for _, cap := range cl {
@@ -157,6 +158,11 @@ func (driver *Driver) GetCapacity(ctx context.Context, req *csi.GetCapacityReque
 // ControllerGetVolume fetch current information about a volume
 func (driver *Driver) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "ControllerGetVolume is unimplemented and should not be called")
+}
+
+// Probe returns the health and readiness of the plugin
+func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	return &csi.ProbeResponse{}, nil
 }
 
 func (driver *Driver) beginRoutine(ctx *DriverCtx) error {
