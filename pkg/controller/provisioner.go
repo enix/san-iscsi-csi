@@ -34,8 +34,7 @@ func (driver *Driver) checkVolumeExists(volumeID string, size int64) (bool, erro
 	return false, nil
 }
 
-// CreateVolume creates a new volume from the given request. The function is
-// idempotent.
+// CreateVolume creates a new volume from the given request. The function is idempotent.
 func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	if req.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cannot create volume with empty name")
