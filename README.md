@@ -47,7 +47,7 @@ You should first add our charts repository, and then install the chart as follow
 
 ```sh
 helm repo add enix https://charts.enix.io/
-helm install my-release enix/dothill-provisioner -f ./example/values.yaml
+helm install my-release enix/dothill-csi -f ./example/values.yaml
 ```
 
 #### Run a test pod

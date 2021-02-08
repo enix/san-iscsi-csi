@@ -9,7 +9,7 @@ pspAdmissionControllerEnabled: false
 
 image:
   # -- Docker repository to use for nodes and controller
-  repository: docker.io/enix/dothill-provisioner
+  repository: docker.io/enix/dothill-csi
   # -- Tag to use for nodes and controller
   # @default -- The chart will use the appVersion value by default if not given.
   tag: ""

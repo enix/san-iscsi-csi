@@ -1,5 +1,5 @@
 apiVersion: v2
-name: dothill-provisioner
+name: dothill-csi
 version: 0.0.0-DIRTY
 description: Dothill (Seagate) AssuredSAN dynamic provisioner for Kubernetes (CSI plugin).
 type: application

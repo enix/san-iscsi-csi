@@ -10,7 +10,7 @@ ifeq ($(BIN),)
 	BIN = dothill
 endif
 
-IMAGE = $(DOCKER_HUB_REPOSITORY)/dothill-provisioner:$(VERSION)
+IMAGE = $(DOCKER_HUB_REPOSITORY)/dothill-csi:$(VERSION)
 
 all:		bin image
 .PHONY: all
