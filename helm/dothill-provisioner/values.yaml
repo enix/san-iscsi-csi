@@ -37,7 +37,7 @@ csiAttacher:
 # -- Controller sidecar for volume expansion
 csiResizer:
   image:
-    repository: gcr.io/k8s-staging-sig-storage/csi-resizer
+    repository: k8s.gcr.io/sig-storage/csi-resizer
     tag: v1.1.0
   # -- Extra arguments for csi-resizer controller sidecar
   extraArgs: []
