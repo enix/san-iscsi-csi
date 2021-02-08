@@ -49,6 +49,7 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 provisioner: dothill.csi.enix.io # Required for the plugin to recognize this storage class as handled by itself.
 volumeBindingMode: WaitForFirstConsumer # Prefer this value to avoid unschedulable pods (https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode)
+allowVolumeExpansion: true
 metadata:
   name: my-marvelous-storage # Choose the name that fits the best with your StorageClass.
 parameters:
