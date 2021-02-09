@@ -33,6 +33,15 @@ To a lesser extent, the following features are considered for a longer term futu
 - FiberChannel (supported by AssuredSAN appliances)
 - Authentication proxy, as any appliance account has full access to all volumes
 
+## Features
+
+| Features / Availability | alpha | beta  | general availability | roadmap   |
+|-------------------------|-------|-------|----------------------|-----------|
+| Dynamic provisioning    |       | 2.3.x |                      |           |
+| Resize                  | 2.4.x |       |                      |           |
+| Snapshot                |       |       |                      | 3.1.x     |
+| prometheus metrics      |       |       |                      | 3.x       |
+| FiberChannel            |       |       |                      | long term |
 
 ## Usage
 
