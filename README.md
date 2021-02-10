@@ -59,9 +59,7 @@ Our charts are availables on [charts.enix.io](https://charts.enix.io/).
 
 Create a `values.yaml` file. It should contain configuration for your release.
 
-You can find a [basic configuration snippet](./example/values.yaml) in the example directory.
-
-You can have as many storage classes and secrets as you want, they will be created in the same namespace as your release.
+Please read the dothill-csi helm-chart [README.md](https://github.com/enix/helm-charts/blob/master/charts/dothill-csi/README.md#values) for more details about this file.
 
 #### Install the helm chart
 
@@ -71,6 +69,10 @@ You should first add our charts repository, and then install the chart as follow
 helm repo add enix https://charts.enix.io/
 helm install my-release enix/dothill-csi -f ./example/values.yaml
 ```
+
+### Create a storage class
+
+In order to dynamically provision persistants volumes, you first need to create a storage class as well as his associated secret. To do so, please refer to this [example](./example/storage-class).
 
 ### Run a test pod
 
