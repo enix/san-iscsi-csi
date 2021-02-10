@@ -312,56 +312,54 @@ func checkFs(path string) error {
 	return nil
 }
 
-// see https://github.com/kubernetes-csi/driver-registrar/blob/795af1899f3c94dd0c6dda2a25ed301123479bb9/vendor/k8s.io/kubernetes/pkg/util/mount/mount_linux.go#L543
-func getDiskFormat(disk string) (string, error) {
-	args := []string{"-p", "-s", "TYPE", "-s", "PTTYPE", "-o", "export", disk}
-	klog.V(2).Infof("Attempting to determine if disk %q is formatted using blkid with args: (%v)", disk, args)
-	output, err := exec.Command("blkid", args...).CombinedOutput()
-	klog.V(2).Infof("Output: %q, err: %v", output, err)
+func findDeviceFormat(device string) (string, error) {
+	klog.V(2).Infof("Trying to find filesystem format on device %q", device)
+	output, err := exec.Command("blkid",
+		"--probe",
+		"--match-tag", "TYPE",
+		"--match-tag", "PTTYPE",
+		"--output", "export",
+		device).CombinedOutput()
+
+	klog.V(2).Infof("blkid output: %q,", output)
 
 	if err != nil {
-		if exit, ok := err.(*exec.ExitError); ok {
-			if exit.ExitCode() == 2 {
-				klog.V(2).Infof("Disk device is unformatted (%v)", err)
-				// Disk device is unformatted.
-				// For `blkid`, if the specified token (TYPE/PTTYPE, etc) was
-				// not found, or no (specified) devices could be identified, an
-				// exit code of 2 is returned.
-				return "", nil
-			}
+		// blkid exit with code 2 if the specified token (TYPE/PTTYPE, etc) could not be found or if device could not be identified.
+		if exit, ok := err.(*exec.ExitError); ok && exit.ExitCode() == 2 {
+			klog.V(2).Infof("Device seems to be is unformatted (%v)", err)
+			return "", nil
 		}
-		return "", fmt.Errorf("Could not determine if disk %q is formatted (%v)", disk, err)
+		return "", fmt.Errorf("could not not find format for device %q (%v)", device, err)
 	}
-
-	var fsType, ptType string
 
 	re := regexp.MustCompile(`([A-Z]+)="?([^"\n]+)"?`) // Handles alpine and debian outputs
 	matches := re.FindAllSubmatch(output, -1)
+
+	var filesystemType, partitionType string
 	for _, match := range matches {
 		if len(match) != 3 {
-			return "", fmt.Errorf("blkid returns invalid output: %s", output)
+			return "", fmt.Errorf("invalid blkid output: %s", output)
 		}
-		// TYPE is filesystem type, and PTTYPE is partition table type, according
-		// to https://www.kernel.org/pub/linux/utils/util-linux/v2.21/libblkid-docs/.
-		if string(match[1]) == "TYPE" {
-			fsType = string(match[2])
-		} else if string(match[1]) == "PTTYPE" {
-			ptType = string(match[2])
+		key := string(match[1])
+		value := string(match[2])
+
+		if key == "TYPE" {
+			filesystemType = value
+		} else if key == "PTTYPE" {
+			partitionType = value
 		}
 	}
 
-	if len(ptType) > 0 {
-		klog.V(2).Infof("Disk %s detected partition table type: %s", ptType)
-		// Returns a special non-empty string as filesystem type, then kubelet
-		// will not format it.
-		return "unknown data, probably partitions", nil
+	if partitionType != "" {
+		klog.V(2).Infof("Device %q seems to have a partition table type: %s", partitionType)
+		return "OTHER/PARTITIONS", nil
 	}
 
-	return fsType, nil
+	return filesystemType, nil
 }
 
 func ensureFsType(fsType string, disk string) error {
-	currentFsType, err := getDiskFormat(disk)
+	currentFsType, err := findDeviceFormat(disk)
 	if err != nil {
 		return err
 	}
