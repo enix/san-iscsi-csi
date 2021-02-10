@@ -79,7 +79,7 @@ In order to dynamically provision persistants volumes, you first need to create 
 To make sure everything went well, there's a example pod you can deploy in the `example/` directory. If the pod reaches the `Running` status, you're good to go!
 
 ```sh
-kubectl apply -f example/pod.yml
+kubectl apply -f example/pod.yaml
 ```
 
 ## Command-line arguments
