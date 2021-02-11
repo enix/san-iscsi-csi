@@ -1,5 +1,7 @@
 # Dothill-csi dynamic provisioner for Kubernetes
 
+[![Build status](https://gitlab.com/enix.io/dothill-csi/badges/main/pipeline.svg)](https://gitlab.com/enix.io/dothill-csi/-/pipelines)
+
 A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storage systems.
 
 ## Introduction
