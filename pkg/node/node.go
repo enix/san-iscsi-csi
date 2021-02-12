@@ -167,7 +167,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	klog.Infof("succesfully mounted volume at %s", req.GetTargetPath())
+	klog.Infof("successfully mounted volume at %s", req.GetTargetPath())
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
