@@ -25,6 +25,8 @@ build and push:
     - docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD"
   script:
     - VERSION="$CI_COMMIT_TAG" make push
+    - docker tag "enix/dothill-provisioner:$CI_COMMIT_TAG" enix/dothill-provisioner
+    - docker push enix/dothill-provisioner
   only:
     - tags
 

@@ -1,5 +1,5 @@
 ifeq ($(REGISTRY),)
-	REGISTRY = docker.io/enix
+	REGISTRY = enix
 endif
 
 ifeq ($(VERSION),)
