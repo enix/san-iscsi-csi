@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/container-storage-interface/spec v1.3.0
-	github.com/enix/dothill-api-go v1.5.0
+	github.com/enix/dothill-api-go v1.5.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/kubernetes-csi/csi-lib-iscsi v0.0.0-20200118015005-959f12c91ca8
 	github.com/kubernetes-csi/csi-test v0.0.0-20191016154743-6931aedb3df0
