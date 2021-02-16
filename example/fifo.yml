@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fifo-claim
+
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: my-marvelous-storage
+  resources:
+    requests:
+      storage: 10Mi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fifo-pod
+
+spec:
+  initContainers:
+  - image: alpine
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c", "rm -f /vol/fifo && mkfifo /vol/fifo"]
+    name: mkfifo
+    volumeMounts:
+    - mountPath: /vol
+      name: volume
+  containers:
+  - image: alpine
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c", "while read line </vol/fifo; do echo $line; done"]
+    name: read
+    volumeMounts:
+    - mountPath: /vol
+      name: volume
+  - image: alpine
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c", "(while true; do for i in $(seq 0 100); do echo $i && sleep 0.1; done; done) > /vol/fifo"]
+    name: write
+    volumeMounts:
+    - mountPath: /vol
+      name: volume
+  volumes:
+  - name: volume
+    persistentVolumeClaim:
+      claimName: fifo-claim
