@@ -1,5 +1,5 @@
-ifeq ($(REGISTRY),)
-	REGISTRY = enix
+ifeq ($(DOCKER_HUB_REPOSITORY),)
+	DOCKER_HUB_REPOSITORY = docker.io/enix
 endif
 
 ifeq ($(VERSION),)
@@ -10,7 +10,7 @@ ifeq ($(BIN),)
 	BIN = dothill
 endif
 
-IMAGE = $(REGISTRY)/dothill-provisioner:$(VERSION)
+IMAGE = $(DOCKER_HUB_REPOSITORY)/dothill-provisioner:$(VERSION)
 
 all:		bin image
 .PHONY: all
