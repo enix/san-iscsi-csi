@@ -1,3 +1,14 @@
+## [2.4.1](https://github.com/enix/dothill-csi/compare/v2.4.0...v2.4.1) (2021-02-18)
+
+
+### Bug Fixes
+
+* **ci:** push latest tag ([1d5523e](https://github.com/enix/dothill-csi/commit/1d5523ea971f7fc297c62a678b1ca79764279c54)), closes [#80](https://github.com/enix/dothill-csi/issues/80)
+* fix typos ([2c3917d](https://github.com/enix/dothill-csi/commit/2c3917d8c5b597969bfa99b4546fd3d9890bc59d))
+* **controller:** upgrade dothill-api-go to fix sigsegv on nil status ([9ff320f](https://github.com/enix/dothill-csi/commit/9ff320f81cafd8c0ec3835782da01b4236d6c0ab))
+* **helm:** mount /run/udev to fix multipathd table loading at startup ([4159980](https://github.com/enix/dothill-csi/commit/4159980821b0e86651f4052875649ec6776231fc)), closes [#81](https://github.com/enix/dothill-csi/issues/81)
+* **node:** upgrade csi-lib-iscsi ([3505af6](https://github.com/enix/dothill-csi/commit/3505af62156137c9107a7514ae76dc2d5a5fa441)), closes [#74](https://github.com/enix/dothill-csi/issues/74)
+
 # [2.4.0](https://gitlab.enix.io/products/stx/dothill-provisioner/compare/v2.3.2...v2.4.0) (2021-02-02)
 
 
