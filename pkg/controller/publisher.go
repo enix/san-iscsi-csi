@@ -76,7 +76,7 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 		return nil, err
 	}
 
-	klog.Infof("succesfully mapped volume %s for initiator %s", req.GetVolumeId(), initiatorName)
+	klog.Infof("successfully mapped volume %s for initiator %s", req.GetVolumeId(), initiatorName)
 	return &csi.ControllerPublishVolumeResponse{
 		PublishContext: map[string]string{"lun": strconv.Itoa(lun)},
 	}, nil
