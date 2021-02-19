@@ -1,3 +1,20 @@
+# [3.0.0](https://github.com/enix/dothill-csi/compare/v2.4.1...v3.0.0) (2021-02-19)
+
+
+### Bug Fixes
+
+* **readme:** marketing stuff ([bb14e0b](https://github.com/enix/dothill-csi/commit/bb14e0bb0af5b27826b7a2facdae780299a2e08d))
+
+
+### chore
+
+* rename dothill-provisioner to dothill-csi ([a6624e8](https://github.com/enix/dothill-csi/commit/a6624e897aef3dfd2bd675c4b70c4ffa44a9d005))
+
+
+### BREAKING CHANGES
+
+* The docker image and helm chart are now called dothill-csi instead of dothill-provisioner
+
 ## [2.4.1](https://github.com/enix/dothill-csi/compare/v2.4.0...v2.4.1) (2021-02-18)
 
 
