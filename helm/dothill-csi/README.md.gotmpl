@@ -1,0 +1,53 @@
+{{ template "chart.header" . }}
+{{ template "chart.deprecationWarning" . }}
+
+{{ template "chart.badgesSection" . }}
+
+{{ template "chart.description" . }}
+
+{{ template "chart.homepageLine" . }}
+
+## 📜 Using the Chart
+
+### Installing the Chart
+
+Create a file named `{{ template "chart.name" . }}.values.yaml` with your values, with the help of [Chart Values](#values).
+
+Add our Charts repository:
+```
+$ helm repo add enix https://charts.enix.io
+```
+
+Install the {{ template "chart.name" . }} with release name `{{ template "chart.name" . }}` in the `dothill-system` namespace:
+```
+$ helm install -n dothill-system {{ template "chart.name" . }} enix/{{ template "chart.name" . }} --values {{ template "chart.name" . }}.values.yaml
+```
+
+The `upgrade` command is used to change configuration when values are modified:
+```
+$ helm upgrade -n dothill-system {{ template "chart.name" . }} enix/{{ template "chart.name" . }} --values {{ template "chart.name" . }}.values.yaml
+```
+
+### Upgrading the Chart
+
+Update Helm repositories:
+```
+$ helm repo update
+```
+
+Upgrade release names `{{ template "chart.name" . }}` to the latest version:
+```
+$ helm upgrade {{ template "chart.name" . }} enix/{{ template "chart.name" . }}
+```
+
+### Creating a storage class
+
+In order to dynamically provision persistants volumes, you first need to create a storage class. To do so, please refer to the project [documentation](https://github.com/enix/dothill-csi).
+
+{{ template "chart.maintainersSection" . }}
+
+{{ template "chart.sourcesSection" . }}
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}

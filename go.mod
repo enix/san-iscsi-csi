@@ -1,4 +1,4 @@
-module github.com/enix/dothill-storage-controller
+module github.com/enix/dothill-csi
 
 go 1.12
 

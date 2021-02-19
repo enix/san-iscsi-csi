@@ -3,9 +3,9 @@ package main
 import (
 	"testing"
 
-	"github.com/enix/dothill-storage-controller/pkg/common"
-	"github.com/enix/dothill-storage-controller/pkg/controller"
-	"github.com/enix/dothill-storage-controller/pkg/node"
+	"github.com/enix/dothill-csi/pkg/common"
+	"github.com/enix/dothill-csi/pkg/controller"
+	"github.com/enix/dothill-csi/pkg/node"
 	"github.com/kubernetes-csi/csi-test/pkg/sanity"
 )
 

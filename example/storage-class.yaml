@@ -1,21 +1,22 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
-provisioner: dothill.csi.enix.io
-volumeBindingMode: WaitForFirstConsumer
+provisioner: dothill.csi.enix.io # Required for the plugin to recognize this storage class as handled by itself.
+volumeBindingMode: WaitForFirstConsumer # Prefer this value to avoid unschedulable pods (https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode)
 allowVolumeExpansion: true
 metadata:
-  name: my-marvelous-storage
+  name: my-marvelous-storage # Choose the name that fits the best with your StorageClass.
 parameters:
+  # Secrets name and namespace, they can be the same for provisioner, controller-publish and controller-expand sections.
   csi.storage.k8s.io/provisioner-secret-name: dothill-api
   csi.storage.k8s.io/provisioner-secret-namespace: dothill-system
   csi.storage.k8s.io/controller-publish-secret-name: dothill-api
   csi.storage.k8s.io/controller-publish-secret-namespace: dothill-system
   csi.storage.k8s.io/controller-expand-secret-name: dothill-api
   csi.storage.k8s.io/controller-expand-secret-namespace: dothill-system
-  fsType: ext4
-  iqn: iqn.2015-11.com.hpe:storage.msa2050.2002518b4c
-  pool: A
-  portals: 10.0.0.24,10.0.0.25
+  fsType: ext4 # Desired filesystem
+  iqn: iqn.2015-11.com.hpe:storage.msa2050.2002518b4c # Appliance IQN
+  pool: A # Pool to use on the IQN to provision volumes
+  portals: 10.0.0.24,10.0.0.25 # Comma separated list of portal ips. (One per controller should be enough).
 ---
 apiVersion: v1
 kind: Secret
@@ -24,6 +25,6 @@ metadata:
   namespace: dothill-system
 type: Opaque
 data:
-  apiAddress: aHR0cHM6Ly8xMC4wLjAuNDI=
-  username: am9obi5kb2U=
-  password: bXktU0BmZStwYXNzdzByZCE=
+  apiAddress: aHR0cHM6Ly8xMC4wLjAuNDI= # base64 encoded api address
+  username: am9obi5kb2U= # base64 encoded username
+  password: bXktU0BmZStwYXNzdzByZCE= # base64 encoded password

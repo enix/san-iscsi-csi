@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/enix/dothill-storage-controller/pkg/common"
-	"github.com/enix/dothill-storage-controller/pkg/node"
+	"github.com/enix/dothill-csi/pkg/common"
+	"github.com/enix/dothill-csi/pkg/node"
 	"k8s.io/klog"
 )
 
