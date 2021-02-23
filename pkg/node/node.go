@@ -211,6 +211,10 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
+	if err = checkFs(connector.MountTargetDevice.GetPath()); err != nil {
+		return nil, status.Errorf(codes.DataLoss, "Filesystem seems to be corrupted: %v", err)
+	}
+
 	klog.Info("detaching ISCSI device")
 	err = connector.DisconnectVolume()
 	if err != nil {
