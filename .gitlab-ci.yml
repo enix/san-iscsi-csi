@@ -51,6 +51,7 @@ push helm chart:
       sed -i
       -e "s/version: 0\.0\.0-DIRTY/version: ${CI_COMMIT_TAG:1}/g"
       -e "s/appVersion: 0\.0\.0-DIRTY/appVersion: $CI_COMMIT_TAG/g"
+      -e "s/image: enix\/dothill-csi:0\.0\.0-DIRTY/image: enix\/dothill-csi:$CI_COMMIT_TAG/g"
       ./Chart.yaml
     - helm-docs
     - rm ./README.md.gotmpl
