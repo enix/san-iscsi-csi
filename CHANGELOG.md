@@ -1,3 +1,11 @@
+## [3.0.1](https://github.com/enix/dothill-csi/compare/v3.0.0...v3.0.1) (2021-03-02)
+
+
+### Bug Fixes
+
+* **node:** check fs health before ejecting devices ([1d4ad89](https://github.com/enix/dothill-csi/commit/1d4ad89729c14141280b1a20129de49cf5b45f31))
+* **node:** set disable_changed_wwids to yes in multipathd config ([6f7af14](https://github.com/enix/dothill-csi/commit/6f7af14d885ffcfd53146d145854329b972c1933))
+
 # [3.0.0](https://github.com/enix/dothill-csi/compare/v2.4.1...v3.0.0) (2021-02-19)
 
 
