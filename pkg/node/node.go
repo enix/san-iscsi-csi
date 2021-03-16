@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-csi/pkg/common"
@@ -318,12 +319,19 @@ func checkFs(path string) error {
 
 func findDeviceFormat(device string) (string, error) {
 	klog.V(2).Infof("Trying to find filesystem format on device %q", device)
-	output, err := exec.Command("blkid",
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	output, err := exec.CommandContext(ctx, "blkid",
 		"--probe",
 		"--match-tag", "TYPE",
 		"--match-tag", "PTTYPE",
 		"--output", "export",
 		device).CombinedOutput()
+
+	if ctx.Err() == context.DeadlineExceeded {
+		err = errors.New("command timed out after 2 seconds")
+	}
 
 	klog.V(2).Infof("blkid output: %q,", output)
 
