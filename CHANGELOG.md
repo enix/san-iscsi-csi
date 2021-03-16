@@ -1,3 +1,12 @@
+## [3.0.2](https://github.com/enix/dothill-csi/compare/v3.0.1...v3.0.2) (2021-03-16)
+
+
+### Bug Fixes
+
+* **helm:** mount udev database in dothill-node container ([e5658d2](https://github.com/enix/dothill-csi/commit/e5658d2e5440ef9759cbd8985166c717d3a5d1cd))
+* **node:** add 2 second timeout on blkid to prevent a deadlock ([b925c4b](https://github.com/enix/dothill-csi/commit/b925c4b65fd23843cec47199d75eb24907739a33))
+* **node:** check multipath consistency on connection/disconnection ([22b373d](https://github.com/enix/dothill-csi/commit/22b373d02301772beab5e5bb924c633988ad2206))
+
 ## [3.0.1](https://github.com/enix/dothill-csi/compare/v3.0.0...v3.0.1) (2021-03-02)
 
 
