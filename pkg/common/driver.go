@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/enix/dothill-csi/pkg/exporter"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"k8s.io/klog"
@@ -35,9 +36,10 @@ const (
 // Driver contains main resources needed by the driver
 // and references the underlying specific driver
 type Driver struct {
-	impl   DriverImpl
-	socket net.Listener
-	server *grpc.Server
+	impl     DriverImpl
+	socket   net.Listener
+	server   *grpc.Server
+	exporter *exporter.Exporter
 }
 
 // DriverImpl is the implementation of the specific driver
@@ -67,13 +69,22 @@ type WithVolumeCaps interface {
 
 // NewDriver is a convenience function for creating an abstract driver
 func NewDriver(impl DriverImpl) *Driver {
+	exporter := exporter.New(9842)
+	interceptors := append(
+		*impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl)),
+		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			resp, err := handler(ctx, req)
+			exporter.Collector.IncCSICall(info.FullMethod, err == nil)
+			return resp, err
+		},
+	)
+
 	return &Driver{
 		impl: impl,
 		server: grpc.NewServer(
-			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-				*impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl))...,
-			)),
+			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(interceptors...)),
 		),
+		exporter: exporter,
 	}
 }
 
@@ -129,6 +140,10 @@ func (driver *Driver) Start(bind string) {
 	go func() {
 		_ = <-sigc
 		driver.Stop()
+	}()
+
+	go func() {
+		driver.exporter.ListenAndServe()
 	}()
 
 	klog.Infof("driver listening on %s\n\n", bind)
