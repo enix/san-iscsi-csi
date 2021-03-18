@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-csi/pkg/exporter"
@@ -70,14 +71,15 @@ type WithVolumeCaps interface {
 // NewDriver is a convenience function for creating an abstract driver
 func NewDriver(impl DriverImpl) *Driver {
 	exporter := exporter.New(9842)
-	interceptors := append(
-		*impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl)),
+	interceptors := append([]grpc.UnaryServerInterceptor{
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			start := time.Now()
 			resp, err := handler(ctx, req)
-			exporter.Collector.IncCSICall(info.FullMethod, err == nil)
+			exporter.Collector.IncCSIRPCCall(info.FullMethod, err == nil)
+			exporter.Collector.AddCSIRPCCallDuration(info.FullMethod, time.Since(start))
 			return resp, err
 		},
-	)
+	}, *impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl))...)
 
 	return &Driver{
 		impl: impl,
@@ -155,4 +157,5 @@ func (driver *Driver) Stop() {
 	klog.Info("gracefully stopping...")
 	driver.server.GracefulStop()
 	driver.socket.Close()
+	driver.exporter.Shutdown()
 }

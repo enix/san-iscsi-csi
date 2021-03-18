@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -13,6 +14,9 @@ type Collector struct {
 var (
 	csiRPCCallMetric = "dothill_csi_rpc_call"
 	csiRPCCallHelp   = "How many CSI RPC calls have been executed"
+
+	csiRPCCallDurationMetric = "dothill_csi_rpc_call_duration"
+	csiRPCCallDurationHelp   = "The total duration of CSI RPC calls"
 )
 
 func NewCollector() *Collector {
@@ -55,4 +59,25 @@ func (collector *Collector) getCSIRPCCallCounter(method string, success bool) pr
 
 func (collector *Collector) IncCSIRPCCall(method string, success bool) {
 	collector.getCSIRPCCallCounter(method, success).Inc()
+}
+
+func (collector *Collector) getCSIRPCCallDurationCounter(method string) prometheus.Counter {
+	if counter, ok := collector.csiRPCCallCounters[method]; ok {
+		return counter
+	}
+
+	counter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: csiRPCCallDurationMetric,
+		Help: csiRPCCallDurationHelp,
+		ConstLabels: prometheus.Labels{
+			"method": method,
+		},
+	})
+	collector.csiRPCCallCounters[method] = counter
+
+	return counter
+}
+
+func (collector *Collector) AddCSIRPCCallDuration(method string, duration time.Duration) {
+	collector.getCSIRPCCallDurationCounter(method).Add(float64(duration.Nanoseconds()) / 1000 / 1000 / 1000)
 }
