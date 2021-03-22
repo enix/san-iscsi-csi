@@ -9,8 +9,8 @@ require (
 	github.com/kubernetes-csi/csi-lib-iscsi v0.0.0-20200118015005-959f12c91ca8
 	github.com/kubernetes-csi/csi-test v0.0.0-20191016154743-6931aedb3df0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.9.0
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
+	github.com/prometheus/client_golang v1.10.0
+	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	google.golang.org/grpc v1.29.1
 	k8s.io/klog v1.0.0
 )

@@ -32,6 +32,10 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
+          ports:
+            - containerPort: 9842
+              name: metrics
+              protocol: TCP
         - name: csi-provisioner
           image: {{ .Values.csiProvisioner.image.repository }}:{{ .Values.csiProvisioner.image.tag }}
           args:

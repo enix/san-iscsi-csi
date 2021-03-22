@@ -11,7 +11,7 @@ type Collector struct {
 	csiRPCCallCounters map[string]prometheus.Counter
 }
 
-var (
+const (
 	csiRPCCallMetric = "dothill_csi_rpc_call"
 	csiRPCCallHelp   = "How many CSI RPC calls have been executed"
 

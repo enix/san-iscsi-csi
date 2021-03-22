@@ -73,7 +73,7 @@ spec:
             name: healthz
             protocol: TCP
           - containerPort: 9842
-            name: prom-exporter
+            name: metrics
             protocol: TCP
           livenessProbe:
             httpGet:
