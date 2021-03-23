@@ -39,8 +39,10 @@ var csiMutexes = map[string]*sync.Mutex{
 	"/csi.v1.Controller/ControllerExpandVolume":    {},
 }
 
-// Driver is the implementation of csi.ControllerServer
-type Driver struct {
+// Controller is the implementation of csi.ControllerServer
+type Controller struct {
+	*common.Driver
+
 	dothillClient *dothill.Client
 }
 
@@ -51,14 +53,14 @@ type DriverCtx struct {
 	VolumeCaps  *[]*csi.VolumeCapability
 }
 
-// NewDriver is a convenience fn for creating a controller driver
-func NewDriver() *Driver {
-	return &Driver{dothillClient: dothill.NewClient()}
-}
+// New is a convenience fn for creating a controller driver
+func New() *Controller {
+	controller := &Controller{
+		Driver:        common.NewDriver(),
+		dothillClient: dothill.NewClient(),
+	}
 
-// NewServerInterceptors implements DriverImpl.NewServerInterceptors
-func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor {
-	serverInterceptors := []grpc.UnaryServerInterceptor{
+	controller.InitServer(
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			if mutex, exists := csiMutexes[info.FullMethod]; exists {
 				mutex.Lock()
@@ -66,7 +68,9 @@ func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.Una
 			}
 			return handler(ctx, req)
 		},
-		logRoutineServerInterceptor,
+		common.NewLogRoutineServerInterceptor(func(string) bool {
+			return true
+		}),
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			driverContext := DriverCtx{}
 			if reqWithSecrets, ok := req.(common.WithSecrets); ok {
@@ -79,26 +83,24 @@ func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.Una
 				driverContext.VolumeCaps = reqWithVolumeCaps.GetVolumeCapabilities()
 			}
 
-			err := driver.beginRoutine(&driverContext)
-			defer driver.endRoutine()
+			err := controller.beginRoutine(&driverContext)
+			defer controller.endRoutine()
 			if err != nil {
 				return nil, err
 			}
 
 			return handler(ctx, req)
 		},
-	}
+	)
 
-	return &serverInterceptors
-}
+	csi.RegisterIdentityServer(controller.Server, controller)
+	csi.RegisterControllerServer(controller.Server, controller)
 
-// ShouldLogRoutine implements DriverImpl.ShouldLogRoutine
-func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
-	return true
+	return controller
 }
 
 // ControllerGetCapabilities returns the capabilities of the controller service.
-func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
+func (controller *Controller) ControllerGetCapabilities(ctx context.Context, req *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
 	var csc []*csi.ControllerServiceCapability
 	cl := []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
@@ -125,7 +127,7 @@ func (driver *Driver) ControllerGetCapabilities(ctx context.Context, req *csi.Co
 
 // ValidateVolumeCapabilities checks whether the volume capabilities requested
 // are supported.
-func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
+func (controller *Controller) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
 	volumeID := req.GetVolumeId()
 	if len(volumeID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot validate volume with empty ID")
@@ -133,7 +135,7 @@ func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.V
 	if len(req.GetVolumeCapabilities()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot validate volume without capabilities")
 	}
-	_, _, err := driver.dothillClient.ShowVolumes(volumeID)
+	_, _, err := controller.dothillClient.ShowVolumes(volumeID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "cannot validate volume not found")
 	}
@@ -146,26 +148,26 @@ func (driver *Driver) ValidateVolumeCapabilities(ctx context.Context, req *csi.V
 }
 
 // ListVolumes returns a list of all requested volumes
-func (driver *Driver) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
+func (controller *Controller) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "ListVolumes is unimplemented and should not be called")
 }
 
 // GetCapacity returns the capacity of the storage pool
-func (driver *Driver) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
+func (controller *Controller) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "GetCapacity is unimplemented and should not be called")
 }
 
 // ControllerGetVolume fetch current information about a volume
-func (driver *Driver) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
+func (controller *Controller) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "ControllerGetVolume is unimplemented and should not be called")
 }
 
 // Probe returns the health and readiness of the plugin
-func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+func (controller *Controller) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
 	return &csi.ProbeResponse{}, nil
 }
 
-func (driver *Driver) beginRoutine(ctx *DriverCtx) error {
+func (controller *Controller) beginRoutine(ctx *DriverCtx) error {
 	if err := runPreflightChecks(ctx.Parameters, ctx.VolumeCaps); err != nil {
 		return err
 	}
@@ -175,14 +177,14 @@ func (driver *Driver) beginRoutine(ctx *DriverCtx) error {
 		return nil
 	}
 
-	return driver.configureClient(ctx.Credentials)
+	return controller.configureClient(ctx.Credentials)
 }
 
-func (driver *Driver) endRoutine() {
-	driver.dothillClient.HTTPClient.CloseIdleConnections()
+func (controller *Controller) endRoutine() {
+	controller.dothillClient.HTTPClient.CloseIdleConnections()
 }
 
-func (driver *Driver) configureClient(credentials map[string]string) error {
+func (controller *Controller) configureClient(credentials map[string]string) error {
 	username := string(credentials[common.UsernameSecretKey])
 	password := string(credentials[common.PasswordSecretKey])
 	apiAddr := string(credentials[common.APIAddressConfigKey])
@@ -192,16 +194,16 @@ func (driver *Driver) configureClient(credentials map[string]string) error {
 	}
 
 	klog.Infof("using dothill API at address %s", apiAddr)
-	if driver.dothillClient.Addr == apiAddr && driver.dothillClient.Username == username {
+	if controller.dothillClient.Addr == apiAddr && controller.dothillClient.Username == username {
 		klog.Info("dothill client is already configured for this API, skipping login")
 		return nil
 	}
 
-	driver.dothillClient.Username = username
-	driver.dothillClient.Password = password
-	driver.dothillClient.Addr = apiAddr
-	klog.Infof("login into %q as user %q", driver.dothillClient.Addr, driver.dothillClient.Username)
-	err := driver.dothillClient.Login()
+	controller.dothillClient.Username = username
+	controller.dothillClient.Password = password
+	controller.dothillClient.Addr = apiAddr
+	klog.Infof("login into %q as user %q", controller.dothillClient.Addr, controller.dothillClient.Username)
+	err := controller.dothillClient.Login()
 	if err != nil {
 		return status.Error(codes.Unauthenticated, err.Error())
 	}

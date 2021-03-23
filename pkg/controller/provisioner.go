@@ -13,8 +13,8 @@ import (
 	"k8s.io/klog"
 )
 
-func (driver *Driver) checkVolumeExists(volumeID string, size int64) (bool, error) {
-	data, responseStatus, err := driver.dothillClient.ShowVolumes(volumeID)
+func (controller *Controller) checkVolumeExists(volumeID string, size int64) (bool, error) {
+	data, responseStatus, err := controller.dothillClient.ShowVolumes(volumeID)
 	if err != nil && responseStatus.ReturnCode != -10058 {
 		return false, err
 	}
@@ -35,7 +35,7 @@ func (driver *Driver) checkVolumeExists(volumeID string, size int64) (bool, erro
 }
 
 // CreateVolume creates a new volume from the given request. The function is idempotent.
-func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
+func (controller *Controller) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	if req.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cannot create volume with empty name")
 	}
@@ -54,13 +54,13 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 
 	klog.Infof("creating volume %s (size %s) in pool %s", volumeID, sizeStr, parameters[common.PoolConfigKey])
 
-	volumeExists, err := driver.checkVolumeExists(volumeID, size)
+	volumeExists, err := controller.checkVolumeExists(volumeID, size)
 	if err != nil {
 		return nil, err
 	}
 
 	if !volumeExists {
-		_, _, err = driver.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
+		_, _, err = controller.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
 		if err != nil {
 			return nil, err
 		}
@@ -81,13 +81,13 @@ func (driver *Driver) CreateVolume(ctx context.Context, req *csi.CreateVolumeReq
 }
 
 // DeleteVolume deletes the given volume. The function is idempotent.
-func (driver *Driver) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
+func (controller *Controller) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot delete volume with empty ID")
 	}
 
 	klog.Infof("deleting volume %s", req.GetVolumeId())
-	_, status, err := driver.dothillClient.DeleteVolume(req.GetVolumeId())
+	_, status, err := controller.dothillClient.DeleteVolume(req.GetVolumeId())
 	if err != nil {
 		if status != nil && status.ReturnCode == volumeNotFoundErrorCode {
 			klog.Infof("volume %s does not exist, assuming it has already been deleted", req.GetVolumeId())

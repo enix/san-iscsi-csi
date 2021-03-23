@@ -34,23 +34,12 @@ const (
 	VolumeNameMaxLength = 32
 )
 
-// Driver contains main resources needed by the driver
-// and references the underlying specific driver
+// Driver contains main resources needed by the driver and references the underlying specific driver
 type Driver struct {
-	impl     DriverImpl
-	socket   net.Listener
-	server   *grpc.Server
-	exporter *exporter.Exporter
-}
+	Server *grpc.Server
 
-// DriverImpl is the implementation of the specific driver
-type DriverImpl interface {
-	// NewServerInterceptors create server interceptors to be used as middlewares
-	NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor
-	// ShouldLogRoutine determine if a routine should be logged or not
-	ShouldLogRoutine(fullMethod string) bool
-	// Probe is an implementation of IdentityServer.Probe
-	Probe(context.Context, *csi.ProbeRequest) (*csi.ProbeResponse, error)
+	socket   net.Listener
+	exporter *exporter.Exporter
 }
 
 // WithSecrets is an interface for structs with secrets
@@ -69,30 +58,29 @@ type WithVolumeCaps interface {
 }
 
 // NewDriver is a convenience function for creating an abstract driver
-func NewDriver(impl DriverImpl) *Driver {
-	exporter := exporter.New(9842)
+func NewDriver() *Driver {
+	return &Driver{exporter: exporter.New(9842)}
+}
+
+func (driver *Driver) InitServer(unaryServerInterceptors ...grpc.UnaryServerInterceptor) {
 	interceptors := append([]grpc.UnaryServerInterceptor{
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			start := time.Now()
 			resp, err := handler(ctx, req)
-			exporter.Collector.IncCSIRPCCall(info.FullMethod, err == nil)
-			exporter.Collector.AddCSIRPCCallDuration(info.FullMethod, time.Since(start))
+			driver.exporter.Collector.IncCSIRPCCall(info.FullMethod, err == nil)
+			driver.exporter.Collector.AddCSIRPCCallDuration(info.FullMethod, time.Since(start))
 			return resp, err
 		},
-	}, *impl.NewServerInterceptors(newLogRoutineServerInterceptor(impl))...)
+	}, unaryServerInterceptors...)
 
-	return &Driver{
-		impl: impl,
-		server: grpc.NewServer(
-			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(interceptors...)),
-		),
-		exporter: exporter,
-	}
+	driver.Server = grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(interceptors...)),
+	)
 }
 
-func newLogRoutineServerInterceptor(impl DriverImpl) grpc.UnaryServerInterceptor {
+func NewLogRoutineServerInterceptor(shouldLogRoutine func(string) bool) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if impl.ShouldLogRoutine(info.FullMethod) {
+		if shouldLogRoutine(info.FullMethod) {
 			klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
 			defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
 		}
@@ -123,15 +111,6 @@ func (driver *Driver) Start(bind string) {
 	}
 	driver.socket = socket
 
-	csi.RegisterIdentityServer(driver.server, driver)
-	if controller, ok := driver.impl.(csi.ControllerServer); ok {
-		csi.RegisterControllerServer(driver.server, controller)
-	} else if node, ok := driver.impl.(csi.NodeServer); ok {
-		csi.RegisterNodeServer(driver.server, node)
-	} else {
-		klog.Fatalf("cannot start a driver which does not implement anything")
-	}
-
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,
 		syscall.SIGHUP,
@@ -149,13 +128,13 @@ func (driver *Driver) Start(bind string) {
 	}()
 
 	klog.Infof("driver listening on %s\n\n", bind)
-	driver.server.Serve(socket)
+	driver.Server.Serve(socket)
 }
 
 // Stop shuts down the driver
 func (driver *Driver) Stop() {
 	klog.Info("gracefully stopping...")
-	driver.server.GracefulStop()
+	driver.Server.GracefulStop()
 	driver.socket.Close()
 	driver.exporter.Shutdown()
 }

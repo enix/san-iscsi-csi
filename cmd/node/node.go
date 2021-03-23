@@ -17,5 +17,5 @@ func main() {
 	flag.Set("logtostderr", "true")
 	flag.Parse()
 	klog.Infof("starting dothill storage node plugin %s", common.Version)
-	common.NewDriver(node.NewDriver(*kubeletPath)).Start(*bind)
+	node.New(*kubeletPath).Start(*bind)
 }

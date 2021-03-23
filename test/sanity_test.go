@@ -3,7 +3,6 @@ package main
 import (
 	"testing"
 
-	"github.com/enix/dothill-csi/pkg/common"
 	"github.com/enix/dothill-csi/pkg/controller"
 	"github.com/enix/dothill-csi/pkg/node"
 	"github.com/kubernetes-csi/csi-test/pkg/sanity"
@@ -14,8 +13,8 @@ func Test(t *testing.T) {
 	controllerSocketPath := "unix:///tmp/controller.sock"
 	nodeSocketPath := "unix:///tmp/node.sock"
 
-	ctrl := common.NewDriver(controller.NewDriver())
-	node := common.NewDriver(node.NewDriver("/var/lib/kubelet"))
+	ctrl := controller.New()
+	node := node.New("/var/lib/kubelet")
 
 	go ctrl.Start(controllerSocketPath)
 	defer ctrl.Stop()
