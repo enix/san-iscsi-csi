@@ -12,6 +12,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-csi/pkg/exporter"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 	"k8s.io/klog"
 )
@@ -58,8 +59,14 @@ type WithVolumeCaps interface {
 }
 
 // NewDriver is a convenience function for creating an abstract driver
-func NewDriver() *Driver {
-	return &Driver{exporter: exporter.New(9842)}
+func NewDriver(collectors ...prometheus.Collector) *Driver {
+	exporter := exporter.New(9842)
+
+	for _, collector := range collectors {
+		exporter.RegisterCollector(collector)
+	}
+
+	return &Driver{exporter: exporter}
 }
 
 func (driver *Driver) InitServer(unaryServerInterceptors ...grpc.UnaryServerInterceptor) {

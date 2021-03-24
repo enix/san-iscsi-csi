@@ -55,9 +55,10 @@ type DriverCtx struct {
 
 // New is a convenience fn for creating a controller driver
 func New() *Controller {
+	dothillClient := dothill.NewClient()
 	controller := &Controller{
-		Driver:        common.NewDriver(),
-		dothillClient: dothill.NewClient(),
+		Driver:        common.NewDriver(dothillClient.Collector),
+		dothillClient: dothillClient,
 	}
 
 	controller.InitServer(

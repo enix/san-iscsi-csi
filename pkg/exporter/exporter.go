@@ -16,15 +16,18 @@ type Exporter struct {
 	Port      int
 	Collector *Collector
 
-	listener net.Listener
-	server   *http.Server
+	listener   net.Listener
+	server     *http.Server
+	collectors []prometheus.Collector
 }
 
 func New(port int) *Exporter {
-	return &Exporter{
+	exporter := &Exporter{
 		Port:      port,
 		Collector: NewCollector(),
 	}
+	exporter.RegisterCollector(exporter.Collector)
+	return exporter
 }
 
 // ListenAndServe : Convenience function to start exporter
@@ -38,11 +41,13 @@ func (exporter *Exporter) ListenAndServe() error {
 
 // Listen : Listen for requests
 func (exporter *Exporter) Listen() error {
-	err := prometheus.Register(exporter.Collector)
-	if err != nil {
-		if registered, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			prometheus.Unregister(registered.ExistingCollector)
-			prometheus.MustRegister(exporter.Collector)
+	for _, collector := range exporter.collectors {
+		err := prometheus.Register(collector)
+		if err != nil {
+			if registered, ok := err.(prometheus.AlreadyRegisteredError); ok {
+				prometheus.Unregister(registered.ExistingCollector)
+				prometheus.MustRegister(collector)
+			}
 		}
 	}
 
@@ -73,4 +78,8 @@ func (exporter *Exporter) Serve() error {
 // Shutdown : Properly tear down server
 func (exporter *Exporter) Shutdown() error {
 	return exporter.server.Shutdown(context.Background())
+}
+
+func (exporter *Exporter) RegisterCollector(collector prometheus.Collector) {
+	exporter.collectors = append(exporter.collectors, collector)
 }
