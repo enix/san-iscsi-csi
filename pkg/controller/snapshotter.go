@@ -12,14 +12,17 @@ import (
 	"github.com/enix/dothill-api-go"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"k8s.io/klog"
 )
 
 // CreateSnapshot creates a snapshot of the given volume
 func (controller *Controller) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
 	name := strings.Replace(req.Name[9:], "-", "", -1)
 
-	_, status, err := controller.dothillClient.CreateSnapshot(req.SourceVolumeId, name)
-	if err != nil && status.ReturnCode != -10186 {
+	_, respStatus, err := controller.dothillClient.CreateSnapshot(req.SourceVolumeId, name)
+	if err != nil && respStatus.ReturnCode != snapshotAlreadyExists {
 		return nil, err
 	}
 
@@ -44,13 +47,21 @@ func (controller *Controller) CreateSnapshot(ctx context.Context, req *csi.Creat
 		return nil, errors.New("snapshot not found")
 	}
 
+	if snapshot.SourceVolumeId != req.SourceVolumeId {
+		return nil, status.Error(codes.AlreadyExists, "cannot validate volume with empty ID")
+	}
+
 	return &csi.CreateSnapshotResponse{Snapshot: snapshot}, nil
 }
 
 // DeleteSnapshot deletes a snapshot of the given volume
 func (controller *Controller) DeleteSnapshot(ctx context.Context, req *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
 	_, status, err := controller.dothillClient.DeleteSnapshot(req.SnapshotId)
-	if err != nil && status.ReturnCode != -10050 {
+	if err != nil {
+		if status != nil && status.ReturnCode == snapshotNotFoundErrorCode {
+			klog.Infof("snapshot %s does not exist, assuming it has already been deleted", req.SnapshotId)
+			return &csi.DeleteSnapshotResponse{}, nil
+		}
 		return nil, err
 	}
 	return &csi.DeleteSnapshotResponse{}, nil

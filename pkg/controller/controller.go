@@ -18,6 +18,8 @@ const (
 	hostMapDoesNotExistsErrorCode = -10074
 	unmapFailedErrorCode          = -10509
 	volumeNotFoundErrorCode       = -10075
+	snapshotNotFoundErrorCode     = -10050
+	snapshotAlreadyExists         = -10186
 )
 
 var volumeCapabilities = []*csi.VolumeCapability{
