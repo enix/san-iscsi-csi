@@ -60,9 +60,23 @@ func (controller *Controller) CreateVolume(ctx context.Context, req *csi.CreateV
 	}
 
 	if !volumeExists {
-		_, _, err = controller.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
-		if err != nil {
-			return nil, err
+		var sourceID string
+
+		if volume := req.VolumeContentSource.GetVolume(); volume != nil {
+			sourceID = volume.VolumeId
+		}
+
+		if snapshot := req.VolumeContentSource.GetSnapshot(); sourceID == "" && snapshot != nil {
+			sourceID = snapshot.SnapshotId
+		}
+
+		if sourceID != "" {
+			controller.dothillClient.VolumeCopy(sourceID, volumeID, parameters[common.PoolConfigKey])
+		} else {
+			_, _, err = controller.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
