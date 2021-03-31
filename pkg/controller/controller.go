@@ -18,6 +18,7 @@ const (
 	hostMapDoesNotExistsErrorCode = -10074
 	unmapFailedErrorCode          = -10509
 	volumeNotFoundErrorCode       = -10075
+	volumeHasSnapshot             = -10183
 	snapshotNotFoundErrorCode     = -10050
 	snapshotAlreadyExists         = -10186
 )

@@ -101,11 +101,15 @@ func (controller *Controller) DeleteVolume(ctx context.Context, req *csi.DeleteV
 	}
 
 	klog.Infof("deleting volume %s", req.GetVolumeId())
-	_, status, err := controller.dothillClient.DeleteVolume(req.GetVolumeId())
+	_, respStatus, err := controller.dothillClient.DeleteVolume(req.GetVolumeId())
 	if err != nil {
-		if status != nil && status.ReturnCode == volumeNotFoundErrorCode {
-			klog.Infof("volume %s does not exist, assuming it has already been deleted", req.GetVolumeId())
-			return &csi.DeleteVolumeResponse{}, nil
+		if respStatus != nil {
+			if respStatus.ReturnCode == volumeNotFoundErrorCode {
+				klog.Infof("volume %s does not exist, assuming it has already been deleted", req.GetVolumeId())
+				return &csi.DeleteVolumeResponse{}, nil
+			} else if respStatus.ReturnCode == volumeHasSnapshot {
+				return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("volume %s cannot be deleted since it has snapshots", req.GetVolumeId()))
+			}
 		}
 		return nil, err
 	}
