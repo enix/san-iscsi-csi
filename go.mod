@@ -15,4 +15,4 @@ require (
 )
 
 // replace github.com/kubernetes-csi/csi-lib-iscsi => ./pkg/csi-lib-iscsi
-replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi v0.0.0-dothill-3-0-2-1
+replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi v0.0.0-dothill-3-0-3
