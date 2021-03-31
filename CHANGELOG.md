@@ -1,3 +1,11 @@
+## [3.0.3](https://github.com/enix/dothill-csi/compare/v3.0.2...v3.0.3) (2021-03-31)
+
+
+### Bug Fixes
+
+* replace debian by ubuntu to reduce vulnerabilities ([d4d91c9](https://github.com/enix/dothill-csi/commit/d4d91c90de18be3035d4cbec782fc36954462d16))
+* **node:** upgrade csi-lib-iscsi to fix a typo ([6cad085](https://github.com/enix/dothill-csi/commit/6cad0854f0a0d997ea19c2a6ee1a99a6444b8d80))
+
 ## [3.0.2](https://github.com/enix/dothill-csi/compare/v3.0.1...v3.0.2) (2021-03-16)
 
 
