@@ -24,9 +24,10 @@ RUN BIN="/dothill" make node
 
 ###########################################
 
-FROM debian:buster
+FROM ubuntu:18.04
 
 RUN apt update \
+ && apt dist-upgrade -y \
  && apt install -y dosfstools e2fsprogs xfsprogs jfsutils libisns0 open-iscsi kmod multipath-tools \
  && rm -rf /var/lib/apt/lists/*
 
