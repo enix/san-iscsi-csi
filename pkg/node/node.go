@@ -22,51 +22,51 @@ import (
 	"k8s.io/klog"
 )
 
-// Driver is the implementation of csi.NodeServer
-type Driver struct {
+// Node is the implementation of csi.NodeServer
+type Node struct {
+	*common.Driver
+
 	semaphore   *semaphore.Weighted
 	kubeletPath string
 }
 
-// NewDriver is a convenience function for creating a node driver
-func NewDriver(kubeletPath string) *Driver {
+// New is a convenience function for creating a node driver
+func New(kubeletPath string) *Node {
 	if klog.V(8) {
 		iscsi.EnableDebugLogging(os.Stderr)
 	}
 
-	return &Driver{
+	node := &Node{
+		Driver:      common.NewDriver(),
 		semaphore:   semaphore.NewWeighted(1),
 		kubeletPath: kubeletPath,
 	}
-}
 
-// NewServerInterceptors implements DriverImpl.NewServerInterceptors
-func (driver *Driver) NewServerInterceptors(logRoutineServerInterceptor grpc.UnaryServerInterceptor) *[]grpc.UnaryServerInterceptor {
-	serverInterceptors := []grpc.UnaryServerInterceptor{
+	node.InitServer(
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
-				if !driver.semaphore.TryAcquire(1) {
+				if !node.semaphore.TryAcquire(1) {
 					return nil, status.Error(codes.Aborted, "node busy: too many concurrent volume publication, try again later")
 				}
-				defer driver.semaphore.Release(1)
+				defer node.semaphore.Release(1)
 			}
 			return handler(ctx, req)
 		},
-		logRoutineServerInterceptor,
-	}
+		common.NewLogRoutineServerInterceptor(func(fullMethod string) bool {
+			return fullMethod == "/csi.v1.Node/NodePublishVolume" ||
+				fullMethod == "/csi.v1.Node/NodeUnpublishVolume" ||
+				fullMethod == "/csi.v1.Node/NodeExpandVolume"
+		}),
+	)
 
-	return &serverInterceptors
-}
+	csi.RegisterIdentityServer(node.Server, node)
+	csi.RegisterNodeServer(node.Server, node)
 
-// ShouldLogRoutine implements DriverImpl.ShouldLogRoutine
-func (driver *Driver) ShouldLogRoutine(fullMethod string) bool {
-	return fullMethod == "/csi.v1.Node/NodePublishVolume" ||
-		fullMethod == "/csi.v1.Node/NodeUnpublishVolume" ||
-		fullMethod == "/csi.v1.Node/NodeExpandVolume"
+	return node
 }
 
 // NodeGetInfo returns info about the node
-func (driver *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+func (node *Node) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	initiatorName, err := readInitiatorName()
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -79,7 +79,7 @@ func (driver *Driver) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoReque
 }
 
 // NodeGetCapabilities returns the supported capabilities of the node server
-func (driver *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
+func (node *Node) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
 	var csc []*csi.NodeServiceCapability
 	cl := []csi.NodeServiceCapability_RPC_Type{
 		csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
@@ -100,7 +100,7 @@ func (driver *Driver) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 }
 
 // NodePublishVolume mounts the volume mounted to the staging path to the target path
-func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume with empty id")
 	}
@@ -161,7 +161,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.Internal, string(out))
 	}
 
-	iscsiInfoPath := driver.getIscsiInfoPath(req.GetVolumeId())
+	iscsiInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
 	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
 	err = connector.Persist(iscsiInfoPath)
 	if err != nil {
@@ -173,7 +173,7 @@ func (driver *Driver) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 }
 
 // NodeUnpublishVolume unmounts the volume from the target path
-func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot unpublish volume with empty id")
 	}
@@ -199,7 +199,7 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		os.Remove(req.GetTargetPath())
 	}
 
-	iscsiInfoPath := driver.getIscsiInfoPath(req.GetVolumeId())
+	iscsiInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
 	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
@@ -230,8 +230,8 @@ func (driver *Driver) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 }
 
 // NodeExpandVolume finalizes volume expansion on the node
-func (driver *Driver) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
-	iscsiInfoPath := driver.getIscsiInfoPath(req.GetVolumeId())
+func (node *Node) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
+	iscsiInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
 	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -261,7 +261,7 @@ func (driver *Driver) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 
 // NodeGetVolumeStats return info about a given volume
 // Will not be called as the plugin does not have the GET_VOLUME_STATS capability
-func (driver *Driver) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
+func (node *Node) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeGetVolumeStats is unimplemented and should not be called")
 }
 
@@ -270,18 +270,18 @@ func (driver *Driver) NodeGetVolumeStats(ctx context.Context, req *csi.NodeGetVo
 // volume to a staging path. Once mounted, NodePublishVolume will make sure to
 // mount it to the appropriate path
 // Will not be called as the plugin does not have the STAGE_UNSTAGE_VOLUME capability
-func (driver *Driver) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+func (node *Node) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeStageVolume is unimplemented and should not be called")
 }
 
 // NodeUnstageVolume unstages the volume from the staging path
 // Will not be called as the plugin does not have the STAGE_UNSTAGE_VOLUME capability
-func (driver *Driver) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+func (node *Node) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "NodeUnstageVolume is unimplemented and should not be called")
 }
 
 // Probe returns the health and readiness of the plugin
-func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
 	if !isKernelModLoaded("iscsi_tcp") {
 		return nil, status.Error(codes.FailedPrecondition, "kernel mod iscsi_tcp is not loaded")
 	}
@@ -292,8 +292,8 @@ func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.Pr
 	return &csi.ProbeResponse{}, nil
 }
 
-func (driver *Driver) getIscsiInfoPath(volumeID string) string {
-	return fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", driver.kubeletPath, common.PluginName, volumeID)
+func (node *Node) getIscsiInfoPath(volumeID string) string {
+	return fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", node.kubeletPath, common.PluginName, volumeID)
 }
 
 func isKernelModLoaded(modName string) bool {

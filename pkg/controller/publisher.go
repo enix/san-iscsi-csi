@@ -42,7 +42,7 @@ func getVolumeMapsHostNames(client *dothill.Client, name string) ([]string, *dot
 }
 
 // ControllerPublishVolume attaches the given volume to the node
-func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
+func (driver *Controller) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume with empty ID")
 	}
@@ -83,7 +83,7 @@ func (driver *Driver) ControllerPublishVolume(ctx context.Context, req *csi.Cont
 }
 
 // ControllerUnpublishVolume deattaches the given volume from the node
-func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
+func (driver *Controller) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "cannot unpublish volume with empty ID")
 	}
@@ -103,7 +103,7 @@ func (driver *Driver) ControllerUnpublishVolume(ctx context.Context, req *csi.Co
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
-func (driver *Driver) chooseLUN(initiatorName string) (int, error) {
+func (driver *Controller) chooseLUN(initiatorName string) (int, error) {
 	klog.Infof("listing all LUN mappings")
 	volumes, responseStatus, err := driver.dothillClient.ShowHostMaps(initiatorName)
 	if err != nil && responseStatus == nil {
@@ -139,7 +139,7 @@ func (driver *Driver) chooseLUN(initiatorName string) (int, error) {
 	return -1, status.Error(codes.ResourceExhausted, "no more available LUNs")
 }
 
-func (driver *Driver) mapVolume(volumeName, initiatorName string, lun int) error {
+func (driver *Controller) mapVolume(volumeName, initiatorName string, lun int) error {
 	klog.Infof("trying to map volume %s for initiator %s on LUN %d", volumeName, initiatorName, lun)
 	_, metadata, err := driver.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
 	if err != nil && metadata == nil {

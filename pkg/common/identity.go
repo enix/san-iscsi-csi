@@ -35,8 +35,3 @@ func (driver *Driver) GetPluginCapabilities(ctx context.Context, req *csi.GetPlu
 		},
 	}, nil
 }
-
-// Probe returns the health and readiness of the plugin
-func (driver *Driver) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	return driver.impl.Probe(ctx, req)
-}

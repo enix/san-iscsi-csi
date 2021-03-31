@@ -75,3 +75,12 @@ nodeServer:
   nodeSelector:
   # -- Kubernetes nodeAffinity field for dothill-node-server Pod
   nodeAffinity:
+
+podMonitor:
+  # -- Set a Prometheus operator PodMonitor ressource (true or false)
+  enabled: false
+
+serviceMonitor:
+  # -- Set a Prometheus operator ServiceMonitor ressource (true or false)
+  enabled: false
+  
