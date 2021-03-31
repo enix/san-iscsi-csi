@@ -212,6 +212,12 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
+	_, err = os.Stat(connector.MountTargetDevice.GetPath())
+	if err != nil && os.IsNotExist(err) {
+		klog.Warningf("assuming that volume is already disconnected: %s", err)
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
 	if err = checkFs(connector.MountTargetDevice.GetPath()); err != nil {
 		return nil, status.Errorf(codes.DataLoss, "Filesystem seems to be corrupted: %v", err)
 	}
