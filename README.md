@@ -48,15 +48,17 @@ To a lesser extent, the following features are considered for a longer term futu
 
 ## Features
 
-| Features / Availability |  roadmap  | alpha | beta  | general availability |
-|-------------------------|-----------|-------|-------|----------------------|
-| dynamic provisioning    |           |       | 2.3.x |                      |
-| resize                  |           | 2.4.x |       |                      |
-| snapshot                | 3.1.x     |       |       |                      |
-| prometheus metrics      | 3.2.x     |       |       |                      |
-| raw blocks              | long term |       |       |                      |
-| fiber channel           | long term |       |       |                      |
-| authentication proxy    | long term |       |       |                      |
+| Features / Availability   |  roadmap  | alpha | beta  | general availability |
+|---------------------------|-----------|-------|-------|----------------------|
+| dynamic provisioning      |           |       | 2.3.x |                      |
+| resize                    |           | 2.4.x | 3.0.0 |                      |
+| snapshot                  |           | 3.1.x |       |                      |
+| prometheus metrics        |           | 3.1.x |       |                      |
+| raw blocks                | long term |       |       |                      |
+| iscsi chap authentication | long term |       |       |                      |
+| fiber channel             | long term |       |       |                      |
+| authentication proxy      | long term |       |       |                      |
+| overview web ui           | long term |       |       |                      |
 
 ## Installation
 
@@ -64,7 +66,7 @@ To a lesser extent, the following features are considered for a longer term futu
 
 `iscsid` and `multipathd` are now shipped as sidecars on each nodes, it is therefore strongly suggested to uninstall any `open-iscsi` and `multipath-tools` package.
 
-The decision of shipping `iscsid` and `multipathd` as sidecars comes from the desire to simplify the developpement process, as well as improving monitoring. It's essential that versions of those softwares match the candidates versions on your hosts, more about this in the [FAQ](./docs/troubleshooting.md#multipathd-segfault-or-a-volume-got-corrupted).
+The decision of shipping `iscsid` and `multipathd` as sidecars comes from the desire to simplify the developpement process, as well as improving monitoring. It's essential that versions of those softwares match the candidates versions on your hosts, more about this in the [FAQ](./docs/troubleshooting.md#multipathd-segfault-or-a-volume-got-corrupted). This setup is currently being challenged ... stay tuned for more information.
 
 ### Deploy the provisioner to your kubernetes cluster
 
