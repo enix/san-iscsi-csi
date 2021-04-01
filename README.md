@@ -66,7 +66,7 @@ To a lesser extent, the following features are considered for a longer term futu
 
 `iscsid` and `multipathd` are now shipped as sidecars on each nodes, it is therefore strongly suggested to uninstall any `open-iscsi` and `multipath-tools` package.
 
-The decision of shipping `iscsid` and `multipathd` as sidecars comes from the desire to simplify the developpement process, as well as improving monitoring. It's essential that versions of those softwares match the candidates versions on your hosts, more about this in the [FAQ](./docs/troubleshooting.md#multipathd-segfault-or-a-volume-got-corrupted). This setup is currently being challenged ... stay tuned for more information.
+The decision of shipping `iscsid` and `multipathd` as sidecars comes from the desire to simplify the developpement process, as well as improving monitoring. It's essential that versions of those softwares match the candidates versions on your hosts, more about this in the [FAQ](./docs/troubleshooting.md#multipathd-segfault-or-a-volume-got-corrupted). This setup is currently being challenged ... see #88 for more information.
 
 ### Deploy the provisioner to your kubernetes cluster
 
