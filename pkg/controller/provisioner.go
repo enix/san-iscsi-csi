@@ -60,7 +60,21 @@ func (controller *Controller) CreateVolume(ctx context.Context, req *csi.CreateV
 	}
 
 	if !volumeExists {
-		_, _, err = controller.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
+		var sourceID string
+
+		if volume := req.VolumeContentSource.GetVolume(); volume != nil {
+			sourceID = volume.VolumeId
+		}
+
+		if snapshot := req.VolumeContentSource.GetSnapshot(); sourceID == "" && snapshot != nil {
+			sourceID = snapshot.SnapshotId
+		}
+
+		if sourceID != "" {
+			_, _, err = controller.dothillClient.CopyVolume(sourceID, volumeID, parameters[common.PoolConfigKey])
+		} else {
+			_, _, err = controller.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -87,11 +101,15 @@ func (controller *Controller) DeleteVolume(ctx context.Context, req *csi.DeleteV
 	}
 
 	klog.Infof("deleting volume %s", req.GetVolumeId())
-	_, status, err := controller.dothillClient.DeleteVolume(req.GetVolumeId())
+	_, respStatus, err := controller.dothillClient.DeleteVolume(req.GetVolumeId())
 	if err != nil {
-		if status != nil && status.ReturnCode == volumeNotFoundErrorCode {
-			klog.Infof("volume %s does not exist, assuming it has already been deleted", req.GetVolumeId())
-			return &csi.DeleteVolumeResponse{}, nil
+		if respStatus != nil {
+			if respStatus.ReturnCode == volumeNotFoundErrorCode {
+				klog.Infof("volume %s does not exist, assuming it has already been deleted", req.GetVolumeId())
+				return &csi.DeleteVolumeResponse{}, nil
+			} else if respStatus.ReturnCode == volumeHasSnapshot {
+				return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("volume %s cannot be deleted since it has snapshots", req.GetVolumeId()))
+			}
 		}
 		return nil, err
 	}

@@ -18,6 +18,9 @@ const (
 	hostMapDoesNotExistsErrorCode = -10074
 	unmapFailedErrorCode          = -10509
 	volumeNotFoundErrorCode       = -10075
+	volumeHasSnapshot             = -10183
+	snapshotNotFoundErrorCode     = -10050
+	snapshotAlreadyExists         = -10186
 )
 
 var volumeCapabilities = []*csi.VolumeCapability{
@@ -106,9 +109,9 @@ func (controller *Controller) ControllerGetCapabilities(ctx context.Context, req
 	cl := []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
 		csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
-		// csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
-		// csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
-		// csi.ControllerServiceCapability_RPC_CLONE_VOLUME,
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
+		csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
+		csi.ControllerServiceCapability_RPC_CLONE_VOLUME,
 		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
 	}
 

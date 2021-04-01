@@ -42,6 +42,14 @@ csiResizer:
   # -- Extra arguments for csi-resizer controller sidecar
   extraArgs: []
 
+# -- Controller sidecar for snapshots handling
+csiSnapshotter:
+  image:
+    repository: k8s.gcr.io/sig-storage/csi-snapshotter
+    tag: v4.0.0
+  # -- Extra arguments for csi-snapshotter controller sidecar
+  extraArgs: []
+
 # -- Node sidecar for plugin registration
 csiNodeRegistrar:
   image:
