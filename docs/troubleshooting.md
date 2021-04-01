@@ -6,7 +6,7 @@ It might happen that your iSCSI devices/sessions/whatever are in a bad state, fo
 
 In such case, running the following commands should fix the state by removing and recreating devices.
 
-*Please use those commands with **EXTREM CAUTION** and **NEVER IN PRODUCTION** since it can result in data loss.*
+*Please use those commands with **EXTREME CAUTION** and **NEVER IN PRODUCTION** since it can result in data loss.*
 
 ```sh
 iscsiadm -m node --logout all
@@ -23,3 +23,9 @@ In order to fix this issue, paste the following line in your `value.yaml` and up
 ```yaml
 kubeletPath: /opt/rke/var/lib/kubelet
 ```
+
+## Multipathd segfault or a volume got corrupted
+
+It's a known fact that when `multipathd` segfaults, it can produce wrong mappings of device paths. When such a multipathed device is mounted, it can result in a corruption of the filesystem. Some checks were added to ensure that the different paths are consistent and lead to the same volume in the appliance.
+
+If you still get this issue, please check that the candidate for the package `multipath-tools` on your host is on the same version as in the container. You can do so by running `apt-cache policy multipath-tools` on your host as well as in the container `multipathd` from one of the pod `dothill-node-server-xxxxx`.
