@@ -1,3 +1,21 @@
+# [3.1.0](https://github.com/enix/dothill-csi/compare/v3.0.3...v3.1.0) (2021-04-02)
+
+
+### Bug Fixes
+
+* **node:** fix NodeUnpublishVolume when device is already disconnected ([5f3cb60](https://github.com/enix/dothill-csi/commit/5f3cb609065356c37989b728c0157076f19d15e3))
+
+
+### Features
+
+* **controller:** snapshot restoration ([5a62d21](https://github.com/enix/dothill-csi/commit/5a62d21149b43d886de5df8b814a31754dcd3a5b))
+* **controller:** volume cloning ([30f6257](https://github.com/enix/dothill-csi/commit/30f625743bfe8e1d45106d40b16df5f2cf2d53e9)), closes [#21](https://github.com/enix/dothill-csi/issues/21)
+* **controller:** volume snapshotting ([8beefd3](https://github.com/enix/dothill-csi/commit/8beefd3c1c950db7abdc811adea189545ecd7998))
+* **exporter:** dothill_api metrics ([31bf4c4](https://github.com/enix/dothill-csi/commit/31bf4c4e0ec3ab09f2f5a37fe4fe45e1b41c4feb))
+* **exporter:** dothill_csi_rpc_call metric ([32ae764](https://github.com/enix/dothill-csi/commit/32ae764fe44725bf75939b449383d7b96c526e54))
+* **exporter:** dothill_csi_rpc_call_duration ([ab82a71](https://github.com/enix/dothill-csi/commit/ab82a71e7465b4e7cfa10d9d4e8695335d9b5f9d))
+* **helm:** add optional PodMonitor and ServiceMonitor ([6c06ed8](https://github.com/enix/dothill-csi/commit/6c06ed845111364e08be62d18c7ec173889f69f2))
+
 ## [3.0.3](https://github.com/enix/dothill-csi/compare/v3.0.2...v3.0.3) (2021-03-31)
 
 
