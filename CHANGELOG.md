@@ -1,3 +1,12 @@
+## [3.1.1](https://github.com/enix/dothill-csi/compare/v3.1.0...v3.1.1) (2021-04-07)
+
+
+### Bug Fixes
+
+* **helm:** fix link in helm install notes ([6ee05de](https://github.com/enix/dothill-csi/commit/6ee05ded2dad6df01536ef36e3432938da4a4ee6))
+* **node:** fix WWIDs differ logs ([b548749](https://github.com/enix/dothill-csi/commit/b548749bea056a9a9349795cf679c756f24866ce))
+* **node:** improve multipath device consistency check ([e310820](https://github.com/enix/dothill-csi/commit/e310820767245fd49143c9430e9ae23cbb5e5503))
+
 # [3.1.0](https://github.com/enix/dothill-csi/compare/v3.0.3...v3.1.0) (2021-04-02)
 
 
