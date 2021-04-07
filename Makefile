@@ -31,7 +31,7 @@ test:
 .PHONY: test
 
 image:
-	docker build -t $(IMAGE) --build-arg version=$(VERSION) .
+	docker build -t $(IMAGE) --build-arg version="$(VERSION)" --build-arg vcs_ref="$(shell git rev-parse HEAD)" --build-arg build_date="$(shell date --rfc-3339=seconds)" .
 .PHONY: image
 
 push:		image
