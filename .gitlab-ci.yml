@@ -45,6 +45,7 @@ push helm chart:
   script:
     - git clone --single-branch --branch master git@github.com:enix/helm-charts.git
     - rm -rf ./helm-charts/charts/dothill-csi
+    - cp ./LICENSE ./helm/dothill-csi/
     - cp -R ./helm/dothill-csi ./helm-charts/charts/dothill-csi
     - cd ./helm-charts/charts/dothill-csi
     - >
