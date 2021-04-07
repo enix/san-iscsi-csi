@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -40,6 +41,16 @@ var csiMutexes = map[string]*sync.Mutex{
 	"/csi.v1.Controller/DeleteVolume":              {},
 	"/csi.v1.Controller/ControllerUnpublishVolume": {},
 	"/csi.v1.Controller/ControllerExpandVolume":    {},
+}
+
+var nonAuthenticatedMethods = []string{
+	"/csi.v1.Controller/ControllerGetCapabilities",
+	"/csi.v1.Controller/ListVolumes",
+	"/csi.v1.Controller/GetCapacity",
+	"/csi.v1.Controller/ControllerGetVolume",
+	"/csi.v1.Identity/Probe",
+	"/csi.v1.Identity/GetPluginInfo",
+	"/csi.v1.Identity/GetPluginCapabilities",
 }
 
 // Controller is the implementation of csi.ControllerServer
@@ -87,7 +98,7 @@ func New() *Controller {
 				driverContext.VolumeCaps = reqWithVolumeCaps.GetVolumeCapabilities()
 			}
 
-			err := controller.beginRoutine(&driverContext)
+			err := controller.beginRoutine(&driverContext, info.FullMethod)
 			defer controller.endRoutine()
 			if err != nil {
 				return nil, err
@@ -171,14 +182,25 @@ func (controller *Controller) Probe(ctx context.Context, req *csi.ProbeRequest) 
 	return &csi.ProbeResponse{}, nil
 }
 
-func (controller *Controller) beginRoutine(ctx *DriverCtx) error {
+func (controller *Controller) beginRoutine(ctx *DriverCtx, methodName string) error {
 	if err := runPreflightChecks(ctx.Parameters, ctx.VolumeCaps); err != nil {
 		return err
 	}
 
-	if ctx.Credentials == nil {
-		klog.Info("skipping login as this RPC does not require any API call")
+	needsAuthentication := true
+	for _, name := range nonAuthenticatedMethods {
+		if methodName == name {
+			needsAuthentication = false
+			break
+		}
+	}
+
+	if !needsAuthentication {
 		return nil
+	}
+
+	if ctx.Credentials == nil {
+		return errors.New("missing API credentials")
 	}
 
 	return controller.configureClient(ctx.Credentials)

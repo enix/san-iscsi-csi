@@ -57,8 +57,8 @@ github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFP
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
 github.com/enix/csi-lib-iscsi v0.0.0-dothill-3-1-1-1 h1:cfq1+Xm8XO/ijV6fPP/d5a+4qwwV93I+3LQ+ClgAB/k=
 github.com/enix/csi-lib-iscsi v0.0.0-dothill-3-1-1-1/go.mod h1:c/keGS6bErOzLrFyNgafdDWT6h72v2XQiA/p2R7yghU=
-github.com/enix/dothill-api-go v1.7.0 h1:jbziGAb4ecXRgds47zcfXqEeNPJJBOgiDPV4FH0FQgA=
-github.com/enix/dothill-api-go v1.7.0/go.mod h1:OuhSm5SRGxzXFy3kmRAGCCDpbp6q/2JFmTdES2jP5Jw=
+github.com/enix/dothill-api-go v1.7.1 h1:A8O9xXyiMPFtThQXqh1w5er6i7QTA71Yew+LUsSEXjw=
+github.com/enix/dothill-api-go v1.7.1/go.mod h1:OuhSm5SRGxzXFy3kmRAGCCDpbp6q/2JFmTdES2jP5Jw=
 github.com/envoyproxy/go-control-plane v0.6.9/go.mod h1:SBwIajubJHhxtWwsL9s8ss4safvEdbitLhGGK48rN6g=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=

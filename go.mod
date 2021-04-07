@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/container-storage-interface/spec v1.4.0
-	github.com/enix/dothill-api-go v1.7.0
+	github.com/enix/dothill-api-go v1.7.1
 	github.com/golang/protobuf v1.4.3
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/kubernetes-csi/csi-lib-iscsi v0.0.0-20200118015005-959f12c91ca8
