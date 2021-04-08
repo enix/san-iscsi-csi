@@ -71,7 +71,6 @@ spec:
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
             - dothill-node
-            - -kubeletpath={{ .Values.kubeletPath }}
             - -bind=unix://{{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io/csi.sock
 {{- include "dothill.extraArgs" .Values.node | indent 10 }}
           securityContext:

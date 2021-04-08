@@ -30,8 +30,8 @@ import (
 	"k8s.io/klog"
 )
 
-var kubeletPath = flag.String("kubeletpath", "/var/lib/kubelet", "Kubelet path")
-var bind = flag.String("bind", fmt.Sprintf("unix:///var/lib/kubelet/plugins/%s/csi.sock", common.PluginName), "RPC bind URI (can be a UNIX socket path or any URI)")
+var kubeletPath = flag.String("kubeletpath", "", "Kubelet path (deprecated)")
+var bind = flag.String("bind", fmt.Sprintf("unix:///var/run/%s/csi.sock", common.PluginName), "RPC bind URI (can be a UNIX socket path or any URI)")
 
 func main() {
 	klog.InitFlags(nil)
