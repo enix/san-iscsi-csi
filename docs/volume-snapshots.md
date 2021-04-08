@@ -18,6 +18,8 @@ To restore a snapshot, you have to create a new `PersistantVolumeClaim` and spec
 
 To clone a volume, you can follow the same procedure than to restore a snapshot, but configure another volume instead of a snapshot. An example can be found [here](https://github.com/kubernetes-csi/csi-driver-host-path/blob/master/examples/csi-clone.yaml) and the kubernetes documentation [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#volume-cloning).
 
+---
+
 References:
 - https://kubernetes.io/docs/concepts/storage/volume-snapshots
 - https://github.com/kubernetes-csi/external-snapshotter
