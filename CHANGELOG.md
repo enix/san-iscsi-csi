@@ -1,3 +1,10 @@
+## [3.1.2](https://github.com/enix/dothill-csi/compare/v3.1.1...v3.1.2) (2021-04-08)
+
+
+### Bug Fixes
+
+* **controller:** check for missing credentials before API calls ([7e387c3](https://github.com/enix/dothill-csi/commit/7e387c3893b2a87bc10d88b29929d9b00bda3579)), closes [#83](https://github.com/enix/dothill-csi/issues/83)
+
 ## [3.1.1](https://github.com/enix/dothill-csi/compare/v3.1.0...v3.1.1) (2021-04-07)
 
 
