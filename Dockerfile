@@ -16,11 +16,8 @@ COPY Makefile ./
 
 ARG version
 
-RUN echo "package common\nconst Version = \"${version}\"" > ./pkg/common/version.go
-
-RUN BIN="/dothill" make controller
-
-RUN BIN="/dothill" make node
+RUN BIN="/dothill" VERSION="$version" make controller
+RUN BIN="/dothill" VERSION="$version" make node
 
 ###########################################
 

@@ -1,12 +1,14 @@
-ifeq ($(DOCKER_HUB_REPOSITORY),)
+ifndef DOCKER_HUB_REPOSITORY
 	DOCKER_HUB_REPOSITORY = docker.io/enix
 endif
 
-ifeq ($(VERSION),)
+ifndef VERSION
 	VERSION = latest
+else
+	VERSION_FLAG = -X github.com/enix/dothill-csi/pkg/common.Version=$(VERSION)
 endif
 
-ifeq ($(BIN),)
+ifndef BIN
 	BIN = dothill
 endif
 
@@ -19,11 +21,12 @@ bin: controller node
 .PHONY: bin
 
 controller:
-	go build -v -o $(BIN)-controller ./cmd/controller
+	go build -v -ldflags "$(VERSION_FLAG)" -o $(BIN)-controller ./cmd/controller
 .PHONY: controller
 
 node:
-	go build -v -o $(BIN)-node ./cmd/node
+	echo "$(VERSION_FLAG)"
+	go build -v -ldflags "$(VERSION_FLAG)" -o $(BIN)-node ./cmd/node
 .PHONY: node
 
 test:
