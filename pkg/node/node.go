@@ -151,14 +151,27 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 	}
 
 	if err = checkFs(path); err != nil {
-		return nil, status.Errorf(codes.DataLoss, "Filesystem seems to be corrupted: %v", err)
+		return nil, status.Errorf(codes.DataLoss, "filesystem seems to be corrupted: %v", err)
 	}
 
-	klog.Infof("mounting volume at %s", req.GetTargetPath())
-	os.Mkdir(req.GetTargetPath(), 00755)
-	out, err := exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
-	if err != nil {
-		return nil, status.Error(codes.Internal, string(out))
+	out, err := exec.Command("findmnt", "--output", "TARGET", "--noheadings", path).Output()
+	mountpoints := strings.Split(strings.Trim(string(out), "\n"), "\n")
+	if err != nil || len(mountpoints) == 0 {
+		klog.Infof("mounting volume at %s", req.GetTargetPath())
+		os.Mkdir(req.GetTargetPath(), 00755)
+		out, err = exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
+		if err != nil {
+			return nil, status.Error(codes.Internal, string(out))
+		}
+	} else if len(mountpoints) == 1 {
+		if mountpoints[0] == req.GetTargetPath() {
+			klog.Infof("volume %s already mounted", req.GetTargetPath())
+		} else {
+			errStr := fmt.Sprintf("device has already been mounted somewhere else (%s instead of %s), please unmount first", mountpoints[0], req.GetTargetPath())
+			return nil, status.Error(codes.Internal, errStr)
+		}
+	} else if len(mountpoints) > 1 {
+		return nil, errors.New("device has already been mounted in several locations, please unmount first")
 	}
 
 	iscsiInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
