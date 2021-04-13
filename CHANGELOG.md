@@ -1,3 +1,10 @@
+## [3.1.3](https://github.com/enix/dothill-csi/compare/v3.1.2...v3.1.3) (2021-04-13)
+
+
+### Bug Fixes
+
+* **node:** make mount idempotent in NodePublishVolume ([7d3bfca](https://github.com/enix/dothill-csi/commit/7d3bfca3db808634a31ad7ca4950a0adab2242c9)), closes [#91](https://github.com/enix/dothill-csi/issues/91)
+
 ## [3.1.2](https://github.com/enix/dothill-csi/compare/v3.1.1...v3.1.2) (2021-04-08)
 
 
