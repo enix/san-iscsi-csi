@@ -1,3 +1,10 @@
+## [3.1.4](https://github.com/enix/dothill-csi/compare/v3.1.3...v3.1.4) (2021-04-27)
+
+
+### Bug Fixes
+
+* **node:** better checks on umount ([34b65af](https://github.com/enix/dothill-csi/commit/34b65af38e4365619c8976486d039f82bfc03ba5))
+
 ## [3.1.3](https://github.com/enix/dothill-csi/compare/v3.1.2...v3.1.3) (2021-04-13)
 
 
