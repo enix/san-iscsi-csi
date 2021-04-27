@@ -202,14 +202,19 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 		out, err := exec.Command("mountpoint", req.GetTargetPath()).CombinedOutput()
 		if err == nil {
 			out, err := exec.Command("umount", req.GetTargetPath()).CombinedOutput()
-			if err != nil && !os.IsNotExist(err) {
+			if err != nil {
 				return nil, status.Error(codes.Internal, string(out))
 			}
 		} else {
 			klog.Warningf("assuming that volume is already unmounted: %s", out)
 		}
 
-		os.Remove(req.GetTargetPath())
+		err = os.Remove(req.GetTargetPath())
+		if err != nil && !os.IsNotExist(err) {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		klog.Warningf("assuming that volume is already unmounted: %v", err)
 	}
 
 	iscsiInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
