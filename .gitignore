@@ -11,5 +11,6 @@ _legacy
 dothill-node
 dothill-controller
 
-# generated documentation
+# generated documentation and license
 /helm/*/README.md
+/helm/*/LICENSE
