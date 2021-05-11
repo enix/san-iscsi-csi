@@ -49,7 +49,7 @@ LABEL maintainer="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.source="https://github.com/enix/dothill-csi/blob/master/Dockerfile" \
       org.opencontainers.image.documentation="https://github.com/enix/dothill-csi/blob/master/README.md" \
       org.opencontainers.image.authors="Enix <no-reply@enix.fr>" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="Apache 2.0"
 
 RUN apt update \
  && apt dist-upgrade -y \
