@@ -66,10 +66,6 @@ node:
   # -- Extra arguments for dothill-node containers
   extraArgs: []
 
-multipathd:
-  # -- Extra arguments for multipathd containers
-  extraArgs: []
-
 # -- Container that convert CSI liveness probe to kubernetes liveness/readiness probe
 nodeLivenessProbe:
   image:

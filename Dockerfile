@@ -32,10 +32,10 @@ LABEL maintainer="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.authors="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.licenses="MIT"
 
-RUN apt update \
- && apt dist-upgrade -y \
- && apt install -y dosfstools e2fsprogs xfsprogs jfsutils libisns0 open-iscsi kmod multipath-tools \
- && rm -rf /var/lib/apt/lists/*
+COPY host-chrooted.sh /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/host-chrooted.sh \
+ && ln -s /usr/local/bin/host-chrooted.sh /usr/local/bin/iscsiadm
 
 COPY --from=build /dothill-* /usr/local/bin/
 

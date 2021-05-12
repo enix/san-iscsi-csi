@@ -306,31 +306,11 @@ func (node *Node) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVol
 
 // Probe returns the health and readiness of the plugin
 func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	if !isKernelModLoaded("iscsi_tcp") {
-		return nil, status.Error(codes.FailedPrecondition, "kernel mod iscsi_tcp is not loaded")
-	}
-	if !isKernelModLoaded("dm_multipath") {
-		return nil, status.Error(codes.FailedPrecondition, "kernel mod dm_multipath is not loaded")
-	}
-
 	return &csi.ProbeResponse{}, nil
 }
 
 func (node *Node) getIscsiInfoPath(volumeID string) string {
 	return fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", node.kubeletPath, common.PluginName, volumeID)
-}
-
-func isKernelModLoaded(modName string) bool {
-	klog.V(5).Infof("verifiying that %q kernel mod is loaded", modName)
-	err := exec.Command("grep", "^"+modName, "/proc/modules", "-q").Run()
-
-	if err != nil {
-		return false
-	}
-
-	klog.V(5).Infof("kernel mod %q is loaded", modName)
-
-	return true
 }
 
 func checkFs(path string) error {
