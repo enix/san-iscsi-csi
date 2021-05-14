@@ -306,11 +306,33 @@ func (node *Node) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVol
 
 // Probe returns the health and readiness of the plugin
 func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
+	if err := checkHostPackage("open-iscsi"); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+	if err := checkHostPackage("multipath-tools"); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
 	return &csi.ProbeResponse{}, nil
 }
 
 func (node *Node) getIscsiInfoPath(volumeID string) string {
 	return fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", node.kubeletPath, common.PluginName, volumeID)
+}
+
+func checkHostPackage(name string) error {
+	klog.V(5).Infof("checking that host package %q is installed", name)
+	cmd := hostChrootedCmd("dpkg", "-s", name)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return errors.New(string(out))
+	}
+	klog.V(5).Infof("host package %q is installed", name)
+	return nil
+}
+
+func hostChrootedCmd(name string, arg ...string) *exec.Cmd {
+	cmd := exec.Command("host-chrooted.sh", arg...)
+	cmd.Env = []string{"TARGET=" + name}
+	return cmd
 }
 
 func checkFs(path string) error {
