@@ -35,7 +35,10 @@ LABEL maintainer="Enix <no-reply@enix.fr>" \
 COPY host-chrooted.sh /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/host-chrooted.sh \
- && ln -s /usr/local/bin/host-chrooted.sh /usr/local/bin/iscsiadm
+ && ln -s /usr/local/bin/host-chrooted.sh /usr/local/bin/iscsiadm \
+ && ln -s /usr/local/bin/host-chrooted.sh /usr/local/bin/multipath \
+ && ln -s /usr/local/bin/host-chrooted.sh /usr/local/bin/multipathd \
+ && ln -s /usr/local/bin/host-chrooted.sh /lib/udev/scsi_id
 
 COPY --from=build /dothill-* /usr/local/bin/
 
