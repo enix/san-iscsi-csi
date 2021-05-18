@@ -334,12 +334,12 @@ func (node *Node) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVol
 
 // Probe returns the health and readiness of the plugin
 func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	if err := checkHostPackage("open-iscsi"); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	for _, binaryName := range strings.Split(os.Getenv("CHROOTED_BINARIES"), ",") {
+		if err := checkHostBinary(binaryName); err != nil {
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
 	}
-	if err := checkHostPackage("multipath-tools"); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
-	}
+
 	return &csi.ProbeResponse{}, nil
 }
 
@@ -347,13 +347,13 @@ func (node *Node) getIscsiInfoPath(volumeID string) string {
 	return fmt.Sprintf("%s/iscsi-%s.json", node.runPath, volumeID)
 }
 
-func checkHostPackage(name string) error {
-	klog.V(5).Infof("checking that host package %q is installed", name)
-	cmd := hostChrootedCmd("dpkg", "-s", name)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return errors.New(string(out))
+func checkHostBinary(name string) error {
+	klog.V(5).Infof("checking that binary %q exists in host PATH", name)
+	cmd := hostChrootedCmd("which", name)
+	if _, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("binary %q not found", name)
 	}
-	klog.V(5).Infof("host package %q is installed", name)
+	klog.V(5).Infof("found binary %q in host PATH", name)
 	return nil
 }
 

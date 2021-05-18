@@ -72,6 +72,7 @@ spec:
               mountPath: /etc/iscsi
             - name: host
               mountPath: /host
+              mountPropagation: Bidirectional
           ports:
           - containerPort: 9808
             name: healthz
