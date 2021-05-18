@@ -34,11 +34,10 @@ LABEL maintainer="Enix <no-reply@enix.fr>" \
 
 COPY host-chrooted.sh /usr/local/bin/
 
+ENV CHROOTED_BINARIES='scsi_id,iscsiadm,multipath,multipathd,lsblk,blockdev,findmnt,mount,umount,mountpoint,resize2fs,e2fsck,blkid,mkfs.ext4'
+
 RUN chmod +x /usr/local/bin/host-chrooted.sh \
- && ln -s /usr/local/bin/host-chrooted.sh /usr/local/bin/iscsiadm \
- && ln -s /usr/local/bin/host-chrooted.sh /usr/local/bin/multipath \
- && ln -s /usr/local/bin/host-chrooted.sh /usr/local/bin/multipathd \
- && ln -s /usr/local/bin/host-chrooted.sh /lib/udev/scsi_id
+ && bash -c 'cd /usr/local/bin; for bin in ${CHROOTED_BINARIES//,/ }; do ln -s ./host-chrooted.sh ./$bin; done'
 
 COPY --from=build /dothill-* /usr/local/bin/
 
