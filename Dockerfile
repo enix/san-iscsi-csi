@@ -39,6 +39,8 @@ RUN apt update \
 
 COPY --from=build /dothill-* /usr/local/bin/
 
+ENV PATH="${PATH}:/lib/udev"
+
 CMD [ "/usr/local/bin/dothill-controller" ]
 
 ARG version
