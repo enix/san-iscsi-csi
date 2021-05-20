@@ -1,3 +1,10 @@
+## [3.1.5](https://github.com/enix/dothill-csi/compare/v3.1.4...v3.1.5) (2021-05-20)
+
+
+### Bug Fixes
+
+* **node:** add a timeout on scsi_id ([7ce732f](https://github.com/enix/dothill-csi/commit/7ce732f88c1709b234a58f76b5d547bad35f8b1c))
+
 ## [3.1.4](https://github.com/enix/dothill-csi/compare/v3.1.3...v3.1.4) (2021-04-27)
 
 
