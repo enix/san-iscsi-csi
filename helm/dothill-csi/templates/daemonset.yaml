@@ -19,7 +19,8 @@ spec:
 {{ include "dothill.labels" . | indent 8 }}
     spec:
       hostNetwork: true
-      hostIPC: true
+      # hostIPC: true
+      hostPID: true
       {{ if .Values.pspAdmissionControllerEnabled }}serviceAccount: csi-node-registrar{{ end }}
       {{- if .Values.nodeServer.nodeAffinity }}
       affinity:
@@ -60,6 +61,9 @@ spec:
           - containerPort: 9842
             name: metrics
             protocol: TCP
+          # - containerPort: 5000
+          #   name: gdbgui
+          #   protocol: TCP
           livenessProbe:
             httpGet:
               path: /healthz

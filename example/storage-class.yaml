@@ -13,10 +13,11 @@ parameters:
   csi.storage.k8s.io/controller-publish-secret-namespace: dothill-system
   csi.storage.k8s.io/controller-expand-secret-name: dothill-api
   csi.storage.k8s.io/controller-expand-secret-namespace: dothill-system
-  fsType: ext4 # Desired filesystem
-  iqn: iqn.2015-11.com.hpe:storage.msa2050.2002518b4c # Appliance IQN
-  pool: A # Pool to use on the IQN to provision volumes
-  portals: 10.0.0.24,10.0.0.25 # Comma separated list of portal ips. (One per controller should be enough).
+  fsType: ext4
+  iqn: iqn.2015-11.com.hpe:storage.msa2050.2002518b4c
+  pool: A
+  portals: 10.14.84.215,10.14.84.226
+  # portals: 10.14.84.215,10.14.84.216,10.14.84.217,10.14.84.218,10.14.84.225,10.14.84.226,10.14.84.227,10.14.84.228
 ---
 apiVersion: v1
 kind: Secret
@@ -25,6 +26,6 @@ metadata:
   namespace: dothill-system
 type: Opaque
 data:
-  apiAddress: aHR0cHM6Ly8xMC4wLjAuNDI= # base64 encoded api address
-  username: am9obi5kb2U= # base64 encoded username
-  password: bXktU0BmZStwYXNzdzByZCE= # base64 encoded password
+  apiAddress: aHR0cHM6Ly8xMC4xNC4zLjk4
+  username: azhzZGV2
+  password: RnUyTGFmLWU=

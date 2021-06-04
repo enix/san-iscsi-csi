@@ -15,6 +15,8 @@ kind: Pod
 metadata:
   name: pod
 spec:
+  # nodeSelector:
+  #   multipath-debug: "true"
   containers:
   - image: alpine
     command: ["/bin/sh", "-c", "while sleep 1; do echo hello > /vol/test && ls -l /vol && cat /vol/test; done"]

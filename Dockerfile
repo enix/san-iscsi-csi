@@ -7,6 +7,7 @@ RUN apt update \
 WORKDIR /app
 
 COPY ./go.* ./
+# COPY ./pkg/csi-lib-iscsi/go.* ./pkg/csi-lib-iscsi/
 
 RUN go mod download
 
@@ -31,6 +32,11 @@ LABEL maintainer="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.documentation="https://github.com/enix/dothill-csi/blob/master/README.md" \
       org.opencontainers.image.authors="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.licenses="MIT"
+
+RUN apt update \
+ && apt install -y strace gdb python3 python3-pip vim \
+ && rm -rf /var/lib/apt/lists/* \
+ && pip3 install gdbgui
 
 COPY host-chrooted.sh /usr/local/bin/
 

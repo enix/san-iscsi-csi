@@ -306,11 +306,11 @@ func (node *Node) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVol
 
 // Probe returns the health and readiness of the plugin
 func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	for _, binaryName := range strings.Split(os.Getenv("CHROOTED_BINARIES"), ",") {
-		if err := checkHostBinary(binaryName); err != nil {
-			return nil, status.Error(codes.FailedPrecondition, err.Error())
-		}
-	}
+	// for _, binaryName := range strings.Split(os.Getenv("CHROOTED_BINARIES"), ",") {
+	// 	if err := checkHostBinary(binaryName); err != nil {
+	// 		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	// 	}
+	// }
 
 	return &csi.ProbeResponse{}, nil
 }
