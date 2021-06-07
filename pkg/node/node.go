@@ -334,7 +334,24 @@ func (node *Node) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVol
 
 // Probe returns the health and readiness of the plugin
 func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	for _, binaryName := range strings.Split(os.Getenv("CHROOTED_BINARIES"), ",") {
+	requiredBinaries := []string{
+		"scsi_id",
+		"iscsiadm",
+		"multipath",
+		"multipathd",
+		"lsblk",
+		"blockdev",
+		"findmnt",
+		"mount",
+		"umount",
+		"mountpoint",
+		"resize2fs",
+		"e2fsck",
+		"blkid",
+		"mkfs.ext4",
+	}
+
+	for _, binaryName := range requiredBinaries {
 		if err := checkHostBinary(binaryName); err != nil {
 			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
@@ -349,18 +366,14 @@ func (node *Node) getIscsiInfoPath(volumeID string) string {
 
 func checkHostBinary(name string) error {
 	klog.V(5).Infof("checking that binary %q exists in host PATH", name)
-	cmd := hostChrootedCmd("which", name)
-	if _, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("binary %q not found", name)
-	}
-	klog.V(5).Infof("found binary %q in host PATH", name)
-	return nil
-}
 
-func hostChrootedCmd(name string, arg ...string) *exec.Cmd {
-	cmd := exec.Command("host-chrooted.sh", arg...)
-	cmd.Env = []string{"TARGET=" + name}
-	return cmd
+	if path, err := exec.LookPath(name); err != nil {
+		return fmt.Errorf("binary %q not found", name)
+	} else {
+		klog.V(5).Infof("found binary %q in host PATH at %q", name, path)
+	}
+
+	return nil
 }
 
 func checkFs(path string) error {

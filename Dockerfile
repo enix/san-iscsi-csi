@@ -51,13 +51,6 @@ LABEL maintainer="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.authors="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.licenses="Apache 2.0"
 
-COPY host-chrooted.sh /usr/local/bin/
-
-ENV CHROOTED_BINARIES='scsi_id,iscsiadm,multipath,multipathd,lsblk,blockdev,findmnt,mount,umount,mountpoint,resize2fs,e2fsck,blkid,mkfs.ext4'
-
-RUN chmod +x /usr/local/bin/host-chrooted.sh \
- && bash -c 'cd /usr/local/bin; for bin in ${CHROOTED_BINARIES//,/ }; do ln -s ./host-chrooted.sh ./$bin; done'
-
 COPY --from=build /dothill-* /usr/local/bin/
 
 ENV PATH="${PATH}:/lib/udev"

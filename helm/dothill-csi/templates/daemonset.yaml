@@ -55,6 +55,7 @@ spec:
           command:
             - dothill-node
             - -bind=unix://{{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io/csi.sock
+            - -chroot=/host
 {{- include "dothill.extraArgs" .Values.node | indent 10 }}
           securityContext:
             privileged: true
