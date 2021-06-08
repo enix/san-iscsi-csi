@@ -35,7 +35,7 @@ func Test(t *testing.T) {
 	nodeSocketPath := "unix:///tmp/node.sock"
 
 	ctrl := controller.New()
-	node := node.New("/var/lib/kubelet")
+	node := node.New()
 
 	go ctrl.Start(controllerSocketPath)
 	defer ctrl.Stop()

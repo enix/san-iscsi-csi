@@ -52,7 +52,7 @@ type Node struct {
 }
 
 // New is a convenience function for creating a node driver
-func New(kubeletPath string) *Node {
+func New() *Node {
 	if klog.V(8) {
 		iscsi.EnableDebugLogging(os.Stderr)
 	}
@@ -60,12 +60,11 @@ func New(kubeletPath string) *Node {
 	node := &Node{
 		Driver:    common.NewDriver(),
 		semaphore: semaphore.NewWeighted(1),
-		runPath:   "/var/run",
+		runPath:   fmt.Sprintf("/var/run/%s", common.PluginName),
 	}
 
-	if kubeletPath != "" {
-		node.runPath = kubeletPath + "/plugins"
-		klog.Warning("Flag -kubeletpath has been deprecated and will be removed in the future.")
+	if err := os.MkdirAll(node.runPath, 0755); err != nil {
+		panic(err)
 	}
 
 	node.InitServer(
@@ -346,7 +345,7 @@ func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeR
 }
 
 func (node *Node) getIscsiInfoPath(volumeID string) string {
-	return fmt.Sprintf("%s/%s/iscsi-%s.json", node.runPath, common.PluginName, volumeID)
+	return fmt.Sprintf("%s/iscsi-%s.json", node.runPath, volumeID)
 }
 
 func isKernelModLoaded(modName string) bool {
