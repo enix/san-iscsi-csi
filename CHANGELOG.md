@@ -1,3 +1,12 @@
+## [3.1.6](https://github.com/enix/dothill-csi/compare/v3.1.5...v3.1.6) (2021-06-09)
+
+
+### Bug Fixes
+
+* **node:** add hostIPC flag on pod to prevent multipath -f from hanging ([d292c50](https://github.com/enix/dothill-csi/commit/d292c50f15bfab68839a4a9aacf0f37eac85da20))
+* **node:** fix typo in logs and improve lsblk error handling ([d24b2cf](https://github.com/enix/dothill-csi/commit/d24b2cf52f529bf60f1d21b8407c7d847582dc22)), closes [#92](https://github.com/enix/dothill-csi/issues/92)
+* **node:** handle errors on read connection information properly ([a311b47](https://github.com/enix/dothill-csi/commit/a311b47238cdc9786ec4048d2594c7817314b6ac)), closes [#96](https://github.com/enix/dothill-csi/issues/96)
+
 ## [3.1.5](https://github.com/enix/dothill-csi/compare/v3.1.4...v3.1.5) (2021-05-20)
 
 
