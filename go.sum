@@ -55,8 +55,8 @@ github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5m
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
-github.com/enix/csi-lib-iscsi v0.0.0-dothill-3-1-6 h1:cNUS3PFg07WEdTcLKOOTfgVE1P7Vpe3YPfRBJhy1/Cw=
-github.com/enix/csi-lib-iscsi v0.0.0-dothill-3-1-6/go.mod h1:c/keGS6bErOzLrFyNgafdDWT6h72v2XQiA/p2R7yghU=
+github.com/enix/csi-lib-iscsi v0.0.0-dothill-3-1-6-2 h1:KIpwLX3gYt/Jw4GXo2z7ixXggbv9vPq2nbT5zUWAg78=
+github.com/enix/csi-lib-iscsi v0.0.0-dothill-3-1-6-2/go.mod h1:c/keGS6bErOzLrFyNgafdDWT6h72v2XQiA/p2R7yghU=
 github.com/enix/dothill-api-go v1.7.1 h1:A8O9xXyiMPFtThQXqh1w5er6i7QTA71Yew+LUsSEXjw=
 github.com/enix/dothill-api-go v1.7.1/go.mod h1:OuhSm5SRGxzXFy3kmRAGCCDpbp6q/2JFmTdES2jP5Jw=
 github.com/envoyproxy/go-control-plane v0.6.9/go.mod h1:SBwIajubJHhxtWwsL9s8ss4safvEdbitLhGGK48rN6g=

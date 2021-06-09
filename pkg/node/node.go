@@ -221,8 +221,11 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
 	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
-		klog.Warning(errors.Wrap(err, "assuming that ISCSI connection is already closed"))
-		return &csi.NodeUnpublishVolumeResponse{}, nil
+		if os.IsNotExist(err) {
+			klog.Warning(errors.Wrap(err, "assuming that ISCSI connection is already closed"))
+			return &csi.NodeUnpublishVolumeResponse{}, nil
+		}
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	if isVolumeInUse(connector.MountTargetDevice.GetPath()) {
