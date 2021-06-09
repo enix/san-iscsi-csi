@@ -334,11 +334,27 @@ func (node *Node) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVol
 
 // Probe returns the health and readiness of the plugin
 func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	if !isKernelModLoaded("iscsi_tcp") {
-		return nil, status.Error(codes.FailedPrecondition, "kernel mod iscsi_tcp is not loaded")
+	requiredBinaries := []string{
+		"scsi_id",
+		"iscsiadm",
+		"multipath",
+		"multipathd",
+		"lsblk",
+		"blockdev",
+		"findmnt",
+		"mount",
+		"umount",
+		"mountpoint",
+		"resize2fs",
+		"e2fsck",
+		"blkid",
+		"mkfs.ext4",
 	}
-	if !isKernelModLoaded("dm_multipath") {
-		return nil, status.Error(codes.FailedPrecondition, "kernel mod dm_multipath is not loaded")
+
+	for _, binaryName := range requiredBinaries {
+		if err := checkHostBinary(binaryName); err != nil {
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
 	}
 
 	return &csi.ProbeResponse{}, nil
@@ -348,17 +364,16 @@ func (node *Node) getIscsiInfoPath(volumeID string) string {
 	return fmt.Sprintf("%s/iscsi-%s.json", node.runPath, volumeID)
 }
 
-func isKernelModLoaded(modName string) bool {
-	klog.V(5).Infof("verifiying that %q kernel mod is loaded", modName)
-	err := exec.Command("grep", "^"+modName, "/proc/modules", "-q").Run()
+func checkHostBinary(name string) error {
+	klog.V(5).Infof("checking that binary %q exists in host PATH", name)
 
-	if err != nil {
-		return false
+	if path, err := exec.LookPath(name); err != nil {
+		return fmt.Errorf("binary %q not found", name)
+	} else {
+		klog.V(5).Infof("found binary %q in host PATH at %q", name, path)
 	}
 
-	klog.V(5).Infof("kernel mod %q is loaded", modName)
-
-	return true
+	return nil
 }
 
 func checkFs(path string) error {

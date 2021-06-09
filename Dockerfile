@@ -51,11 +51,6 @@ LABEL maintainer="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.authors="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.licenses="Apache 2.0"
 
-RUN apt update \
- && apt dist-upgrade -y \
- && apt install -y dosfstools e2fsprogs xfsprogs jfsutils libisns0 open-iscsi kmod multipath-tools \
- && rm -rf /var/lib/apt/lists/*
-
 COPY --from=build /dothill-* /usr/local/bin/
 
 ENV PATH="${PATH}:/lib/udev"
