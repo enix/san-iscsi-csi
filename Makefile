@@ -44,7 +44,6 @@ controller:
 .PHONY: controller
 
 node:
-	echo "$(VERSION_FLAG)"
 	go build -v -ldflags "$(VERSION_FLAG)" -o $(BIN)-node ./cmd/node
 .PHONY: node
 

@@ -71,7 +71,6 @@ spec:
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
             - dothill-node
-            - -kubeletpath={{ .Values.kubeletPath }}
             - -bind=unix://{{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io/csi.sock
 {{- include "dothill.extraArgs" .Values.node | indent 10 }}
           securityContext:
@@ -88,6 +87,8 @@ spec:
             - name: mountpoint-dir
               mountPath: {{ .Values.kubeletPath }}/pods
               mountPropagation: Bidirectional
+            - name: dothill-run-dir
+              mountPath: /var/run/dothill.csi.enix.io
           ports:
           - containerPort: 9808
             name: healthz
@@ -181,6 +182,9 @@ spec:
         - name: udev-dir
           hostPath:
             path: /run/udev
+        - name: dothill-run-dir
+          hostPath:
+            path: /var/run/dothill.csi.enix.io
         - name: init-node
           configMap:
             name: init-node
