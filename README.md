@@ -4,6 +4,7 @@ A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storag
 
 [![Build status](https://gitlab.com/enix.io/dothill-csi/badges/main/pipeline.svg)](https://gitlab.com/enix.io/dothill-csi/-/pipelines)
 [![Go Report Card](https://goreportcard.com/badge/github.com/enix/dothill-csi)](https://goreportcard.com/report/github.com/enix/dothill-csi)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Introduction
 
@@ -62,11 +63,34 @@ To a lesser extent, the following features are considered for a longer term futu
 
 ## Installation
 
-### Uninstall ISCSI tools on your node(s)
+### Install dependencies on your node(s)
 
-`iscsid` and `multipathd` are now shipped as sidecars on each nodes, it is therefore strongly suggested to uninstall any `open-iscsi` and `multipath-tools` package.
+After having shipped `iscsid` and `multipathd` as sidecars on each nodes, we finally decided to extract them and let them run on the host, especially for portability purposes. Indeed, it may happens that the version of `multipathd` running in sidecars don't match the version which would run on the host if it was installed and may produce incompatibilities with the kernel and other tools like `udev`. More about this in the [FAQ](./docs/troubleshooting.md#multipathd-segfault-or-a-volume-got-corrupted).
 
-The decision of shipping `iscsid` and `multipathd` as sidecars comes from the desire to simplify the developpement process, as well as improving monitoring. It's essential that versions of those softwares match the candidates versions on your hosts, more about this in the [FAQ](./docs/troubleshooting.md#multipathd-segfault-or-a-volume-got-corrupted). This setup is currently being challenged ... see [issue #88](https://github.com/enix/dothill-csi/issues/88) for more information.
+To run `iscsid` and `multipathd` on your host, first install `open-iscsi` and `multipath-tools` packages, then start the corresponding services. Here is an example on how to do it, it may vary depending on your OS. This was tested against ubuntu 20 and debian buster.
+
+```bash
+apt update
+apt install open-iscsi multipath-tools -y
+service iscsid start
+service multipathd start
+```
+
+### Multipathd additionnal configuration
+
+For the plugin to work with multipathd, you have to install the following configuration on your hosts. We advise to put it in `/etc/multipath/conf.d/dothill.conf`.
+
+```conf
+defaults {
+  polling_interval 2
+  find_multipaths "yes"
+  retain_attached_hw_handler "no"
+  disable_changed_wwids "yes"
+  user_friendly_names "no"
+}
+```
+
+After the configuration has been created, restart multipathd to reload it (`service multipathd restart`).
 
 ### Deploy the provisioner to your kubernetes cluster
 
