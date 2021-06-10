@@ -15,7 +15,6 @@
  *
  * Authors:
  * Paul Laffitte <paul.laffitte@enix.fr>
- * Arthur Chaloin <arthur.chaloin@enix.fr>
  * Alexandre Buisine <alexandre.buisine@enix.fr>
  */
 
