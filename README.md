@@ -32,7 +32,7 @@ All dothill AssuredSAN based equipements share a common API which **may or may n
 Although this project is developped and tested on HPE MSA 2050 & 2060 equipments, it should work with a lot of other references from various brands.
 We are therefore looking for tests and feedbacks while using other references.
 
-Considering that this project reached a certain level of maturity, and as of version `3.0.0`, this csi driver is proposed as an open-source project under the MIT [license](./LICENSE).
+Considering that this project reached a certain level of maturity, and as of version `4.0.0`, this csi driver is proposed as an open-source project under the Apache 2.0 [license](./LICENSE).
 
 ## Roadmap
 
