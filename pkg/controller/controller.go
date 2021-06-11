@@ -27,7 +27,7 @@ import (
 	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/enix/dothill-api-go"
+	"github.com/enix/dothill-api-go/v2"
 	"github.com/enix/dothill-csi/pkg/common"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

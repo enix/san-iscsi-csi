@@ -21,7 +21,7 @@
 
 package controller
 
-import dothill "github.com/enix/dothill-api-go"
+import dothill "github.com/enix/dothill-api-go/v2"
 
 // Volumes : convenience alias for sorting purposes
 type Volumes []dothill.Volume
