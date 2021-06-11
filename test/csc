@@ -29,7 +29,7 @@ portals="10.14.84.211,10.14.84.212"
 function setup {
 	cd $(dirname $0)
 	export CSI_ENDPOINT="tcp://localhost:10000"
-	export X_CSI_SECRETS="apiAddress=${DOTHILL_API_ADDR}, username=${DOTHILL_USERNAME}, password=${DOTHILL_PASSWORD}"
+	export X_CSI_SECRETS="apiAddress=${SAN_ISCSI_CSI_API_ADDR}, username=${SAN_ISCSI_CSI_USERNAME}, password=${SAN_ISCSI_CSI_PASSWORD}"
 }
 
 setup

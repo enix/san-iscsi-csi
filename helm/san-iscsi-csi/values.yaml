@@ -16,7 +16,7 @@
 # Paul Laffitte <paul.laffitte@enix.fr>
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
-# Default values for dothill-csi.
+# Default values for san-iscsi-csi.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -27,7 +27,7 @@ pspAdmissionControllerEnabled: false
 
 image:
   # -- Docker repository to use for nodes and controller
-  repository: docker.io/enix/dothill-csi
+  repository: docker.io/enix/san-iscsi-csi
   # -- Tag to use for nodes and controller
   # @default -- The chart will use the appVersion value by default if not given.
   tag: ""
@@ -77,11 +77,11 @@ csiNodeRegistrar:
   extraArgs: []
 
 controller:
-  # -- Extra arguments for dothill-controller container
+  # -- Extra arguments for san-iscsi-csi-controller container
   extraArgs: []
 
 node:
-  # -- Extra arguments for dothill-node containers
+  # -- Extra arguments for san-iscsi-csi-node containers
   extraArgs: []
 
 # -- Container that convert CSI liveness probe to kubernetes liveness/readiness probe
@@ -93,9 +93,9 @@ nodeLivenessProbe:
   extraArgs: []
 
 nodeServer:
-  # -- Kubernetes nodeSelector field for dothill-node-server Pod
+  # -- Kubernetes nodeSelector field for san-iscsi-csi-node-server Pod
   nodeSelector:
-  # -- Kubernetes nodeAffinity field for dothill-node-server Pod
+  # -- Kubernetes nodeAffinity field for san-iscsi-csi-node-server Pod
   nodeAffinity:
 
 podMonitor:

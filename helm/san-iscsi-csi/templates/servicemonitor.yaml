@@ -16,13 +16,34 @@
 # Paul Laffitte <paul.laffitte@enix.fr>
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
-{{- define "dothill.labels" -}}
-app.kubernetes.io/name: {{ .Chart.Name | kebabcase }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end -}}
-
-{{- define "dothill.extraArgs" -}}
-{{- range .extraArgs }}
-  - {{ toYaml . }}
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: san-iscsi-csi-controller-metrics
+  labels:
+    name: san-iscsi-csi-controller-metrics
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
+spec:
+  ports:
+  - name: metrics
+    port: 9842
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: san-iscsi-csi-controller-server
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: san-iscsi-csi-controller-exporter
+  labels:
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
+spec:
+  selector:
+    matchLabels:
+      name: san-iscsi-csi-controller-metrics
+  endpoints:
+  - port: metrics
+    interval: 1s
 {{- end }}
-{{- end -}}

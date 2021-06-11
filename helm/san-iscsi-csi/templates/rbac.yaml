@@ -32,15 +32,15 @@ kind: ServiceAccount
 metadata:
   name: csi-provisioner
   labels:
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: external-provisioner-runner-dothill
+  name: external-provisioner-runner-san-iscsi-csi
   labels:
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -89,16 +89,16 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-provisioner-role-dothill
+  name: csi-provisioner-role-san-iscsi-csi
   labels:
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: external-provisioner-runner-dothill
+  name: external-provisioner-runner-san-iscsi-csi
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -107,9 +107,9 @@ roleRef:
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: external-provisioner-cfg-dothill
+  name: external-provisioner-cfg-san-iscsi-csi
   labels:
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 rules:
 # Only one of the following rules for endpoints or leases is required based on
 # what is set for `--leader-election-type`. Endpoints are deprecated in favor of Leases.
@@ -124,22 +124,22 @@ rules:
   resources: ["podsecuritypolicies"]
   verbs:     ["use"]
   resourceNames:
-  - dothill
+  - san-iscsi-csi
 {{ end }}
 
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-provisioner-role-cfg-dothill
+  name: csi-provisioner-role-cfg-san-iscsi-csi
   labels:
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 subjects:
   - kind: ServiceAccount
     name: csi-provisioner
 roleRef:
   kind: Role
-  name: external-provisioner-cfg-dothill
+  name: external-provisioner-cfg-san-iscsi-csi
   apiGroup: rbac.authorization.k8s.io
 
 {{ if .Values.pspAdmissionControllerEnabled }}
@@ -149,34 +149,34 @@ kind: ServiceAccount
 metadata:
   name: csi-node-registrar
   labels:
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-node-registrar-cfg-dothill
+  name: csi-node-registrar-cfg-san-iscsi-csi
   labels:
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 rules:
 - apiGroups: ["policy"]
   resources: ["podsecuritypolicies"]
   verbs:     ["use"]
   resourceNames:
-  - dothill
+  - san-iscsi-csi
 
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-node-registrar-role-cfg-dothill
+  name: csi-node-registrar-role-cfg-san-iscsi-csi
   labels:
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 subjects:
   - kind: ServiceAccount
     name: csi-node-registrar
 roleRef:
   kind: Role
-  name: csi-node-registrar-cfg-dothill
+  name: csi-node-registrar-cfg-san-iscsi-csi
   apiGroup: rbac.authorization.k8s.io
 {{ end }}

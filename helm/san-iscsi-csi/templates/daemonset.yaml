@@ -20,22 +20,22 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: dothill-node-server
+  name: san-iscsi-csi-node-server
   labels:
     app.kubernetes.io/version: {{ .Chart.Version }}
     app.kubernetes.io/component: dynamic-provisionning-node
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 
 spec:
   selector:
     matchLabels:
-      name: dothill-node-server
-{{ include "dothill.labels" . | indent 6 }}
+      name: san-iscsi-csi-node-server
+{{ include "san-iscsi-csi.labels" . | indent 6 }}
   template:
     metadata:
       labels:
-        name: dothill-node-server
-{{ include "dothill.labels" . | indent 8 }}
+        name: san-iscsi-csi-node-server
+{{ include "san-iscsi-csi.labels" . | indent 8 }}
     spec:
       hostNetwork: true
       hostIPC: true
@@ -50,23 +50,23 @@ spec:
 {{ toYaml .Values.nodeServer.nodeSelector | indent 8 }}
       {{- end }}
       containers:
-        - name: dothill-node
+        - name: san-iscsi-csi-node
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
-            - dothill-node
-            - -bind=unix://{{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io/csi.sock
+            - san-iscsi-csi-node
+            - -bind=unix://{{ .Values.kubeletPath }}/plugins/san-iscsi.csi.enix.io/csi.sock
             - -chroot=/host
-{{- include "dothill.extraArgs" .Values.node | indent 10 }}
+{{- include "san-iscsi-csi.extraArgs" .Values.node | indent 10 }}
           securityContext:
             privileged: true
           volumeMounts:
             - name: plugin-dir
-              mountPath: {{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io
+              mountPath: {{ .Values.kubeletPath }}/plugins/san-iscsi.csi.enix.io
             - name: mountpoint-dir
               mountPath: {{ .Values.kubeletPath }}/pods
               mountPropagation: Bidirectional
-            - name: dothill-run-dir
-              mountPath: /var/run/dothill.csi.enix.io
+            - name: san-iscsi-csi-run-dir
+              mountPath: /var/run/san-iscsi.csi.enix.io
             - name: device-dir
               mountPath: /dev
             - name: iscsi-dir
@@ -90,7 +90,7 @@ spec:
           image: {{.Values.nodeLivenessProbe.image.repository }}:{{ .Values.nodeLivenessProbe.image.tag }}
           args:
             - --csi-address=/csi/csi.sock
-{{- include "dothill.extraArgs" .Values.nodeLivenessProbe | indent 10 }}
+{{- include "san-iscsi-csi.extraArgs" .Values.nodeLivenessProbe | indent 10 }}
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
@@ -98,8 +98,8 @@ spec:
           image: {{ .Values.csiNodeRegistrar.image.repository }}:{{ .Values.csiNodeRegistrar.image.tag }}
           args:
             - --csi-address=/csi/csi.sock
-            - --kubelet-registration-path={{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io/csi.sock
-{{- include "dothill.extraArgs" .Values.csiNodeRegistrar | indent 10 }}
+            - --kubelet-registration-path={{ .Values.kubeletPath }}/plugins/san-iscsi.csi.enix.io/csi.sock
+{{- include "san-iscsi-csi.extraArgs" .Values.csiNodeRegistrar | indent 10 }}
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
@@ -114,7 +114,7 @@ spec:
             path: {{ .Values.kubeletPath }}/pods
         - name: plugin-dir
           hostPath:
-            path: {{ .Values.kubeletPath }}/plugins/dothill.csi.enix.io
+            path: {{ .Values.kubeletPath }}/plugins/san-iscsi.csi.enix.io
             type: DirectoryOrCreate
         - name: iscsi-dir
           hostPath:
@@ -122,9 +122,9 @@ spec:
         - name: device-dir
           hostPath:
             path: /dev
-        - name: dothill-run-dir
+        - name: san-iscsi-csi-run-dir
           hostPath:
-            path: /var/run/dothill.csi.enix.io
+            path: /var/run/san-iscsi.csi.enix.io
         - name: host
           hostPath:
             path: /

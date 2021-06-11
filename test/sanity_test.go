@@ -24,8 +24,8 @@ package main
 import (
 	"testing"
 
-	"github.com/enix/dothill-csi/pkg/controller"
-	"github.com/enix/dothill-csi/pkg/node"
+	"github.com/enix/san-iscsi-csi/pkg/controller"
+	"github.com/enix/san-iscsi-csi/pkg/node"
 	"github.com/kubernetes-csi/csi-test/pkg/sanity"
 )
 

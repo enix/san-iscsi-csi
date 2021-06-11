@@ -33,7 +33,7 @@ import (
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/enix/dothill-csi/pkg/common"
+	"github.com/enix/san-iscsi-csi/pkg/common"
 	"github.com/kubernetes-csi/csi-lib-iscsi/iscsi"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/semaphore"

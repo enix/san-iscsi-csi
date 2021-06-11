@@ -1,9 +1,9 @@
-# Dothill-csi dynamic provisioner for Kubernetes
+# SAN iSCSI CSI driver
 
-A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storage systems.
+A dynamic persistent volume (PV) provisioner for iSCSI-compatible SAN based storage systems.
 
-[![Build status](https://gitlab.com/enix.io/dothill-csi/badges/main/pipeline.svg)](https://gitlab.com/enix.io/dothill-csi/-/pipelines)
-[![Go Report Card](https://goreportcard.com/badge/github.com/enix/dothill-csi)](https://goreportcard.com/report/github.com/enix/dothill-csi)
+[![Build status](https://gitlab.com/enix.io/san-iscsi-csi/badges/main/pipeline.svg)](https://gitlab.com/enix.io/san-iscsi-csi/-/pipelines)
+[![Go Report Card](https://goreportcard.com/badge/github.com/enix/san-iscsi-csi)](https://goreportcard.com/report/github.com/enix/san-iscsi-csi)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Introduction
@@ -26,7 +26,7 @@ It is also privately labeled by some of the world's most prominent storage brand
 
 ## This project
 
-`Dothill-CSI` implements the **Container Storage Interface** in order to facilitate dynamic provisioning of persistent volumes on kubernetes cluster.
+`san-iscsi-csi` implements the **Container Storage Interface** in order to facilitate dynamic provisioning of persistent volumes on kubernetes cluster.
 
 All dothill AssuredSAN based equipements share a common API which **may or may not be advertised** by the final integrator.
 Although this project is developped and tested on HPE MSA 2050 & 2060 equipments, it should work with a lot of other references from various brands.
@@ -78,7 +78,7 @@ service multipathd start
 
 ### Multipathd additionnal configuration
 
-For the plugin to work with multipathd, you have to install the following configuration on your hosts. We advise to put it in `/etc/multipath/conf.d/dothill.conf`.
+For the plugin to work with multipathd, you have to install the following configuration on your hosts. We advise to put it in `/etc/multipath/conf.d/san-iscsi-csi.conf`.
 
 ```conf
 defaults {
@@ -94,13 +94,13 @@ After the configuration has been created, restart multipathd to reload it (`serv
 
 ### Deploy the provisioner to your kubernetes cluster
 
-The preferred approach to install this project is to use the provided [Helm Chart](https://artifacthub.io/packages/helm/enix/dothill-csi).
+The preferred approach to install this project is to use the provided [Helm Chart](https://artifacthub.io/packages/helm/enix/san-iscsi-csi).
 
 #### Configure your release
 
 Create a `values.yaml` file. It should contain configuration for your release.
 
-Please read the dothill-csi helm-chart [README.md](https://github.com/enix/helm-charts/blob/master/charts/dothill-csi/README.md#values) for more details about this file.
+Please read the san-iscsi-csi helm-chart [README.md](https://github.com/enix/helm-charts/blob/master/charts/san-iscsi-csi/README.md#values) for more details about this file.
 
 #### Install the helm chart
 
@@ -108,7 +108,7 @@ You should first add our charts repository, and then install the chart as follow
 
 ```sh
 helm repo add enix https://charts.enix.io/
-helm install my-release enix/dothill-csi -f ./example/values.yaml
+helm install my-release enix/san-iscsi-csi -f ./example/values.yaml
 ```
 
 ### Create a storage class

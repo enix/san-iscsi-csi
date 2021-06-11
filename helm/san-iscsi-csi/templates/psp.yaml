@@ -16,17 +16,29 @@
 # Paul Laffitte <paul.laffitte@enix.fr>
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
-{{- if .Values.podMonitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
+{{ if .Values.pspAdmissionControllerEnabled -}}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
 metadata:
-  name: dothill-node-exporter
-  labels:
-{{ include "dothill.labels" . | indent 4 }}
+  name: san-iscsi-csi
 spec:
-  selector:
-    matchLabels:
-      name: dothill-node-server
-  podMetricsEndpoints:
-  - port: metrics
-{{- end }}
+  privileged: true
+  hostNetwork: true
+  hostIPC: true
+  hostPID: true
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  fsGroup:
+    rule: RunAsAny
+  hostPorts:
+    - min: 0
+      max: 65535
+  volumes:
+    - '*'
+  allowedCapabilities:
+    - '*'
+{{ end }}

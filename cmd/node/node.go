@@ -26,8 +26,8 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/enix/dothill-csi/pkg/common"
-	"github.com/enix/dothill-csi/pkg/node"
+	"github.com/enix/san-iscsi-csi/pkg/common"
+	"github.com/enix/san-iscsi-csi/pkg/node"
 	"k8s.io/klog"
 )
 
@@ -45,6 +45,6 @@ func main() {
 		}
 	}
 
-	klog.Infof("starting dothill storage node plugin %s", common.Version)
+	klog.Infof("starting SAN iSCSI CSI node %s", common.Version)
 	node.New().Start(*bind)
 }

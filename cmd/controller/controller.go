@@ -25,8 +25,8 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/enix/dothill-csi/pkg/common"
-	"github.com/enix/dothill-csi/pkg/controller"
+	"github.com/enix/san-iscsi-csi/pkg/common"
+	"github.com/enix/san-iscsi-csi/pkg/controller"
 	"k8s.io/klog"
 )
 
@@ -36,6 +36,6 @@ func main() {
 	klog.InitFlags(nil)
 	flag.Set("logtostderr", "true")
 	flag.Parse()
-	klog.Infof("starting dothill storage controller %s", common.Version)
+	klog.Infof("starting SAN iSCSI CSI controller %s", common.Version)
 	controller.New().Start(*bind)
 }

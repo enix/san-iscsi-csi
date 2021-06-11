@@ -16,29 +16,13 @@
 # Paul Laffitte <paul.laffitte@enix.fr>
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
-{{ if .Values.pspAdmissionControllerEnabled -}}
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: dothill
-spec:
-  privileged: true
-  hostNetwork: true
-  hostIPC: true
-  hostPID: true
-  seLinux:
-    rule: RunAsAny
-  supplementalGroups:
-    rule: RunAsAny
-  runAsUser:
-    rule: RunAsAny
-  fsGroup:
-    rule: RunAsAny
-  hostPorts:
-    - min: 0
-      max: 65535
-  volumes:
-    - '*'
-  allowedCapabilities:
-    - '*'
-{{ end }}
+{{- define "san-iscsi-csi.labels" -}}
+app.kubernetes.io/name: {{ .Chart.Name | kebabcase }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+
+{{- define "san-iscsi-csi.extraArgs" -}}
+{{- range .extraArgs }}
+  - {{ toYaml . }}
+{{- end }}
+{{- end -}}

@@ -30,7 +30,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-api-go/v2"
-	"github.com/enix/dothill-csi/pkg/common"
+	"github.com/enix/san-iscsi-csi/pkg/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog"

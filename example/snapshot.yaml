@@ -48,18 +48,18 @@ spec:
 apiVersion: snapshot.storage.k8s.io/v1beta1
 kind: VolumeSnapshotClass
 metadata:
-  name: snapshot-class-dothill
-driver: dothill.csi.enix.io
+  name: snapshot-class-san-iscsi-csi
+driver: san-iscsi.csi.enix.io
 deletionPolicy: Delete
 parameters:
-  csi.storage.k8s.io/snapshotter-secret-name: dothill-api
-  csi.storage.k8s.io/snapshotter-secret-namespace: dothill-system
+  csi.storage.k8s.io/snapshotter-secret-name: san-iscsi-csi-api
+  csi.storage.k8s.io/snapshotter-secret-namespace: san-iscsi-csi-system
 ---
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
   name: test-snapshot
 spec:
-  volumeSnapshotClassName: snapshot-class-dothill
+  volumeSnapshotClassName: snapshot-class-san-iscsi-csi
   source:
     persistentVolumeClaimName: claim

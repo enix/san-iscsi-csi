@@ -35,27 +35,27 @@ COPY Makefile ./
 
 ARG version
 
-RUN BIN="/dothill" VERSION="$version" make controller
-RUN BIN="/dothill" VERSION="$version" make node
+RUN BIN="/san-iscsi-csi" VERSION="$version" make controller
+RUN BIN="/san-iscsi-csi" VERSION="$version" make node
 
 ###########################################
 
 FROM ubuntu:18.04
 
 LABEL maintainer="Enix <no-reply@enix.fr>" \
-      org.opencontainers.image.title="Dothill CSI" \
-      org.opencontainers.image.description="A dynamic persistent volume provisioner for Dothill AssuredSAN based storage systems." \
-      org.opencontainers.image.url="https://github.com/enix/dothill-csi" \
-      org.opencontainers.image.source="https://github.com/enix/dothill-csi/blob/master/Dockerfile" \
-      org.opencontainers.image.documentation="https://github.com/enix/dothill-csi/blob/master/README.md" \
+      org.opencontainers.image.title="SAN iSCSI CSI driver" \
+      org.opencontainers.image.description="A dynamic persistent volume provisioner for iSCSI-compatible SAN based storage systems." \
+      org.opencontainers.image.url="https://github.com/enix/san-iscsi-csi" \
+      org.opencontainers.image.source="https://github.com/enix/san-iscsi-csi/blob/master/Dockerfile" \
+      org.opencontainers.image.documentation="https://github.com/enix/san-iscsi-csi/blob/master/README.md" \
       org.opencontainers.image.authors="Enix <no-reply@enix.fr>" \
       org.opencontainers.image.licenses="Apache 2.0"
 
-COPY --from=build /dothill-* /usr/local/bin/
+COPY --from=build /san-iscsi-csi-* /usr/local/bin/
 
 ENV PATH="${PATH}:/lib/udev"
 
-CMD [ "/usr/local/bin/dothill-controller" ]
+CMD [ "/usr/local/bin/san-iscsi-csi-controller" ]
 
 ARG version
 ARG vcs_ref

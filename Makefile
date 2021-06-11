@@ -24,14 +24,14 @@ endif
 ifndef VERSION
 	VERSION = latest
 else
-	VERSION_FLAG = -X github.com/enix/dothill-csi/pkg/common.Version=$(VERSION)
+	VERSION_FLAG = -X github.com/enix/san-iscsi-csi/pkg/common.Version=$(VERSION)
 endif
 
 ifndef BIN
-	BIN = dothill
+	BIN = san-iscsi-csi
 endif
 
-IMAGE = $(DOCKER_HUB_REPOSITORY)/dothill-csi:$(VERSION)
+IMAGE = $(DOCKER_HUB_REPOSITORY)/san-iscsi-csi:$(VERSION)
 
 all:		bin image
 .PHONY: all

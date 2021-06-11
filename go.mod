@@ -17,7 +17,7 @@
 // Arthur Chaloin <arthur.chaloin@enix.fr>
 // Alexandre Buisine <alexandre.buisine@enix.fr>
 
-module github.com/enix/dothill-csi
+module github.com/enix/san-iscsi-csi
 
 go 1.16
 
@@ -38,4 +38,4 @@ require (
 // replace github.com/enix/dothill-api-go => ./pkg/dothill-api-go
 
 // replace github.com/kubernetes-csi/csi-lib-iscsi => ./pkg/csi-lib-iscsi
-replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi v0.0.0-dothill-4-0-0
+replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi v0.0.0-san-iscsi-csi-4-0-0

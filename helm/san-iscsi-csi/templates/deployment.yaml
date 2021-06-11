@@ -20,11 +20,11 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: dothill-controller-server
+  name: san-iscsi-csi-controller-server
   labels:
     app.kubernetes.io/version: {{ .Chart.Version }}
     app.kubernetes.io/component: dynamic-provisionning-controller
-{{ include "dothill.labels" . | indent 4 }}
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 
 spec:
   replicas: 1
@@ -32,22 +32,22 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      app: dothill-controller-server
-{{ include "dothill.labels" . | indent 6 }}
+      app: san-iscsi-csi-controller-server
+{{ include "san-iscsi-csi.labels" . | indent 6 }}
   template:
     metadata:
       labels:
-        app: dothill-controller-server
-{{ include "dothill.labels" . | indent 8 }}
+        app: san-iscsi-csi-controller-server
+{{ include "san-iscsi-csi.labels" . | indent 8 }}
     spec:
       serviceAccount: csi-provisioner
       containers:
-        - name: dothill-controller
+        - name: san-iscsi-csi-controller
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           command:
-            - dothill-controller
+            - san-iscsi-csi-controller
             - -bind=unix:///csi/csi.sock
-{{- include "dothill.extraArgs" .Values.controller | indent 10 }}
+{{- include "san-iscsi-csi.extraArgs" .Values.controller | indent 10 }}
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -61,7 +61,7 @@ spec:
             - --csi-address=/csi/csi.sock
             - --worker-threads=1
             - --timeout={{ .Values.csiProvisioner.timeout }}
-{{- include "dothill.extraArgs" .Values.csiProvisioner | indent 10 }}
+{{- include "san-iscsi-csi.extraArgs" .Values.csiProvisioner | indent 10 }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: socket-dir
@@ -72,7 +72,7 @@ spec:
             - --csi-address=/csi/csi.sock
             - --worker-threads=1
             - --timeout={{ .Values.csiAttacher.timeout }}
-{{- include "dothill.extraArgs" .Values.csiAttacher | indent 10 }}
+{{- include "san-iscsi-csi.extraArgs" .Values.csiAttacher | indent 10 }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: socket-dir
@@ -81,7 +81,7 @@ spec:
           image: {{ .Values.csiResizer.image.repository }}:{{ .Values.csiResizer.image.tag }}
           args:
             - --csi-address=/csi/csi.sock
-{{- include "dothill.extraArgs" .Values.csiResizer | indent 10 }}
+{{- include "san-iscsi-csi.extraArgs" .Values.csiResizer | indent 10 }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: socket-dir
@@ -90,7 +90,7 @@ spec:
           image: {{ .Values.csiSnapshotter.image.repository }}:{{ .Values.csiSnapshotter.image.tag }}
           args:
             - --csi-address=/csi/csi.sock
-{{- include "dothill.extraArgs" .Values.csiSnapshotter | indent 10 }}
+{{- include "san-iscsi-csi.extraArgs" .Values.csiSnapshotter | indent 10 }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: socket-dir

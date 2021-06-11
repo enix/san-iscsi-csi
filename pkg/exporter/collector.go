@@ -33,10 +33,10 @@ type Collector struct {
 }
 
 const (
-	csiRPCCallMetric = "dothill_csi_rpc_call"
+	csiRPCCallMetric = "san_iscsi_csi_rpc_call"
 	csiRPCCallHelp   = "How many CSI RPC calls have been executed"
 
-	csiRPCCallDurationMetric = "dothill_csi_rpc_call_duration"
+	csiRPCCallDurationMetric = "san_iscsi_csi_rpc_call_duration"
 	csiRPCCallDurationHelp   = "The total duration of CSI RPC calls"
 )
 

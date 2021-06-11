@@ -17,14 +17,14 @@
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
 apiVersion: v2
-name: dothill-csi
+name: san-iscsi-csi
 version: 0.0.0-DIRTY
 appVersion: 0.0.0-DIRTY
-description: A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storage systems.
+description: A dynamic persistent volume (PV) provisioner for iSCSI-compatible SAN based storage systems.
 type: application
-home: https://github.com/enix/dothill-csi
+home: https://github.com/enix/san-iscsi-csi
 sources:
-  - https://github.com/enix/dothill-csi/tree/main/helm/dothill-csi
+  - https://github.com/enix/san-iscsi-csi/tree/main/helm/san-iscsi-csi
 keywords:
   - storage
   - iscsi
@@ -43,5 +43,5 @@ maintainers:
     email: arthur.chaloin@enix.fr
 annotations:
   artifacthub.io/images: |
-    - name: dothill-csi
-      image: enix/dothill-csi:0.0.0-DIRTY
+    - name: san-iscsi-csi
+      image: enix/san-iscsi-csi:0.0.0-DIRTY

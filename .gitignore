@@ -27,8 +27,8 @@ test/.env
 _legacy
 
 # binaries
-dothill-node
-dothill-controller
+san-iscsi-csi-node
+san-iscsi-csi-controller
 
 # generated documentation and license
 /helm/*/README.md

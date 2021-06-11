@@ -14,7 +14,7 @@ iscsiadm -m discovery -t st -p 10.14.84.215
 iscsiadm -m node -L all
 ```
 
-## AttachVolume.Attach failed for volume "xxx" : CSINode xxx does not contain driver dothill.csi.enix.io
+## AttachVolume.Attach failed for volume "xxx" : CSINode xxx does not contain driver san-iscsi.csi.enix.io
 
 Typically, this error happens when you use RancherOS. Since the kubelet path is `/opt/rke/var/lib/kubelet` instead of `/var/lib/kubelet`, the plugin cannot be registered using the default path.
 
@@ -36,7 +36,7 @@ It's because your storage class miss parameters `csi.storage.k8s.io/controller-e
 
 ## multipath is inconsistent: devices WWIDs differ
 
-This issue can be caused by various reasons. In the case the full message looks like the following, it's most probably because you forgot to install the configuration file for multipathd, or forgot to reload it. To find the configuration to apply, refers to the section [multipathd additionnal configuration](https://github.com/enix/dothill-csi/blob/main/README.md#multipathd-additionnal-configuration) in `README.md`.
+This issue can be caused by various reasons. In the case the full message looks like the following, it's most probably because you forgot to install the configuration file for multipathd, or forgot to reload it. To find the configuration to apply, refers to the section [multipathd additionnal configuration](https://github.com/enix/san-iscsi-csi/blob/main/README.md#multipathd-additionnal-configuration) in `README.md`.
 
 ```
 rpc error: code = Unavailable desc = multipath is inconsistent: devices WWIDs differ: mpathb (wwid:3600c0ff00052098834d1c16001000000) != mpathb (wwid:mpathb)

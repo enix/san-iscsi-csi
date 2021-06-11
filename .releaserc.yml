@@ -17,7 +17,7 @@
 # Arthur Chaloin <arthur.chaloin@enix.fr>
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
-repositoryUrl: git@github.com:enix/dothill-csi.git
+repositoryUrl: git@github.com:enix/san-iscsi-csi.git
 branches:
   - main
 plugins:
