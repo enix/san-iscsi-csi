@@ -1,3 +1,29 @@
+# [4.0.0](https://github.com/enix/san-iscsi-csi/compare/v3.1.6...v4.0.0) (2021-06-14)
+
+
+### Bug Fixes
+
+* **node:** remove -kubeletpath flag ([6a038fa](https://github.com/enix/san-iscsi-csi/commit/6a038fa6924dd595e9e8ff5abb9d53cae0e0c40a)), closes [#90](https://github.com/enix/san-iscsi-csi/issues/90) [#45](https://github.com/enix/san-iscsi-csi/issues/45)
+
+
+### chore
+
+* rename dothill-csi to san-iscsi-csi ([f09b5fc](https://github.com/enix/san-iscsi-csi/commit/f09b5fcee9d5870f3a7af317be5c4c5415dcb726))
+
+
+### Features
+
+* **node:** extract iscsid to the host ([3295b05](https://github.com/enix/san-iscsi-csi/commit/3295b05f041a7a41f6634e1d1e99a33af5bbc714))
+* **node:** extract multipathd to the host ([8aac2c7](https://github.com/enix/san-iscsi-csi/commit/8aac2c74b370c6e97dbabf057dfc3f35738541d8))
+* **node:** probe to check required packages on the host ([9b4e26e](https://github.com/enix/san-iscsi-csi/commit/9b4e26e4e38ae1ee9f9de64324cbda559c8344c0))
+
+
+### BREAKING CHANGES
+
+* The docker image and helm chart are now called san-iscsi-csi instead of dothill-csi
+* **node:** open-iscsi now have to be installed on the host
+* **node:** Since CSI is orchestrator agnostic, -kubeletpath flag break the spec by making the plugin Kubernetes dependent. Thus we remove it and -bind can be used instead.
+
 ## [3.1.6](https://github.com/enix/san-iscsi-csi/compare/v3.1.5...v3.1.6) (2021-06-09)
 
 
