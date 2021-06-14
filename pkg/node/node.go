@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2021 Enix, SAS
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ *
+ * Authors:
+ * Paul Laffitte <paul.laffitte@enix.fr>
+ * Arthur Chaloin <arthur.chaloin@enix.fr>
+ * Alexandre Buisine <alexandre.buisine@enix.fr>
+ */
+
 package node
 
 import (
@@ -12,7 +33,7 @@ import (
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/enix/dothill-csi/pkg/common"
+	"github.com/enix/san-iscsi-csi/pkg/common"
 	"github.com/kubernetes-csi/csi-lib-iscsi/iscsi"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/semaphore"
@@ -26,20 +47,24 @@ import (
 type Node struct {
 	*common.Driver
 
-	semaphore   *semaphore.Weighted
-	kubeletPath string
+	semaphore *semaphore.Weighted
+	runPath   string
 }
 
 // New is a convenience function for creating a node driver
-func New(kubeletPath string) *Node {
+func New() *Node {
 	if klog.V(8) {
 		iscsi.EnableDebugLogging(os.Stderr)
 	}
 
 	node := &Node{
-		Driver:      common.NewDriver(),
-		semaphore:   semaphore.NewWeighted(1),
-		kubeletPath: kubeletPath,
+		Driver:    common.NewDriver(),
+		semaphore: semaphore.NewWeighted(1),
+		runPath:   fmt.Sprintf("/var/run/%s", common.PluginName),
+	}
+
+	if err := os.MkdirAll(node.runPath, 0755); err != nil {
+		panic(err)
 	}
 
 	node.InitServer(
@@ -309,31 +334,46 @@ func (node *Node) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVol
 
 // Probe returns the health and readiness of the plugin
 func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	if !isKernelModLoaded("iscsi_tcp") {
-		return nil, status.Error(codes.FailedPrecondition, "kernel mod iscsi_tcp is not loaded")
+	requiredBinaries := []string{
+		"scsi_id",
+		"iscsiadm",
+		"multipath",
+		"multipathd",
+		"lsblk",
+		"blockdev",
+		"findmnt",
+		"mount",
+		"umount",
+		"mountpoint",
+		"resize2fs",
+		"e2fsck",
+		"blkid",
+		"mkfs.ext4",
 	}
-	if !isKernelModLoaded("dm_multipath") {
-		return nil, status.Error(codes.FailedPrecondition, "kernel mod dm_multipath is not loaded")
+
+	for _, binaryName := range requiredBinaries {
+		if err := checkHostBinary(binaryName); err != nil {
+			return nil, status.Error(codes.FailedPrecondition, err.Error())
+		}
 	}
 
 	return &csi.ProbeResponse{}, nil
 }
 
 func (node *Node) getIscsiInfoPath(volumeID string) string {
-	return fmt.Sprintf("%s/plugins/%s/iscsi-%s.json", node.kubeletPath, common.PluginName, volumeID)
+	return fmt.Sprintf("%s/iscsi-%s.json", node.runPath, volumeID)
 }
 
-func isKernelModLoaded(modName string) bool {
-	klog.V(5).Infof("verifiying that %q kernel mod is loaded", modName)
-	err := exec.Command("grep", "^"+modName, "/proc/modules", "-q").Run()
+func checkHostBinary(name string) error {
+	klog.V(5).Infof("checking that binary %q exists in host PATH", name)
 
-	if err != nil {
-		return false
+	if path, err := exec.LookPath(name); err != nil {
+		return fmt.Errorf("binary %q not found", name)
+	} else {
+		klog.V(5).Infof("found binary %q in host PATH at %q", name, path)
 	}
 
-	klog.V(5).Infof("kernel mod %q is loaded", modName)
-
-	return true
+	return nil
 }
 
 func checkFs(path string) error {

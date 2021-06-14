@@ -6,7 +6,7 @@
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/enix)](https://artifacthub.io/packages/search?repo=enix)
 
 # Introduction
-As of version `3.0.0`, this `csi` driver and its helm chart are released as open-source projects under the MIT license.
+As of version `4.0.0`, this `csi` driver and its helm chart are released as open-source projects under the Apache 2.0 license.
 
 Your contribution is obviously most welcomed !
 
@@ -26,14 +26,14 @@ Add our Charts repository:
 $ helm repo add enix https://charts.enix.io
 ```
 
-Install the {{ template "chart.name" . }} with release name `{{ template "chart.name" . }}` in the `dothill-system` namespace:
+Install the {{ template "chart.name" . }} with release name `{{ template "chart.name" . }}` in the `san-iscsi-csi-system` namespace:
 ```
-$ helm install -n dothill-system {{ template "chart.name" . }} enix/{{ template "chart.name" . }} --values {{ template "chart.name" . }}.values.yaml
+$ helm install -n san-iscsi-csi-system {{ template "chart.name" . }} enix/{{ template "chart.name" . }} --values {{ template "chart.name" . }}.values.yaml
 ```
 
 The `upgrade` command is used to change configuration when values are modified:
 ```
-$ helm upgrade -n dothill-system {{ template "chart.name" . }} enix/{{ template "chart.name" . }} --values {{ template "chart.name" . }}.values.yaml
+$ helm upgrade -n san-iscsi-csi-system {{ template "chart.name" . }} enix/{{ template "chart.name" . }} --values {{ template "chart.name" . }}.values.yaml
 ```
 
 # Upgrading the Chart
@@ -50,7 +50,7 @@ $ helm upgrade {{ template "chart.name" . }} enix/{{ template "chart.name" . }}
 
 # Creating a storage class
 
-In order to dynamically provision persistants volumes, you first need to create a storage class. To do so, please refer to the project [documentation](https://github.com/enix/dothill-csi).
+In order to dynamically provision persistants volumes, you first need to create a storage class. To do so, please refer to the project [documentation](https://github.com/enix/san-iscsi-csi).
 
 {{ template "chart.maintainersSection" . }}
 

@@ -16,37 +16,34 @@
 # Paul Laffitte <paul.laffitte@enix.fr>
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
-apiVersion: apps/v1
-kind: StatefulSet
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: v1
+kind: Service
 metadata:
-  name: date-log
+  name: san-iscsi-csi-controller-metrics
+  labels:
+    name: san-iscsi-csi-controller-metrics
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
 spec:
-  serviceName: date-log
+  ports:
+  - name: metrics
+    port: 9842
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: san-iscsi-csi-controller-server
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: san-iscsi-csi-controller-exporter
+  labels:
+{{ include "san-iscsi-csi.labels" . | indent 4 }}
+spec:
   selector:
     matchLabels:
-      app: date-log
-  replicas: 3
-  podManagementPolicy: Parallel
-  template:
-    metadata:
-      labels:
-        app: date-log
-    spec:
-      containers:
-      - name: logger
-        image: alpine
-        imagePullPolicy: IfNotPresent
-        command: ["/bin/sh", "-c", "(echo '=== START ===' && while true; do sleep 1 && date; done) | tee -a /vol/logs"]
-        volumeMounts:
-        - mountPath: /vol
-          name: data
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      storageClassName: my-marvelous-storage
-      resources:
-        requests:
-          storage: 100Mi
+      name: san-iscsi-csi-controller-metrics
+  endpoints:
+  - port: metrics
+    interval: 1s
+{{- end }}

@@ -14,18 +14,15 @@
 #
 # Authors:
 # Paul Laffitte <paul.laffitte@enix.fr>
-# Arthur Chaloin <arthur.chaloin@enix.fr>
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
-repositoryUrl: git@github.com:enix/san-iscsi-csi.git
-branches:
-  - main
-plugins:
-  - '@semantic-release/commit-analyzer'
-  - '@semantic-release/release-notes-generator'
-  - '@semantic-release/github'
-  - - '@semantic-release/changelog'
-    - changelogFile: 'CHANGELOG.md'
-  - - '@semantic-release/git'
-    - assets: 'CHANGELOG.md'
-      message: "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
+{{- define "san-iscsi-csi.labels" -}}
+app.kubernetes.io/name: {{ .Chart.Name | kebabcase }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+
+{{- define "san-iscsi-csi.extraArgs" -}}
+{{- range .extraArgs }}
+  - {{ toYaml . }}
+{{- end }}
+{{- end -}}

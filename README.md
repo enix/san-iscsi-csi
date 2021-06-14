@@ -1,15 +1,29 @@
-# Dothill-csi dynamic provisioner for Kubernetes
+# SAN iSCSI CSI driver
 
-A dynamic persistent volume (PV) provisioner for Dothill AssuredSAN based storage systems.
+A dynamic persistent volume (PV) provisioner for iSCSI-compatible SAN based storage systems.
 
-[![Build status](https://gitlab.com/enix.io/dothill-csi/badges/main/pipeline.svg)](https://gitlab.com/enix.io/dothill-csi/-/pipelines)
-[![Go Report Card](https://goreportcard.com/badge/github.com/enix/dothill-csi)](https://goreportcard.com/report/github.com/enix/dothill-csi)
+[![Build status](https://gitlab.com/enix.io/san-iscsi-csi/badges/main/pipeline.svg)](https://gitlab.com/enix.io/san-iscsi-csi/-/pipelines)
+[![Go Report Card](https://goreportcard.com/badge/github.com/enix/san-iscsi-csi)](https://goreportcard.com/report/github.com/enix/san-iscsi-csi)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Introduction
 
 Dealing with persistent storage on kubernetes can be particularly cumbersome, especially when dealing with on-premises installations, or when the cloud-provider persistent storage solutions are not applicable.
 
 Entry-level SAN appliances usually propose a low-cost, still powerful, solution to enable redundant persistent storage, with the flexibility of attaching it to any host on your network.
+
+## This project
+
+`san-iscsi-csi` implements the **Container Storage Interface** in order to facilitate dynamic provisioning of persistent volumes, on an iSCSI-compatible SAN based storage, from a kubernetes cluster.
+
+Considering that this project reached a certain level of maturity, and as of version `3.0.0`, this csi driver is proposed as an open-source project.
+As of version `4.0.0` it is distributed under the Apache 2.0 [license](./LICENSE).
+
+### Equipement compatibility
+
+Although this project is developped and tested on HPE MSA 2050 & 2060 equipments, it should work with a lot of other references from various brands.
+All dothill AssuredSAN based equipements share a common API which **may or may not be advertised** by the final integrator.
+We are therefore looking for tests and feedbacks while using other references.
 
 Dothill systems was acquired by Seagate in 2015 for its AssuredSAN family of hybrid storage.
 
@@ -23,27 +37,16 @@ It is also privately labeled by some of the world's most prominent storage brand
 - Lenovo DS series.
 - ...
 
-## This project
-
-`Dothill-CSI` implements the **Container Storage Interface** in order to facilitate dynamic provisioning of persistent volumes on kubernetes cluster.
-
-All dothill AssuredSAN based equipements share a common API which **may or may not be advertised** by the final integrator.
-Although this project is developped and tested on HPE MSA 2050 & 2060 equipments, it should work with a lot of other references from various brands.
-We are therefore looking for tests and feedbacks while using other references.
-
-Considering that this project reached a certain level of maturity, and as of version `3.0.0`, this csi driver is proposed as an open-source project under the MIT [license](./LICENSE).
-
 ## Roadmap
 
 This project has reached a `beta` stage, and we hope to promote it to `general availability` with the help of external users and contributors. Feel free to help !
 
 The following features are considered for the near future :
-- PV snapshotting (supported by AssuredSAN appliances)
+- modular equipment / API support
 - additional prometheus metrics
 
 To a lesser extent, the following features are considered for a longer term future :
 - Raw blocks support
-- FiberChannel (supported by AssuredSAN appliances)
 - Authentication proxy, as appliances lack correct right management
 
 ## Features
@@ -54,29 +57,53 @@ To a lesser extent, the following features are considered for a longer term futu
 | resize                    |           | 2.4.x | 3.0.0 |                      |
 | snapshot                  |           | 3.1.x |       |                      |
 | prometheus metrics        |           | 3.1.x |       |                      |
+| modular API support       | mid term  |       |       |                      |
 | raw blocks                | long term |       |       |                      |
 | iscsi chap authentication | long term |       |       |                      |
-| fiber channel             | long term |       |       |                      |
 | authentication proxy      | long term |       |       |                      |
 | overview web ui           | long term |       |       |                      |
+| fiber channel             | maybe     |       |       |                      |
 
 ## Installation
 
-### Uninstall ISCSI tools on your node(s)
+### Install dependencies on your node(s)
 
-`iscsid` and `multipathd` are now shipped as sidecars on each nodes, it is therefore strongly suggested to uninstall any `open-iscsi` and `multipath-tools` package.
+After having shipped `iscsid` and `multipathd` as sidecars on each nodes, we finally decided to extract them and let them run on the host, especially for portability purposes. Indeed, it may happens that the version of `multipathd` running in sidecars don't match the version which would run on the host if it was installed and may produce incompatibilities with the kernel and other tools like `udev`. More about this in the [FAQ](./docs/troubleshooting.md#multipathd-segfault-or-a-volume-got-corrupted).
 
-The decision of shipping `iscsid` and `multipathd` as sidecars comes from the desire to simplify the developpement process, as well as improving monitoring. It's essential that versions of those softwares match the candidates versions on your hosts, more about this in the [FAQ](./docs/troubleshooting.md#multipathd-segfault-or-a-volume-got-corrupted). This setup is currently being challenged ... see [issue #88](https://github.com/enix/dothill-csi/issues/88) for more information.
+To run `iscsid` and `multipathd` on your host, first install `open-iscsi` and `multipath-tools` packages, then start the corresponding services. Here is an example on how to do it, it may vary depending on your OS. This was tested against ubuntu 20 and debian buster.
+
+```bash
+apt update
+apt install open-iscsi multipath-tools -y
+service iscsid start
+service multipathd start
+```
+
+### Multipathd additionnal configuration
+
+For the plugin to work with multipathd, you have to install the following configuration on your hosts. We advise to put it in `/etc/multipath/conf.d/san-iscsi-csi.conf`.
+
+```conf
+defaults {
+  polling_interval 2
+  find_multipaths "yes"
+  retain_attached_hw_handler "no"
+  disable_changed_wwids "yes"
+  user_friendly_names "no"
+}
+```
+
+After the configuration has been created, restart multipathd to reload it (`service multipathd restart`).
 
 ### Deploy the provisioner to your kubernetes cluster
 
-The preferred approach to install this project is to use the provided [Helm Chart](https://artifacthub.io/packages/helm/enix/dothill-csi).
+The preferred approach to install this project is to use the provided [Helm Chart](https://artifacthub.io/packages/helm/enix/san-iscsi-csi).
 
 #### Configure your release
 
 Create a `values.yaml` file. It should contain configuration for your release.
 
-Please read the dothill-csi helm-chart [README.md](https://github.com/enix/helm-charts/blob/master/charts/dothill-csi/README.md#values) for more details about this file.
+Please read the san-iscsi-csi helm-chart [README.md](https://github.com/enix/helm-charts/blob/master/charts/san-iscsi-csi/README.md#values) for more details about this file.
 
 #### Install the helm chart
 
@@ -84,7 +111,7 @@ You should first add our charts repository, and then install the chart as follow
 
 ```sh
 helm repo add enix https://charts.enix.io/
-helm install my-release enix/dothill-csi -f ./example/values.yaml
+helm install my-release enix/san-iscsi-csi -f ./example/values.yaml
 ```
 
 ### Create a storage class

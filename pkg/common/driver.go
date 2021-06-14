@@ -1,3 +1,24 @@
+/*
+ * Copyright (c) 2021 Enix, SAS
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ *
+ * Authors:
+ * Paul Laffitte <paul.laffitte@enix.fr>
+ * Arthur Chaloin <arthur.chaloin@enix.fr>
+ * Alexandre Buisine <alexandre.buisine@enix.fr>
+ */
+
 package common
 
 import (
@@ -10,7 +31,7 @@ import (
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/enix/dothill-csi/pkg/exporter"
+	"github.com/enix/san-iscsi-csi/pkg/exporter"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
@@ -18,7 +39,7 @@ import (
 )
 
 // PluginName is the public name to be used in storage class etc.
-const PluginName = "dothill.csi.enix.io"
+const PluginName = "san-iscsi.csi.enix.io"
 
 // Configuration constants
 const (

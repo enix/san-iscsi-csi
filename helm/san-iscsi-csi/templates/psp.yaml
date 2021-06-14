@@ -14,18 +14,31 @@
 #
 # Authors:
 # Paul Laffitte <paul.laffitte@enix.fr>
-# Arthur Chaloin <arthur.chaloin@enix.fr>
 # Alexandre Buisine <alexandre.buisine@enix.fr>
 
-repositoryUrl: git@github.com:enix/san-iscsi-csi.git
-branches:
-  - main
-plugins:
-  - '@semantic-release/commit-analyzer'
-  - '@semantic-release/release-notes-generator'
-  - '@semantic-release/github'
-  - - '@semantic-release/changelog'
-    - changelogFile: 'CHANGELOG.md'
-  - - '@semantic-release/git'
-    - assets: 'CHANGELOG.md'
-      message: "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
+{{ if .Values.pspAdmissionControllerEnabled -}}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: san-iscsi-csi
+spec:
+  privileged: true
+  hostNetwork: true
+  hostIPC: true
+  hostPID: true
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  fsGroup:
+    rule: RunAsAny
+  hostPorts:
+    - min: 0
+      max: 65535
+  volumes:
+    - '*'
+  allowedCapabilities:
+    - '*'
+{{ end }}

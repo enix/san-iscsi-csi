@@ -1,18 +1,37 @@
+# Copyright (c) 2021 Enix, SAS
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# permissions and limitations under the License.
+#
+# Authors:
+# Paul Laffitte <paul.laffitte@enix.fr>
+# Arthur Chaloin <arthur.chaloin@enix.fr>
+# Alexandre Buisine <alexandre.buisine@enix.fr>
+
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
-provisioner: dothill.csi.enix.io # Required for the plugin to recognize this storage class as handled by itself.
+provisioner: san-iscsi.csi.enix.io # Required for the plugin to recognize this storage class as handled by itself.
 volumeBindingMode: WaitForFirstConsumer # Prefer this value to avoid unschedulable pods (https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode)
 allowVolumeExpansion: true
 metadata:
   name: my-marvelous-storage # Choose the name that fits the best with your StorageClass.
 parameters:
   # Secrets name and namespace, they can be the same for provisioner, controller-publish and controller-expand sections.
-  csi.storage.k8s.io/provisioner-secret-name: dothill-api
-  csi.storage.k8s.io/provisioner-secret-namespace: dothill-system
-  csi.storage.k8s.io/controller-publish-secret-name: dothill-api
-  csi.storage.k8s.io/controller-publish-secret-namespace: dothill-system
-  csi.storage.k8s.io/controller-expand-secret-name: dothill-api
-  csi.storage.k8s.io/controller-expand-secret-namespace: dothill-system
+  csi.storage.k8s.io/provisioner-secret-name: san-iscsi-csi-api
+  csi.storage.k8s.io/provisioner-secret-namespace: san-iscsi-csi-system
+  csi.storage.k8s.io/controller-publish-secret-name: san-iscsi-csi-api
+  csi.storage.k8s.io/controller-publish-secret-namespace: san-iscsi-csi-system
+  csi.storage.k8s.io/controller-expand-secret-name: san-iscsi-csi-api
+  csi.storage.k8s.io/controller-expand-secret-namespace: san-iscsi-csi-system
   fsType: ext4 # Desired filesystem
   iqn: iqn.2015-11.com.hpe:storage.msa2050.2002518b4c # Appliance IQN
   pool: A # Pool to use on the IQN to provision volumes
@@ -21,8 +40,8 @@ parameters:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: dothill-api
-  namespace: dothill-system
+  name: san-iscsi-csi-api
+  namespace: san-iscsi-csi-system
 type: Opaque
 data:
   apiAddress: aHR0cHM6Ly8xMC4wLjAuNDI= # base64 encoded api address
