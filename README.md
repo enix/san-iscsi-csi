@@ -19,6 +19,8 @@ Entry-level SAN appliances usually propose a low-cost, still powerful, solution 
 Considering that this project reached a certain level of maturity, and as of version `3.0.0`, this csi driver is proposed as an open-source project.
 As of version `4.0.0` it is distributed under the Apache 2.0 [license](./LICENSE).
 
+Migration process between v3.x and v4.x (and between all major versions more generally) is described in a dedicated [documentation page](./docs/migrate-from-v3-to-v4.md).
+
 ### Equipment compatibility
 
 Although this project is developped and tested on HPE MSA 2050 & 2060 equipments, it should work with a lot of other references from various brands.
