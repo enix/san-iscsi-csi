@@ -88,8 +88,8 @@ For the plugin to work with multipathd, you have to install the following config
 ```conf
 defaults {
   polling_interval 2
-  find_multipaths "yes"
-  retain_attached_hw_handler "no"
+  find_multipaths "strict"
+  retain_attached_hw_handler "yes"
   disable_changed_wwids "yes"
   user_friendly_names "no"
 }
