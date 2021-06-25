@@ -33,7 +33,7 @@ import (
 	"github.com/enix/san-iscsi-csi/pkg/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
+	klog "k8s.io/klog/v2"
 )
 
 func getVolumeMapsHostNames(client *dothill.Client, name string) ([]string, *dothill.ResponseStatus, error) {
@@ -91,13 +91,13 @@ func (driver *Controller) ControllerPublishVolume(ctx context.Context, req *csi.
 		}
 	}
 
-	lun, err := driver.chooseLUN(initiatorName)
+	lun, err := driver.chooseLUN(ctx, initiatorName)
 	if err != nil {
 		return nil, err
 	}
 	common.LogInfoS(ctx, "LUN choosed", "lun", lun)
 
-	if err = driver.mapVolume(req.GetVolumeId(), initiatorName, lun); err != nil {
+	if err = driver.mapVolume(ctx, req.GetVolumeId(), initiatorName, lun); err != nil {
 		return nil, err
 	}
 
@@ -131,14 +131,14 @@ func (driver *Controller) ControllerUnpublishVolume(ctx context.Context, req *cs
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
-func (driver *Controller) chooseLUN(initiatorName string) (int, error) {
-	klog.Infof("listing all LUN mappings")
+func (driver *Controller) chooseLUN(ctx context.Context, initiatorName string) (int, error) {
+	common.LogInfoS(ctx, "listing all LUN mappings")
 	volumes, responseStatus, err := driver.dothillClient.ShowHostMaps(initiatorName)
 	if err != nil && responseStatus == nil {
 		return -1, err
 	}
 	if responseStatus.ReturnCode == hostMapDoesNotExistsErrorCode {
-		klog.Info("initiator does not exist, assuming there is no LUN mappings yet and using LUN 1")
+		common.LogInfoS(ctx, "initiator does not exist, assuming there is no LUN mappings yet and using LUN 1")
 		return 1, nil
 	}
 	if err != nil {
@@ -147,19 +147,19 @@ func (driver *Controller) chooseLUN(initiatorName string) (int, error) {
 
 	sort.Sort(Volumes(volumes))
 
-	klog.V(5).Infof("checking if LUN 1 is not already in use")
+	klog.V(5).InfoS("checking if LUN 1 is not already in use", common.GetLogKeyAndValues(ctx)...)
 	if len(volumes) == 0 || volumes[0].LUN > 1 {
 		return 1, nil
 	}
 
-	klog.V(5).Infof("searching for an available LUN between LUNs in use")
+	klog.V(5).InfoS("searching for an available LUN between LUNs in use", common.GetLogKeyAndValues(ctx)...)
 	for index := 1; index < len(volumes); index++ {
 		if volumes[index].LUN-volumes[index-1].LUN > 1 {
 			return volumes[index-1].LUN + 1, nil
 		}
 	}
 
-	klog.V(5).Infof("checking if next LUN is not above maximum LUNs limit")
+	klog.V(5).InfoS("checking if next LUN is not above maximum LUNs limit", common.GetLogKeyAndValues(ctx)...)
 	if volumes[len(volumes)-1].LUN+1 < common.MaximumLUN {
 		return volumes[len(volumes)-1].LUN + 1, nil
 	}
@@ -167,8 +167,8 @@ func (driver *Controller) chooseLUN(initiatorName string) (int, error) {
 	return -1, status.Error(codes.ResourceExhausted, "no more available LUNs")
 }
 
-func (driver *Controller) mapVolume(volumeName, initiatorName string, lun int) error {
-	klog.Infof("trying to map volume %s for initiator %s on LUN %d", volumeName, initiatorName, lun)
+func (driver *Controller) mapVolume(ctx context.Context, volumeName, initiatorName string, lun int) error {
+	common.LogInfoS(ctx, "trying to map volume", "volumeName", volumeName, "initiatorName", initiatorName, "lun", lun)
 	_, metadata, err := driver.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
 	if err != nil && metadata == nil {
 		return err
@@ -180,12 +180,12 @@ func (driver *Controller) mapVolume(volumeName, initiatorName string, lun int) e
 		}
 
 		nodeName := strings.Join(nodeIDParts[1:], ":")
-		klog.Infof("initiator does not exist, creating it with nickname %s", nodeName)
+		common.LogInfoS(ctx, "initiator does not exist, creating it", "nodeName", nodeName, "initiatorName", initiatorName)
 		_, _, err = driver.dothillClient.CreateHost(nodeName, initiatorName)
 		if err != nil {
 			return err
 		}
-		klog.Info("retrying to map volume")
+		common.LogInfoS(ctx, "retrying to map volume")
 		_, _, err = driver.dothillClient.MapVolume(volumeName, initiatorName, "rw", lun)
 		if err != nil {
 			return err

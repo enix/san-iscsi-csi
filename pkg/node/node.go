@@ -168,12 +168,12 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 	}
 
 	fsType := req.GetVolumeContext()[common.FsTypeConfigKey]
-	err = ensureFsType(fsType, path)
+	err = ensureFsType(ctx, fsType, path)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if err = checkFs(path); err != nil {
+	if err = checkFs(ctx, path); err != nil {
 		return nil, status.Errorf(codes.DataLoss, "filesystem seems to be corrupted: %v", err)
 	}
 
@@ -262,7 +262,7 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	if err = checkFs(connector.MountTargetDevice.GetPath()); err != nil {
+	if err = checkFs(ctx, connector.MountTargetDevice.GetPath()); err != nil {
 		return nil, status.Errorf(codes.DataLoss, "Filesystem seems to be corrupted: %v", err)
 	}
 
@@ -350,7 +350,7 @@ func (node *Node) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeR
 	}
 
 	for _, binaryName := range requiredBinaries {
-		if err := checkHostBinary(binaryName); err != nil {
+		if err := checkHostBinary(ctx, binaryName); err != nil {
 			return nil, status.Error(codes.FailedPrecondition, err.Error())
 		}
 	}
@@ -362,48 +362,48 @@ func (node *Node) getIscsiInfoPath(volumeID string) string {
 	return fmt.Sprintf("%s/iscsi-%s.json", node.runPath, volumeID)
 }
 
-func checkHostBinary(name string) error {
-	klog.V(5).Infof("checking that binary %q exists in host PATH", name)
+func checkHostBinary(ctx context.Context, name string) error {
+	klog.V(5).InfoS("checking that binary exists in host PATH", common.GetLogKeyAndValues(ctx, "name", name)...)
 
 	if path, err := exec.LookPath(name); err != nil {
 		return fmt.Errorf("binary %q not found", name)
 	} else {
-		klog.V(5).Infof("found binary %q in host PATH at %q", name, path)
+		klog.V(5).InfoS("found binary %q in host PATH at %q", common.GetLogKeyAndValues(ctx, "name", name, "path", path)...)
 	}
 
 	return nil
 }
 
-func checkFs(path string) error {
-	klog.Infof("Checking filesystem at %s", path)
+func checkFs(ctx context.Context, path string) error {
+	common.LogInfoS(ctx, "Checking filesystem", "path", path)
 	if out, err := exec.Command("e2fsck", "-n", path).CombinedOutput(); err != nil {
 		return errors.New(string(out))
 	}
 	return nil
 }
 
-func findDeviceFormat(device string) (string, error) {
-	klog.V(2).Infof("Trying to find filesystem format on device %q", device)
+func findDeviceFormat(ctx context.Context, device string) (string, error) {
+	klog.V(2).InfoS("Trying to find filesystem format", common.GetLogKeyAndValues(ctx, "device", device)...)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	commandCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	output, err := exec.CommandContext(ctx, "blkid",
+	output, err := exec.CommandContext(commandCtx, "blkid",
 		"--probe",
 		"--match-tag", "TYPE",
 		"--match-tag", "PTTYPE",
 		"--output", "export",
 		device).CombinedOutput()
 
-	if ctx.Err() == context.DeadlineExceeded {
+	if commandCtx.Err() == context.DeadlineExceeded {
 		err = errors.New("command timed out after 2 seconds")
 	}
 
-	klog.V(2).Infof("blkid output: %q,", output)
+	klog.V(2).InfoS("blkid execution terminated", common.GetLogKeyAndValues(ctx, "output", output)...)
 
 	if err != nil {
 		// blkid exit with code 2 if the specified token (TYPE/PTTYPE, etc) could not be found or if device could not be identified.
 		if exit, ok := err.(*exec.ExitError); ok && exit.ExitCode() == 2 {
-			klog.V(2).Infof("Device seems to be is unformatted (%v)", err)
+			klog.V(2).InfoS("Device seems to be unformatted", common.GetLogKeyAndValues(ctx, "err", err)...)
 			return "", nil
 		}
 		return "", fmt.Errorf("could not not find format for device %q (%v)", device, err)
@@ -428,26 +428,26 @@ func findDeviceFormat(device string) (string, error) {
 	}
 
 	if partitionType != "" {
-		klog.V(2).Infof("Device %q seems to have a partition table type: %s", partitionType)
+		klog.V(2).InfoS("Device partition table type seems to be found", common.GetLogKeyAndValues(ctx, "partitionType", partitionType)...)
 		return "OTHER/PARTITIONS", nil
 	}
 
 	return filesystemType, nil
 }
 
-func ensureFsType(fsType string, disk string) error {
-	currentFsType, err := findDeviceFormat(disk)
+func ensureFsType(ctx context.Context, fsType string, disk string) error {
+	currentFsType, err := findDeviceFormat(ctx, disk)
 	if err != nil {
 		return err
 	}
 
-	klog.V(1).Infof("Detected filesystem: %q", currentFsType)
+	klog.V(1).InfoS("Detected filesystem", common.GetLogKeyAndValues(ctx, "fsType", currentFsType)...)
 	if currentFsType != fsType {
 		if currentFsType != "" {
 			return fmt.Errorf("Could not create %s filesystem on device %s since it already has one (%s)", fsType, disk, currentFsType)
 		}
 
-		klog.Infof("Creating %s filesystem on device %s", fsType, disk)
+		common.LogInfoS(ctx, "Creating filesystem on device", "fsType", fsType, "device", disk)
 		out, err := exec.Command(fmt.Sprintf("mkfs.%s", fsType), disk).CombinedOutput()
 		if err != nil {
 			return errors.New(string(out))

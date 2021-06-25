@@ -119,7 +119,7 @@ func New() *Controller {
 				driverContext.VolumeCaps = reqWithVolumeCaps.GetVolumeCapabilities()
 			}
 
-			err := controller.beginRoutine(&driverContext, info.FullMethod)
+			err := controller.beginRoutine(ctx, &driverContext, info.FullMethod)
 			defer controller.endRoutine()
 			if err != nil {
 				return nil, err
@@ -203,8 +203,8 @@ func (controller *Controller) Probe(ctx context.Context, req *csi.ProbeRequest) 
 	return &csi.ProbeResponse{}, nil
 }
 
-func (controller *Controller) beginRoutine(ctx *DriverCtx, methodName string) error {
-	if err := runPreflightChecks(ctx.Parameters, ctx.VolumeCaps); err != nil {
+func (controller *Controller) beginRoutine(ctx context.Context, driverCtx *DriverCtx, methodName string) error {
+	if err := runPreflightChecks(ctx, driverCtx.Parameters, driverCtx.VolumeCaps); err != nil {
 		return err
 	}
 
@@ -220,18 +220,18 @@ func (controller *Controller) beginRoutine(ctx *DriverCtx, methodName string) er
 		return nil
 	}
 
-	if ctx.Credentials == nil {
+	if driverCtx.Credentials == nil {
 		return errors.New("missing API credentials")
 	}
 
-	return controller.configureClient(ctx.Credentials)
+	return controller.configureClient(ctx, driverCtx.Credentials)
 }
 
 func (controller *Controller) endRoutine() {
 	controller.dothillClient.HTTPClient.CloseIdleConnections()
 }
 
-func (controller *Controller) configureClient(credentials map[string]string) error {
+func (controller *Controller) configureClient(ctx context.Context, credentials map[string]string) error {
 	username := string(credentials[common.UsernameSecretKey])
 	password := string(credentials[common.PasswordSecretKey])
 	apiAddr := string(credentials[common.APIAddressConfigKey])
@@ -240,32 +240,31 @@ func (controller *Controller) configureClient(credentials map[string]string) err
 		return status.Error(codes.InvalidArgument, "at least one field is missing in credentials secret")
 	}
 
-	klog.Infof("using dothill API at address %s", apiAddr)
 	if controller.dothillClient.Addr == apiAddr && controller.dothillClient.Username == username {
-		klog.Info("dothill client is already configured for this API, skipping login")
+		common.LogInfoS(ctx, "dothill client is already configured for this API, skipping login")
 		return nil
 	}
 
 	controller.dothillClient.Username = username
 	controller.dothillClient.Password = password
 	controller.dothillClient.Addr = apiAddr
-	klog.Infof("login into %q as user %q", controller.dothillClient.Addr, controller.dothillClient.Username)
+	common.LogInfoS(ctx, "login into API", "address", controller.dothillClient.Addr, "username", controller.dothillClient.Username)
 	err := controller.dothillClient.Login()
 	if err != nil {
 		return status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	klog.Info("login was successful")
+	common.LogInfoS(ctx, "login was successful")
 	return nil
 }
 
-func runPreflightChecks(parameters *map[string]string, capabilities *[]*csi.VolumeCapability) error {
+func runPreflightChecks(ctx context.Context, parameters *map[string]string, capabilities *[]*csi.VolumeCapability) error {
 	checkIfKeyExistsInConfig := func(key string) error {
 		if parameters == nil {
 			return nil
 		}
 
-		klog.V(2).Infof("checking for %s in storage class parameters", key)
+		klog.V(2).InfoS("checking for key in storage class parameters", common.GetLogKeyAndValues(ctx, "key", key)...)
 		_, ok := (*parameters)[key]
 		if !ok {
 			return status.Errorf(codes.InvalidArgument, "'%s' is missing from configuration", key)
