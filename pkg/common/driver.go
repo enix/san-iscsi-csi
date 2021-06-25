@@ -27,6 +27,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -92,12 +93,16 @@ func NewDriver(collectors ...prometheus.Collector) *Driver {
 
 func (driver *Driver) InitServer(unaryServerInterceptors ...grpc.UnaryServerInterceptor) {
 	callId := 0
+	var callIdMutex sync.Mutex
 
 	interceptors := append([]grpc.UnaryServerInterceptor{
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 			ctx = context.WithValue(ctx, "logTags", map[string]interface{}{})
+
+			callIdMutex.Lock()
 			AddLogTag(ctx, "callId", callId)
 			callId++
+			callIdMutex.Unlock()
 
 			start := time.Now()
 			resp, err := handler(ctx, req)
