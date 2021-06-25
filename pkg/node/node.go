@@ -136,7 +136,10 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume without capabilities")
 	}
 
-	common.LogInfoS(ctx, "publishing volume", "volumeId", req.GetVolumeId(), "mountPoint", req.GetTargetPath())
+	common.AddLogTag(ctx, "volumeId", req.GetVolumeId())
+	common.AddLogTag(ctx, "mountpoint", req.GetTargetPath())
+
+	common.LogInfoS(ctx, "publishing volume")
 
 	portals := strings.Split(req.GetVolumeContext()[common.PortalsConfigKey], ",")
 	lun, _ := strconv.ParseInt(req.GetPublishContext()["lun"], 10, 32)
@@ -217,7 +220,10 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume at an empty path")
 	}
 
-	common.LogInfoS(ctx, "unpublishing volume", "volumeId", req.GetVolumeId(), "mountPoint", req.GetTargetPath())
+	common.AddLogTag(ctx, "volumeId", req.GetVolumeId())
+	common.AddLogTag(ctx, "mountpoint", req.GetTargetPath())
+
+	common.LogInfoS(ctx, "unpublishing volume")
 
 	_, err := os.Stat(req.GetTargetPath())
 	if err == nil {
@@ -286,6 +292,8 @@ func (node *Node) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolum
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	common.AddLogTag(ctx, "volumeId", req.GetVolumeId())
 
 	for i := range connector.Devices {
 		connector.Devices[i].Rescan()
