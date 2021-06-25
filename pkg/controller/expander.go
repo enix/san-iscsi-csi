@@ -27,9 +27,9 @@ import (
 	"strconv"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/enix/san-iscsi-csi/pkg/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
 )
 
 // ControllerExpandVolume expands a volume to the given new size
@@ -38,13 +38,13 @@ func (controller *Controller) ControllerExpandVolume(ctx context.Context, req *c
 	if volumeID == "" {
 		return nil, status.Error(codes.InvalidArgument, "cannot expand a volume with an empty ID")
 	}
-	klog.Infof("expanding volume %q", volumeID)
+
+	common.AddLogTag(ctx, "volumeId", volumeID)
 
 	newSize := req.GetCapacityRange().GetRequiredBytes()
 	if newSize == 0 {
 		newSize = req.GetCapacityRange().GetLimitBytes()
 	}
-	klog.V(2).Infof("requested size: %d bytes", newSize)
 
 	response, _, err := controller.dothillClient.ShowVolumes(volumeID)
 	var expansionSize int64
@@ -58,9 +58,8 @@ func (controller *Controller) ControllerExpandVolume(ctx context.Context, req *c
 		return nil, fmt.Errorf("could not parse volume size: %v", err)
 	} else {
 		currentSize := currentBlocks * 512
-		klog.V(2).Infof("current size: %d bytes", currentSize)
 		expansionSize = newSize - currentSize
-		klog.V(2).Infof("expanding volume by %d bytes", expansionSize)
+		common.LogInfoS(ctx, "expanding volume", "oldSize", currentSize, "size", newSize, "addedBytes", expansionSize)
 	}
 
 	expansionSizeStr := getSizeStr(expansionSize)
@@ -68,7 +67,7 @@ func (controller *Controller) ControllerExpandVolume(ctx context.Context, req *c
 		return nil, err
 	}
 
-	klog.Infof("volume %q successfully expanded", volumeID)
+	common.LogInfoS(ctx, "volume successfully expanded")
 
 	return &csi.ControllerExpandVolumeResponse{
 		CapacityBytes:         newSize,

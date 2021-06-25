@@ -31,11 +31,11 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/enix/dothill-api-go/v2"
+	"github.com/enix/san-iscsi-csi/pkg/common"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
 )
 
 // CreateSnapshot creates a snapshot of the given volume
@@ -80,7 +80,7 @@ func (controller *Controller) DeleteSnapshot(ctx context.Context, req *csi.Delet
 	_, status, err := controller.dothillClient.DeleteSnapshot(req.SnapshotId)
 	if err != nil {
 		if status != nil && status.ReturnCode == snapshotNotFoundErrorCode {
-			klog.Infof("snapshot %s does not exist, assuming it has already been deleted", req.SnapshotId)
+			common.LogInfoS(ctx, "snapshot does not exist, assuming it has already been deleted", "snapshotId", req.SnapshotId)
 			return &csi.DeleteSnapshotResponse{}, nil
 		}
 		return nil, err

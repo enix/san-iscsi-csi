@@ -15,36 +15,32 @@
  *
  * Authors:
  * Paul Laffitte <paul.laffitte@enix.fr>
- * Arthur Chaloin <arthur.chaloin@enix.fr>
  * Alexandre Buisine <alexandre.buisine@enix.fr>
  */
 
-package main
+package common
 
 import (
-	"flag"
-	"fmt"
-	"syscall"
+	"context"
 
-	"github.com/enix/san-iscsi-csi/pkg/common"
-	"github.com/enix/san-iscsi-csi/pkg/node"
 	klog "k8s.io/klog/v2"
 )
 
-var bind = flag.String("bind", fmt.Sprintf("unix:///var/run/%s/csi-node.sock", common.PluginName), "RPC bind URI (can be a UNIX socket path or any URI)")
-var chroot = flag.String("chroot", "", "Chroot into a directory at startup (used when running in a container)")
+func GetLogKeyAndValues(ctx context.Context, keyAndValues ...interface{}) []interface{} {
+	logTags := ctx.Value("logTags").(map[string]interface{})
 
-func main() {
-	klog.InitFlags(nil)
-	flag.Set("logtostderr", "true")
-	flag.Parse()
-
-	if *chroot != "" {
-		if err := syscall.Chroot(*chroot); err != nil {
-			panic(err)
-		}
+	for k, v := range logTags {
+		keyAndValues = append(keyAndValues, k, v)
 	}
 
-	klog.InfoS("starting SAN iSCSI CSI node", "nodeVersion", common.Version)
-	node.New().Start(*bind)
+	return keyAndValues
+}
+
+func LogInfoS(ctx context.Context, msg string, keyAndValues ...interface{}) {
+	klog.InfoSDepth(1, msg, GetLogKeyAndValues(ctx, keyAndValues...)...)
+}
+
+func AddLogTag(ctx context.Context, key string, value interface{}) {
+	logTags := ctx.Value("logTags").(map[string]interface{})
+	logTags[key] = value
 }

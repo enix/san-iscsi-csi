@@ -31,7 +31,6 @@ import (
 	"github.com/enix/san-iscsi-csi/pkg/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
 )
 
 func (controller *Controller) checkVolumeExists(volumeID string, size int64) (bool, error) {
@@ -64,7 +63,6 @@ func (controller *Controller) CreateVolume(ctx context.Context, req *csi.CreateV
 	size := req.GetCapacityRange().GetRequiredBytes()
 	sizeStr := getSizeStr(size)
 	parameters := req.GetParameters()
-	klog.Infof("received %s volume request\n", sizeStr)
 
 	volumeID := req.GetName()
 	if len(volumeID) > common.VolumeNameMaxLength {
@@ -73,8 +71,10 @@ func (controller *Controller) CreateVolume(ctx context.Context, req *csi.CreateV
 		volumeID = volumeID[:common.VolumeNameMaxLength]
 	}
 
-	klog.Infof("creating volume %s (size %s) in pool %s", volumeID, sizeStr, parameters[common.PoolConfigKey])
+	common.AddLogTag(ctx, "volumeId", volumeID)
+	common.AddLogTag(ctx, "size", sizeStr)
 
+	common.LogInfoS(ctx, "creating volume", "pool", parameters[common.PoolConfigKey])
 	volumeExists, err := controller.checkVolumeExists(volumeID, size)
 	if err != nil {
 		return nil, err
@@ -110,8 +110,7 @@ func (controller *Controller) CreateVolume(ctx context.Context, req *csi.CreateV
 		},
 	}
 
-	klog.Infof("created volume %s (%s)", volumeID, sizeStr)
-	klog.V(8).Infof("created volume %+v", volume)
+	common.LogInfoS(ctx, "volume created")
 	return volume, nil
 }
 
@@ -121,12 +120,14 @@ func (controller *Controller) DeleteVolume(ctx context.Context, req *csi.DeleteV
 		return nil, status.Error(codes.InvalidArgument, "cannot delete volume with empty ID")
 	}
 
-	klog.Infof("deleting volume %s", req.GetVolumeId())
+	common.AddLogTag(ctx, "volumeId", req.GetVolumeId())
+
+	common.LogInfoS(ctx, "deleting volume")
 	_, respStatus, err := controller.dothillClient.DeleteVolume(req.GetVolumeId())
 	if err != nil {
 		if respStatus != nil {
 			if respStatus.ReturnCode == volumeNotFoundErrorCode {
-				klog.Infof("volume %s does not exist, assuming it has already been deleted", req.GetVolumeId())
+				common.LogInfoS(ctx, "volume does not exist, assuming it has already been deleted")
 				return &csi.DeleteVolumeResponse{}, nil
 			} else if respStatus.ReturnCode == volumeHasSnapshot {
 				return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("volume %s cannot be deleted since it has snapshots", req.GetVolumeId()))
@@ -135,7 +136,7 @@ func (controller *Controller) DeleteVolume(ctx context.Context, req *csi.DeleteV
 		return nil, err
 	}
 
-	klog.Infof("successfully deleted volume %s", req.GetVolumeId())
+	common.LogInfoS(ctx, "successfully deleted volume")
 	return &csi.DeleteVolumeResponse{}, nil
 }
 

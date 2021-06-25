@@ -27,7 +27,7 @@ import (
 
 	"github.com/enix/san-iscsi-csi/pkg/common"
 	"github.com/enix/san-iscsi-csi/pkg/controller"
-	"k8s.io/klog"
+	klog "k8s.io/klog/v2"
 )
 
 var bind = flag.String("bind", fmt.Sprintf("unix:///var/run/%s/csi-controller.sock", common.PluginName), "RPC bind URI (can be a UNIX socket path or any URI)")
@@ -36,6 +36,6 @@ func main() {
 	klog.InitFlags(nil)
 	flag.Set("logtostderr", "true")
 	flag.Parse()
-	klog.Infof("starting SAN iSCSI CSI controller %s", common.Version)
+	klog.InfoS("starting SAN iSCSI CSI controller", "controllerVersion", common.Version)
 	controller.New().Start(*bind)
 }

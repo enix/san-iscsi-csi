@@ -28,7 +28,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/klog"
+	klog "k8s.io/klog/v2"
 )
 
 // Exporter : Configuration (from command-line)
@@ -72,7 +72,7 @@ func (exporter *Exporter) Listen() error {
 	}
 
 	listen := fmt.Sprintf(":%d", exporter.Port)
-	klog.Infof("listening on %s", listen)
+	klog.InfoS("listening", "port", listen)
 
 	listener, err := net.Listen("tcp", listen)
 	if err != nil {

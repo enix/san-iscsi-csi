@@ -75,8 +75,12 @@ func (driver *Controller) ControllerPublishVolume(ctx context.Context, req *csi.
 	}
 
 	initiatorName := req.GetNodeId()
-	klog.Infof("attach request for initiator %s, volume id: %s", initiatorName, req.GetVolumeId())
 
+	common.AddLogTag(ctx, "volumeId", req.GetVolumeId())
+	common.AddLogTag(ctx, "nodeId", req.GetNodeId())
+	common.AddLogTag(ctx, "initiatorName", initiatorName)
+
+	common.LogInfoS(ctx, "attach request")
 	hostNames, _, err := getVolumeMapsHostNames(driver.dothillClient, req.GetVolumeId())
 	if err != nil {
 		return nil, err
@@ -91,13 +95,13 @@ func (driver *Controller) ControllerPublishVolume(ctx context.Context, req *csi.
 	if err != nil {
 		return nil, err
 	}
-	klog.Infof("using LUN %d", lun)
+	common.LogInfoS(ctx, "LUN choosed", "lun", lun)
 
 	if err = driver.mapVolume(req.GetVolumeId(), initiatorName, lun); err != nil {
 		return nil, err
 	}
 
-	klog.Infof("successfully mapped volume %s for initiator %s", req.GetVolumeId(), initiatorName)
+	common.LogInfoS(ctx, "successfully mapped volume", "lun", lun)
 	return &csi.ControllerPublishVolumeResponse{
 		PublishContext: map[string]string{"lun": strconv.Itoa(lun)},
 	}, nil
@@ -109,18 +113,21 @@ func (driver *Controller) ControllerUnpublishVolume(ctx context.Context, req *cs
 		return nil, status.Error(codes.InvalidArgument, "cannot unpublish volume with empty ID")
 	}
 
-	klog.Infof("unmapping volume %s from initiator %s", req.GetVolumeId(), req.GetNodeId())
+	common.AddLogTag(ctx, "volumeId", req.GetVolumeId())
+	common.AddLogTag(ctx, "nodeId", req.GetNodeId())
+
+	common.LogInfoS(ctx, "unmapping volume")
 	_, status, err := driver.dothillClient.UnmapVolume(req.GetVolumeId(), req.GetNodeId())
 	if err != nil {
 		if status != nil && status.ReturnCode == unmapFailedErrorCode {
-			klog.Info("unmap failed, assuming volume is already unmapped")
+			common.LogInfoS(ctx, "unmap failed, assuming volume is already unmapped")
 			return &csi.ControllerUnpublishVolumeResponse{}, nil
 		}
 
 		return nil, err
 	}
 
-	klog.Infof("successfully unmapped volume %s from all initiators", req.GetVolumeId())
+	common.LogInfoS(ctx, "successfully unmapped volume from all initiators")
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 

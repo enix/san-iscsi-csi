@@ -40,7 +40,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
+	klog "k8s.io/klog/v2"
 )
 
 // Node is the implementation of csi.NodeServer
@@ -53,7 +53,7 @@ type Node struct {
 
 // New is a convenience function for creating a node driver
 func New() *Node {
-	if klog.V(8) {
+	if klog.V(8).Enabled() {
 		iscsi.EnableDebugLogging(os.Stderr)
 	}
 
@@ -111,7 +111,7 @@ func (node *Node) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapab
 	}
 
 	for _, cap := range cl {
-		klog.V(4).Infof("enabled node service capability: %v", cap.String())
+		klog.V(4).InfoS("enabled node service capability", common.GetLogKeyAndValues(ctx, "capability", cap.String())...)
 		csc = append(csc, &csi.NodeServiceCapability{
 			Type: &csi.NodeServiceCapability_Rpc{
 				Rpc: &csi.NodeServiceCapability_RPC{
@@ -136,15 +136,13 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume without capabilities")
 	}
 
-	klog.Infof("publishing volume %s", req.GetVolumeId())
+	common.LogInfoS(ctx, "publishing volume", "volumeId", req.GetVolumeId(), "mountPoint", req.GetTargetPath())
 
 	portals := strings.Split(req.GetVolumeContext()[common.PortalsConfigKey], ",")
-	klog.Infof("ISCSI portals: %s", portals)
-
 	lun, _ := strconv.ParseInt(req.GetPublishContext()["lun"], 10, 32)
-	klog.Infof("LUN: %d", lun)
 
-	klog.Info("initiating ISCSI connection...")
+	common.LogInfoS(ctx, "initiating ISCSI connection...", "portals", portals, "LUN", lun)
+
 	targets := make([]iscsi.TargetInfo, 0)
 	for _, portal := range portals {
 		targets = append(targets, iscsi.TargetInfo{
@@ -161,12 +159,12 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
-	klog.Infof("attached device at %s", path)
+	common.LogInfoS(ctx, "device attached", "devicePath", path)
 
 	if connector.IsMultipathEnabled() {
-		klog.Info("device is using multipath")
+		common.LogInfoS(ctx, "device is using multipath")
 	} else {
-		klog.Info("device is NOT using multipath")
+		common.LogInfoS(ctx, "device is NOT using multipath")
 	}
 
 	fsType := req.GetVolumeContext()[common.FsTypeConfigKey]
@@ -182,7 +180,7 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 	out, err := exec.Command("findmnt", "--output", "TARGET", "--noheadings", path).Output()
 	mountpoints := strings.Split(strings.Trim(string(out), "\n"), "\n")
 	if err != nil || len(mountpoints) == 0 {
-		klog.Infof("mounting volume at %s", req.GetTargetPath())
+		common.LogInfoS(ctx, "mounting volume")
 		os.Mkdir(req.GetTargetPath(), 00755)
 		out, err = exec.Command("mount", "-t", fsType, path, req.GetTargetPath()).CombinedOutput()
 		if err != nil {
@@ -190,7 +188,7 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 		}
 	} else if len(mountpoints) == 1 {
 		if mountpoints[0] == req.GetTargetPath() {
-			klog.Infof("volume %s already mounted", req.GetTargetPath())
+			common.LogInfoS(ctx, "volume already mounted")
 		} else {
 			errStr := fmt.Sprintf("device has already been mounted somewhere else (%s instead of %s), please unmount first", mountpoints[0], req.GetTargetPath())
 			return nil, status.Error(codes.Internal, errStr)
@@ -199,14 +197,14 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 		return nil, errors.New("device has already been mounted in several locations, please unmount first")
 	}
 
-	iscsiInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
-	klog.Infof("saving ISCSI connection info in %s", iscsiInfoPath)
-	err = connector.Persist(iscsiInfoPath)
+	iscsiConnectionInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
+	common.LogInfoS(ctx, "saving ISCSI connection info", "iscsiConnectionInfoPath", iscsiConnectionInfoPath)
+	err = connector.Persist(iscsiConnectionInfoPath)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	klog.Infof("successfully mounted volume at %s", req.GetTargetPath())
+	common.LogInfoS(ctx, "successfully mounted volume")
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -219,11 +217,11 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 		return nil, status.Error(codes.InvalidArgument, "cannot publish volume at an empty path")
 	}
 
-	klog.Infof("unpublishing volume %s", req.GetVolumeId())
+	common.LogInfoS(ctx, "unpublishing volume", "volumeId", req.GetVolumeId(), "mountPoint", req.GetTargetPath())
 
 	_, err := os.Stat(req.GetTargetPath())
 	if err == nil {
-		klog.Infof("unmounting volume at %s", req.GetTargetPath())
+		common.LogInfoS(ctx, "unmounting volume")
 		out, err := exec.Command("mountpoint", req.GetTargetPath()).CombinedOutput()
 		if err == nil {
 			out, err := exec.Command("umount", req.GetTargetPath()).CombinedOutput()
@@ -242,9 +240,9 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 		klog.Warningf("assuming that volume is already unmounted: %v", err)
 	}
 
-	iscsiInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
-	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
-	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
+	iscsiConnectionInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
+	common.LogInfoS(ctx, "loading ISCSI connection info", "iscsiConnectionInfoPath", iscsiConnectionInfoPath)
+	connector, err := iscsi.GetConnectorFromFile(iscsiConnectionInfoPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			klog.Warning(errors.Wrap(err, "assuming that ISCSI connection is already closed"))
@@ -254,7 +252,7 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 	}
 
 	if isVolumeInUse(connector.MountTargetDevice.GetPath()) {
-		klog.Info("volume is still in use on the node, thus it will not be detached")
+		common.LogInfoS(ctx, "volume is still in use on the node, thus it will not be detached")
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
@@ -268,16 +266,16 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 		return nil, status.Errorf(codes.DataLoss, "Filesystem seems to be corrupted: %v", err)
 	}
 
-	klog.Info("detaching ISCSI device")
+	common.LogInfoS(ctx, "detaching ISCSI device")
 	err = connector.DisconnectVolume()
 	if err != nil {
 		return nil, err
 	}
 
-	klog.Infof("deleting ISCSI connection info file %s", iscsiInfoPath)
-	os.Remove(iscsiInfoPath)
+	common.LogInfoS(ctx, "deleting ISCSI connection info file", "iscsiConnectionInfoPath", iscsiConnectionInfoPath)
+	os.Remove(iscsiConnectionInfoPath)
 
-	klog.Info("successfully detached ISCSI device")
+	common.LogInfoS(ctx, "successfully detached ISCSI device")
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
@@ -294,15 +292,15 @@ func (node *Node) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolum
 	}
 
 	if connector.IsMultipathEnabled() {
-		klog.V(2).Info("device is using multipath")
+		klog.V(2).InfoS("device is using multipath", common.GetLogKeyAndValues(ctx)...)
 		if err := iscsi.ResizeMultipathDevice(connector.MountTargetDevice); err != nil {
 			return nil, err
 		}
 	} else {
-		klog.V(2).Info("device is NOT using multipath")
+		klog.V(2).InfoS("device is NOT using multipath", common.GetLogKeyAndValues(ctx)...)
 	}
 
-	klog.Infof("expanding filesystem on device %s", connector.MountTargetDevice.GetPath())
+	common.LogInfoS(ctx, "expanding filesystem", "devicePath", connector.MountTargetDevice.GetPath())
 	output, err := exec.Command("resize2fs", connector.MountTargetDevice.GetPath()).CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("could not resize filesystem: %v", output)

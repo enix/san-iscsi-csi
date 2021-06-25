@@ -32,7 +32,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog"
+	klog "k8s.io/klog/v2"
 )
 
 const (
@@ -148,7 +148,7 @@ func (controller *Controller) ControllerGetCapabilities(ctx context.Context, req
 	}
 
 	for _, cap := range cl {
-		klog.V(4).Infof("enabled controller service capability: %v", cap.String())
+		klog.V(4).InfoS("enabled controller service capability", common.GetLogKeyAndValues(ctx, "capability", cap.String())...)
 		csc = append(csc, &csi.ControllerServiceCapability{
 			Type: &csi.ControllerServiceCapability_Rpc{
 				Rpc: &csi.ControllerServiceCapability_RPC{

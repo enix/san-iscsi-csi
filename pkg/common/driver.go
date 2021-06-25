@@ -35,7 +35,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
-	"k8s.io/klog"
+	klog "k8s.io/klog/v2"
 )
 
 // PluginName is the public name to be used in storage class etc.
@@ -91,12 +91,19 @@ func NewDriver(collectors ...prometheus.Collector) *Driver {
 }
 
 func (driver *Driver) InitServer(unaryServerInterceptors ...grpc.UnaryServerInterceptor) {
+	callId := 0
+
 	interceptors := append([]grpc.UnaryServerInterceptor{
 		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			ctx = context.WithValue(ctx, "logTags", map[string]interface{}{})
+			AddLogTag(ctx, "callId", callId)
+			callId++
+
 			start := time.Now()
 			resp, err := handler(ctx, req)
 			driver.exporter.Collector.IncCSIRPCCall(info.FullMethod, err == nil)
 			driver.exporter.Collector.AddCSIRPCCallDuration(info.FullMethod, time.Since(start))
+
 			return resp, err
 		},
 	}, unaryServerInterceptors...)
@@ -109,8 +116,8 @@ func (driver *Driver) InitServer(unaryServerInterceptors ...grpc.UnaryServerInte
 func NewLogRoutineServerInterceptor(shouldLogRoutine func(string) bool) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		if shouldLogRoutine(info.FullMethod) {
-			klog.Infof("=== [ROUTINE START] %s ===", info.FullMethod)
-			defer klog.Infof("=== [ROUTINE END] %s ===", info.FullMethod)
+			LogInfoS(ctx, "=== [ROUTINE START] ===", "fullMethod", info.FullMethod)
+			defer LogInfoS(ctx, "=== [ROUTINE END] ===", "fullMethod", info.FullMethod)
 		}
 
 		result, err := handler(ctx, req)
@@ -155,7 +162,7 @@ func (driver *Driver) Start(bind string) {
 		driver.exporter.ListenAndServe()
 	}()
 
-	klog.Infof("driver listening on %s\n\n", bind)
+	klog.InfoS("driver listening", "URI", bind)
 	driver.Server.Serve(socket)
 }
 
