@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/enix/san-iscsi-csi/compare/v4.0.0...v4.0.1) (2021-08-17)
+
+
+### Bug Fixes
+
+* **node:** add timeout on iscsiadm commands and logout on timeout ([4c7f1c2](https://github.com/enix/san-iscsi-csi/commit/4c7f1c2555f02d04c37e96220dc021b385958308))
+
 # [4.0.0](https://github.com/enix/san-iscsi-csi/compare/v3.1.6...v4.0.0) (2021-06-14)
 
 
