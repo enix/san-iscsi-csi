@@ -38,4 +38,4 @@ require (
 // replace github.com/enix/dothill-api-go => ./pkg/dothill-api-go
 
 // replace github.com/kubernetes-csi/csi-lib-iscsi => ./pkg/csi-lib-iscsi
-replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi v0.0.0-san-iscsi-csi-4-0-0
+replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi v0.0.0-san-iscsi-csi-4-0-1
