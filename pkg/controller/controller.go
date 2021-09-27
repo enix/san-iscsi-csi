@@ -84,7 +84,7 @@ type Controller struct {
 // DriverCtx contains data common to most calls
 type DriverCtx struct {
 	Credentials map[string]string
-	Parameters  *map[string]string
+	Parameters  map[string]string
 	VolumeCaps  *[]*csi.VolumeCapability
 }
 
@@ -259,14 +259,14 @@ func (controller *Controller) configureClient(credentials map[string]string) err
 	return nil
 }
 
-func runPreflightChecks(parameters *map[string]string, capabilities *[]*csi.VolumeCapability) error {
+func runPreflightChecks(parameters map[string]string, capabilities *[]*csi.VolumeCapability) error {
 	checkIfKeyExistsInConfig := func(key string) error {
 		if parameters == nil {
 			return nil
 		}
 
 		klog.V(2).Infof("checking for %s in storage class parameters", key)
-		_, ok := (*parameters)[key]
+		_, ok := parameters[key]
 		if !ok {
 			return status.Errorf(codes.InvalidArgument, "'%s' is missing from configuration", key)
 		}

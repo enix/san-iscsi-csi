@@ -71,7 +71,7 @@ type WithSecrets interface {
 
 // WithParameters is an interface for structs with parameters
 type WithParameters interface {
-	GetParameters() *map[string]string
+	GetParameters() map[string]string
 }
 
 // WithVolumeCaps is an interface for structs with volume capabilities
