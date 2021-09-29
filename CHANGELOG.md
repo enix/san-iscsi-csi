@@ -1,3 +1,11 @@
+## [4.0.2](https://github.com/enix/san-iscsi-csi/compare/v4.0.1...v4.0.2) (2021-09-29)
+
+
+### Bug Fixes
+
+* **controller:** check for required parameters ([813d50b](https://github.com/enix/san-iscsi-csi/commit/813d50bad8ac4e5425f788f3d46602190f371c27)), closes [#99](https://github.com/enix/san-iscsi-csi/issues/99)
+* **node:** try to do discovery if iscsi session re-scan fail ([04f9eb6](https://github.com/enix/san-iscsi-csi/commit/04f9eb61aeb56cbc9a958d72c4505e15d54bcdea))
+
 ## [4.0.1](https://github.com/enix/san-iscsi-csi/compare/v4.0.0...v4.0.1) (2021-08-17)
 
 
