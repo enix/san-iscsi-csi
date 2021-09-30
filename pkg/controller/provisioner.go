@@ -94,7 +94,7 @@ func (controller *Controller) CreateVolume(ctx context.Context, req *csi.CreateV
 		if sourceID != "" {
 			_, _, err = controller.dothillClient.CopyVolume(sourceID, volumeID, parameters[common.PoolConfigKey])
 		} else {
-			_, _, err = controller.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey])
+			_, _, err = controller.dothillClient.CreateVolume(volumeID, sizeStr, parameters[common.PoolConfigKey], "Virtual")
 		}
 		if err != nil {
 			return nil, err

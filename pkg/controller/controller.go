@@ -27,7 +27,7 @@ import (
 	"sync"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/enix/dothill-api-go/v2"
+	exosx "github.com/enix/dothill-api-go/v2"
 	"github.com/enix/san-iscsi-csi/pkg/common"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -78,7 +78,7 @@ var nonAuthenticatedMethods = []string{
 type Controller struct {
 	*common.Driver
 
-	dothillClient *dothill.Client
+	dothillClient *exosx.Client
 }
 
 // DriverCtx contains data common to most calls
@@ -90,7 +90,7 @@ type DriverCtx struct {
 
 // New is a convenience fn for creating a controller driver
 func New() *Controller {
-	dothillClient := dothill.NewClient()
+	dothillClient := exosx.NewClient()
 	controller := &Controller{
 		Driver:        common.NewDriver(dothillClient.Collector),
 		dothillClient: dothillClient,

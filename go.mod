@@ -35,7 +35,7 @@ require (
 	k8s.io/klog v1.0.0
 )
 
-// replace github.com/enix/dothill-api-go => ./pkg/dothill-api-go
+replace github.com/enix/dothill-api-go/v2 => github.com/seagate/seagate-exos-x-api-go v1.7.2-0.20210907211216-c003d6817278
 
 // replace github.com/kubernetes-csi/csi-lib-iscsi => ./pkg/csi-lib-iscsi
 replace github.com/kubernetes-csi/csi-lib-iscsi => github.com/enix/csi-lib-iscsi v0.0.0-san-iscsi-csi-4-0-2

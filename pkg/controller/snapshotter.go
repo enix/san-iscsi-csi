@@ -30,7 +30,7 @@ import (
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/enix/dothill-api-go/v2"
+	exosx "github.com/enix/dothill-api-go/v2"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/grpc/codes"
@@ -116,7 +116,7 @@ func (controller *Controller) ListSnapshots(ctx context.Context, req *csi.ListSn
 	}, nil
 }
 
-func newSnapshotFromResponse(object *dothill.Object) (*csi.Snapshot, error) {
+func newSnapshotFromResponse(object *exosx.Object) (*csi.Snapshot, error) {
 	properties, err := object.GetProperties("total-size-numeric", "name", "master-volume-name", "creation-date-time-numeric")
 	if err != nil {
 		return nil, fmt.Errorf("could not read snapshot %v", err)
