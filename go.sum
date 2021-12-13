@@ -87,8 +87,6 @@ github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5m
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
-github.com/enix/csi-lib-iscsi v0.0.0-san-iscsi-csi-4-0-2 h1:qz9yX4R+MpFQqKkNeDEWk6551oqXpTw1pB+7OUM3Dnw=
-github.com/enix/csi-lib-iscsi v0.0.0-san-iscsi-csi-4-0-2/go.mod h1:c/keGS6bErOzLrFyNgafdDWT6h72v2XQiA/p2R7yghU=
 github.com/enix/dothill-api-go/v2 v2.0.0 h1:ygITsust2Y/tuTA8kzd8rBWgQwB+QAxvrFALifjOoJ4=
 github.com/enix/dothill-api-go/v2 v2.0.0/go.mod h1:Kc2euNhJbjY31KKXW9ld1+ypvBNlqQUpEUPIodh208o=
 github.com/envoyproxy/go-control-plane v0.6.9/go.mod h1:SBwIajubJHhxtWwsL9s8ss4safvEdbitLhGGK48rN6g=
@@ -254,6 +252,8 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
+github.com/kubernetes-csi/csi-lib-iscsi v0.0.0-20211110090527-5c802c48a124 h1:cajnZqFO7WAGwKHNzS4RXKJOLiB6RbN5VMVB38FYxcc=
+github.com/kubernetes-csi/csi-lib-iscsi v0.0.0-20211110090527-5c802c48a124/go.mod h1:c/keGS6bErOzLrFyNgafdDWT6h72v2XQiA/p2R7yghU=
 github.com/kubernetes-csi/csi-test v0.0.0-20191016154743-6931aedb3df0 h1:ecL3Aaj5rnvUnFO1KEXLLuD5AjwdOqK0Tg/5ZOsZQFE=
 github.com/kubernetes-csi/csi-test v0.0.0-20191016154743-6931aedb3df0/go.mod h1:0JHYXISG0wKK4OoXtuyT6CkVyEqmHme4k5VzZphSB3s=
 github.com/leodido/go-urn v1.2.0/go.mod h1:+8+nEpDfqqsY+g338gtMEUOtuK+4dEMhiQEgxpxOKII=

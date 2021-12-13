@@ -145,17 +145,11 @@ func (node *Node) NodePublishVolume(ctx context.Context, req *csi.NodePublishVol
 	klog.Infof("LUN: %d", lun)
 
 	klog.Info("initiating ISCSI connection...")
-	targets := make([]iscsi.TargetInfo, 0)
-	for _, portal := range portals {
-		targets = append(targets, iscsi.TargetInfo{
-			Iqn:    req.GetVolumeContext()[common.TargetIQNConfigKey],
-			Portal: portal,
-		})
-	}
 	connector := &iscsi.Connector{
-		Targets:     targets,
-		Lun:         int32(lun),
-		DoDiscovery: true,
+		TargetIqn:     req.GetVolumeContext()[common.TargetIQNConfigKey],
+		TargetPortals: portals,
+		Lun:           int32(lun),
+		DoDiscovery:   true,
 	}
 	path, err := connector.Connect()
 	if err != nil {
@@ -244,7 +238,7 @@ func (node *Node) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublis
 
 	iscsiInfoPath := node.getIscsiInfoPath(req.GetVolumeId())
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
-	connector, err := iscsi.GetConnectorFromFile(iscsiInfoPath)
+	connector, err := getConnectorFromFile(iscsiInfoPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			klog.Warning(errors.Wrap(err, "assuming that ISCSI connection is already closed"))
@@ -430,7 +424,7 @@ func findDeviceFormat(device string) (string, error) {
 	}
 
 	if partitionType != "" {
-		klog.V(2).Infof("Device %q seems to have a partition table type: %s", partitionType)
+		klog.V(2).Infof("Device %q seems to have a partition table type: %s", device, partitionType)
 		return "OTHER/PARTITIONS", nil
 	}
 
