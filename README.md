@@ -2,7 +2,7 @@
 
 A dynamic persistent volume (PV) provisioner for iSCSI-compatible SAN based storage systems.
 
-[![Build status](https://gitlab.com/enix.io/san-iscsi-csi/badges/main/pipeline.svg)](https://gitlab.com/enix.io/san-iscsi-csi/-/pipelines)
+[![Build status](https://gitlab.com/enix.io/dothill-csi/badges/main/pipeline.svg)](https://gitlab.com/enix.io/dothill-csi/-/pipelines)
 [![Go Report Card](https://goreportcard.com/badge/github.com/enix/san-iscsi-csi)](https://goreportcard.com/report/github.com/enix/san-iscsi-csi)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
