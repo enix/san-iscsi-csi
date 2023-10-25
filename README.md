@@ -1,3 +1,8 @@
+|❗ Warning |
+|:----------|
+|As of 2023/01, this project is no longer maintained by Enix and Seagate as take over the project. We archived the repository and we invite you to join this project [Seagate/seagate-exos-x-csi](https://github.com/Seagate/seagate-exos-x-csi).|
+
+
 # SAN iSCSI CSI driver
 
 A dynamic persistent volume (PV) provisioner for iSCSI-compatible SAN based storage systems.
