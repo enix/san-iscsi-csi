@@ -1,6 +1,6 @@
 |❗ Warning |
 |:----------|
-|As of 2023/01, this project is no longer maintained by Enix and Seagate as take over the project. We archived the repository and we invite you to join this project [Seagate/seagate-exos-x-csi](https://github.com/Seagate/seagate-exos-x-csi).|
+|As of January 2023, this project is no longer maintained by Enix, and Seagate has taken over the project. We have archived the repository, and we invite you to join this project at [Seagate/seagate-exos-x-csi](https://github.com/Seagate/seagate-exos-x-csi).|
 
 
 # SAN iSCSI CSI driver
